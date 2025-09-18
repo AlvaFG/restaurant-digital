@@ -22,6 +22,6 @@ Este documento lista los scripts y flujos de trabajo estándar del proyecto.
 5. Merge a dev cuando pase revisión.
 
 ## CI/CD
-- Ejecuta lint, build y tests en cada PR.
-- Genera reportes de cobertura y performance.
-- Crea releases automáticas en merge a main.
+- Workflow `CI` en `.github/workflows/ci.yml`.
+- Se ejecuta en push y PR hacia `dev` y `feature/**`.
+- Pasos: `npm ci`, `npm run lint`, `npm run build`, `npm test`.
