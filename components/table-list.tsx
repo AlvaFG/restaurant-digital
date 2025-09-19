@@ -1,7 +1,9 @@
-"use client"
+﻿"use client"
 
-import { useState } from "react"
-import { MOCK_TABLES, TABLE_STATUS_COLORS, TABLE_STATUS_LABELS, TableService, type Table } from "@/lib/mock-data"
+import { useCallback, useEffect, useMemo, useState } from "react"
+import type { Table } from "@/lib/mock-data"
+import { TABLE_STATE, TABLE_STATE_BADGE_VARIANT, TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
+import { fetchTables, inviteHouse, resetTable } from "@/lib/table-service"
 import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -24,130 +26,160 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
-import { Gift, RotateCcw, Eye, Users, MapPin } from "lucide-react"
+import { LoadingSpinner } from "@/components/loading-spinner"
+import { Gift, RotateCcw, Eye, Users, MapPin, RefreshCw } from "lucide-react"
 
 export function TableList() {
   const { user } = useAuth()
-  const [selectedTable, setSelectedTable] = useState<Table | null>(null)
+  const [tables, setTables] = useState<Table[]>([])
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
-  const [isLoading, setIsLoading] = useState(false)
+  const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  const handleInvitarLaCasa = async () => {
+  const selectedTable = useMemo(
+    () => tables.find((table) => table.id === selectedTableId) ?? null,
+    [tables, selectedTableId],
+  )
+
+  const loadTables = useCallback(async () => {
+    setIsLoading(true)
+    setError(null)
+    try {
+      const response = await fetchTables()
+      setTables(response.data)
+    } catch (loadError) {
+      console.error("[TableList] Failed to load tables", loadError)
+      setError("No se pudieron cargar las mesas. Intenta nuevamente.")
+    } finally {
+      setIsLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    void loadTables()
+  }, [loadTables])
+
+  const handleInviteHouse = async () => {
     if (!selectedTable) return
 
-    setIsLoading(true)
+    setIsProcessingAction(true)
     try {
-      await TableService.invitarLaCasa(selectedTable.id)
+      await inviteHouse(selectedTable.id)
       setShowInviteDialog(false)
-      setSelectedTable(null)
-      // In real app: refresh table data
-    } catch (error) {
-      console.error("Error invitando la casa:", error)
+      setSelectedTableId(null)
+      await loadTables()
+    } catch (actionError) {
+      console.error("[TableList] Failed to invite house", actionError)
     } finally {
-      setIsLoading(false)
+      setIsProcessingAction(false)
     }
   }
 
-  const handleResetearMesa = async () => {
+  const handleResetTable = async () => {
     if (!selectedTable) return
 
-    setIsLoading(true)
+    setIsProcessingAction(true)
     try {
-      await TableService.resetearMesa(selectedTable.id)
+      await resetTable(selectedTable.id)
       setShowResetDialog(false)
-      setSelectedTable(null)
-      // In real app: refresh table data
-    } catch (error) {
-      console.error("Error reseteando mesa:", error)
+      setSelectedTableId(null)
+      await loadTables()
+    } catch (actionError) {
+      console.error("[TableList] Failed to reset table", actionError)
     } finally {
-      setIsLoading(false)
+      setIsProcessingAction(false)
     }
   }
 
-  const getStatusBadgeVariant = (status: Table["status"]) => {
-    switch (status) {
-      case "libre":
-        return "default"
-      case "ocupada":
-        return "secondary"
-      case "pidió":
-        return "default"
-      case "cuenta_solicitada":
-        return "destructive"
-      case "pago_confirmado":
-        return "default"
-      default:
-        return "outline"
-    }
-  }
+  const getStatusBadgeVariant = (status: Table["status"]) => TABLE_STATE_BADGE_VARIANT[status] ?? "outline"
 
   return (
     <div className="space-y-6">
-      {/* Tables Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {MOCK_TABLES.map((table) => (
-          <Card key={table.id} className="cursor-pointer hover:shadow-md transition-shadow">
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-lg">Mesa {table.number}</CardTitle>
-                <Badge
-                  variant={getStatusBadgeVariant(table.status)}
-                  style={{
-                    backgroundColor: TABLE_STATUS_COLORS[table.status],
-                    color: "white",
-                  }}
-                >
-                  {TABLE_STATUS_LABELS[table.status]}
-                </Badge>
-              </div>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <MapPin className="h-4 w-4" />
-                  {table.zone || "Sin zona"}
-                </div>
-                {table.seats && (
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <Users className="h-4 w-4" />
-                    {table.seats} asientos
-                  </div>
-                )}
-
-                <div className="flex gap-2 pt-2">
-                  <Button variant="outline" size="sm" onClick={() => setSelectedTable(table)} className="flex-1">
-                    <Eye className="h-4 w-4 mr-2" />
-                    Ver Detalles
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-xl font-semibold">Mesas en el salon</h2>
+          <p className="text-sm text-muted-foreground">Controla estados y acciones rapidas</p>
+        </div>
+        <Button variant="outline" size="sm" onClick={() => void loadTables()} disabled={isLoading}>
+          <RefreshCw className="mr-2 h-4 w-4" />
+          Actualizar
+        </Button>
       </div>
 
-      {/* Table Details Dialog */}
-      <Dialog open={!!selectedTable} onOpenChange={() => setSelectedTable(null)}>
+      {isLoading ? (
+        <div className="flex h-48 items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      ) : error ? (
+        <div className="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+          {error}
+        </div>
+      ) : (
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {tables.map((table) => (
+            <Card key={table.id} className="cursor-pointer transition-shadow hover:shadow-md">
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-lg">Mesa {table.number}</CardTitle>
+                  <Badge
+                    variant={getStatusBadgeVariant(table.status)}
+                    style={{ backgroundColor: TABLE_STATE_COLORS[table.status], color: "white" }}
+                  >
+                    {TABLE_STATE_LABELS[table.status]}
+                  </Badge>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4" />
+                    {table.zone || "Sin zona"}
+                  </div>
+                  {table.seats ? (
+                    <div className="flex items-center gap-2">
+                      <Users className="h-4 w-4" />
+                      {table.seats} asientos
+                    </div>
+                  ) : null}
+
+                  <div className="flex gap-2 pt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setSelectedTableId(table.id)}
+                      className="flex-1"
+                    >
+                      <Eye className="mr-2 h-4 w-4" />
+                      Ver detalles
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      <Dialog open={!!selectedTable} onOpenChange={() => setSelectedTableId(null)}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Mesa {selectedTable?.number}</DialogTitle>
             <DialogDescription>Detalles y acciones disponibles</DialogDescription>
           </DialogHeader>
 
-          {selectedTable && (
+          {selectedTable ? (
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <span className="font-medium">Estado:</span>
                   <Badge
                     className="ml-2"
-                    style={{
-                      backgroundColor: TABLE_STATUS_COLORS[selectedTable.status],
-                      color: "white",
-                    }}
+                    style={{ backgroundColor: TABLE_STATE_COLORS[selectedTable.status], color: "white" }}
                   >
-                    {TABLE_STATUS_LABELS[selectedTable.status]}
+                    {TABLE_STATE_LABELS[selectedTable.status]}
                   </Badge>
                 </div>
                 <div>
@@ -160,66 +192,71 @@ export function TableList() {
                 </div>
               </div>
 
-              {/* Staff Actions */}
-              {user?.role === "staff" && selectedTable.status !== "libre" && (
-                <div className="space-y-2 pt-4 border-t">
-                  <p className="text-sm font-medium">Acciones Rápidas:</p>
+              {user?.role === "staff" && selectedTable.status !== TABLE_STATE.FREE ? (
+                <div className="space-y-2 border-t pt-4">
+                  <p className="text-sm font-medium">Acciones rapidas</p>
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={() => setShowInviteDialog(true)} className="flex-1">
-                      <Gift className="h-4 w-4 mr-2" />
-                      Invita la Casa
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowInviteDialog(true)}
+                      className="flex-1"
+                    >
+                      <Gift className="mr-2 h-4 w-4" />
+                      Invita la casa
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setShowResetDialog(true)} className="flex-1">
-                      <RotateCcw className="h-4 w-4 mr-2" />
-                      Resetear Mesa
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowResetDialog(true)}
+                      className="flex-1"
+                    >
+                      <RotateCcw className="mr-2 h-4 w-4" />
+                      Resetear mesa
                     </Button>
                   </div>
                 </div>
-              )}
+              ) : null}
             </div>
-          )}
+          ) : null}
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setSelectedTable(null)}>
+            <Button variant="outline" onClick={() => setSelectedTableId(null)}>
               Cerrar
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
-      {/* Invite House Dialog */}
       <AlertDialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Invitar la Casa</AlertDialogTitle>
+            <AlertDialogTitle>Invitar la casa</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que quieres invitar la casa para la Mesa {selectedTable?.number}? Esta acción cerrará el
-              pedido con total $0 y marcará el motivo como cortesía de la casa.
+              Quieres invitar la casa para la mesa {selectedTable?.number}? Se registrara el motivo como cortesia.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleInvitarLaCasa} disabled={isLoading}>
-              {isLoading ? "Procesando..." : "Confirmar"}
+            <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleInviteHouse} disabled={isProcessingAction}>
+              {isProcessingAction ? "Procesando..." : "Confirmar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
-      {/* Reset Table Dialog */}
       <AlertDialog open={showResetDialog} onOpenChange={setShowResetDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Resetear Mesa</AlertDialogTitle>
+            <AlertDialogTitle>Resetear mesa</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro de que quieres resetear la Mesa {selectedTable?.number}? Esta acción cancelará cualquier
-              pedido abierto y dejará la mesa libre.
+              Quieres resetear la mesa {selectedTable?.number}? Se liberara la mesa y se notificara al salon.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isLoading}>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleResetearMesa} disabled={isLoading}>
-              {isLoading ? "Procesando..." : "Confirmar"}
+            <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleResetTable} disabled={isProcessingAction}>
+              {isProcessingAction ? "Procesando..." : "Confirmar"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

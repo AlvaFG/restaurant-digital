@@ -1,101 +1,134 @@
-"use client"
+﻿"use client"
 
+import { useEffect, useState } from "react"
+import Link from "next/link"
+import { useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { MOCK_TABLES, TABLE_STATUS_COLORS, TABLE_STATUS_LABELS } from "@/lib/mock-data"
+import { LoadingSpinner } from "@/components/loading-spinner"
+import { TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
+import type { Table } from "@/lib/mock-data"
+import { fetchTable } from "@/lib/table-service"
 import { ArrowLeft, Users, MapPin } from "lucide-react"
-import Link from "next/link"
-import { useParams } from "next/navigation"
 
 export default function TableDetailPage() {
   const params = useParams()
   const tableId = params.id as string
-  const table = MOCK_TABLES.find((t) => t.id === tableId)
+  const [table, setTable] = useState<Table | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
-  if (!table) {
-    return (
-      <DashboardLayout>
-        <div className="space-y-6">
-          <div className="flex items-center gap-4">
-            <Link href="/mesas">
-              <Button variant="outline" size="sm">
-                <ArrowLeft className="h-4 w-4 mr-2" />
-                Volver
-              </Button>
-            </Link>
-            <h1 className="text-3xl font-bold tracking-tight">Mesa no encontrada</h1>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
-  }
+  useEffect(() => {
+    let cancelled = false
+
+    const load = async () => {
+      setIsLoading(true)
+      setError(null)
+      try {
+        const result = await fetchTable(tableId)
+        if (!cancelled) {
+          setTable(result)
+        }
+      } catch (loadError) {
+        console.error("[TableDetail] Failed to fetch table", loadError)
+        if (!cancelled) {
+          setError("No se pudo cargar la mesa. Intenta nuevamente.")
+        }
+      } finally {
+        if (!cancelled) {
+          setIsLoading(false)
+        }
+      }
+    }
+
+    void load()
+
+    return () => {
+      cancelled = true
+    }
+  }, [tableId])
+
+  const renderHeader = () => (
+    <div className="flex items-center gap-4">
+      <Link href="/mesas">
+        <Button variant="outline" size="sm">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Volver
+        </Button>
+      </Link>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">
+          Mesa {table ? table.number : ""}
+        </h1>
+        <p className="text-muted-foreground">Detalles y gestion de la mesa</p>
+      </div>
+    </div>
+  )
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/mesas">
-            <Button variant="outline" size="sm">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Volver
-            </Button>
-          </Link>
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">Mesa {table.number}</h1>
-            <p className="text-muted-foreground">Detalles y gestión de la mesa</p>
+        {renderHeader()}
+
+        {isLoading ? (
+          <div className="flex h-64 items-center justify-center">
+            <LoadingSpinner />
           </div>
-        </div>
-
-        <div className="grid gap-6 md:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Información de la Mesa</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Estado:</span>
-                <Badge
-                  style={{
-                    backgroundColor: TABLE_STATUS_COLORS[table.status],
-                    color: "white",
-                  }}
-                >
-                  {TABLE_STATUS_LABELS[table.status]}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Zona:</span>
-                <div className="flex items-center gap-2">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{table.zone || "Sin zona"}</span>
+        ) : error ? (
+          <div className="rounded-md border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        ) : table ? (
+          <div className="grid gap-6 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Informacion de la mesa</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Estado:</span>
+                  <Badge style={{ backgroundColor: TABLE_STATE_COLORS[table.status], color: "white" }}>
+                    {TABLE_STATE_LABELS[table.status]}
+                  </Badge>
                 </div>
-              </div>
 
-              <div className="flex items-center justify-between">
-                <span className="font-medium">Capacidad:</span>
-                <div className="flex items-center gap-2">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>{table.seats || "No especificado"} asientos</span>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Zona:</span>
+                  <div className="flex items-center gap-2">
+                    <MapPin className="h-4 w-4 text-muted-foreground" />
+                    <span>{table.zone || "Sin zona"}</span>
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Pedido Actual</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No hay pedidos activos</p>
-                <p className="text-sm">Los pedidos se mostrarán en la siguiente tarea</p>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+                <div className="flex items-center justify-between">
+                  <span className="font-medium">Capacidad:</span>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-muted-foreground" />
+                    <span>{table.seats || "No especificado"} asientos</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Pedido actual</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="py-8 text-center text-muted-foreground">
+                  <p>No hay pedidos activos</p>
+                  <p className="text-sm">Se mostrara la informacion cuando este disponible</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        ) : (
+          <div className="rounded-md border border-muted px-4 py-3 text-sm text-muted-foreground">
+            No encontramos la mesa solicitada.
+          </div>
+        )}
       </div>
     </DashboardLayout>
   )
