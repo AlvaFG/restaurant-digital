@@ -1,8 +1,10 @@
+import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
+
 export interface Table {
   id: string
   number: number
   zone?: string
-  status: "libre" | "ocupada" | "pidió" | "cuenta_solicitada" | "pago_confirmado"
+  status: TableState
   seats?: number
   qrcodeUrl?: string
 }
@@ -67,12 +69,12 @@ export interface MenuItem {
 
 // Mock data
 export const MOCK_TABLES: Table[] = [
-  { id: "1", number: 1, zone: "Salón Principal", status: "libre", seats: 4 },
-  { id: "2", number: 2, zone: "Salón Principal", status: "ocupada", seats: 2 },
-  { id: "3", number: 3, zone: "Salón Principal", status: "pidió", seats: 6 },
-  { id: "4", number: 4, zone: "Terraza", status: "cuenta_solicitada", seats: 4 },
-  { id: "5", number: 5, zone: "Terraza", status: "pago_confirmado", seats: 2 },
-  { id: "6", number: 6, zone: "Terraza", status: "libre", seats: 8 },
+  { id: "1", number: 1, zone: "Salon Principal", status: TABLE_STATE.FREE, seats: 4 },
+  { id: "2", number: 2, zone: "Salon Principal", status: TABLE_STATE.OCCUPIED, seats: 2 },
+  { id: "3", number: 3, zone: "Salon Principal", status: TABLE_STATE.ORDER_IN_PROGRESS, seats: 6 },
+  { id: "4", number: 4, zone: "Terraza", status: TABLE_STATE.BILL_REQUESTED, seats: 4 },
+  { id: "5", number: 5, zone: "Terraza", status: TABLE_STATE.PAYMENT_CONFIRMED, seats: 2 },
+  { id: "6", number: 6, zone: "Terraza", status: TABLE_STATE.FREE, seats: 8 },
 ]
 
 export const MOCK_ALERTS: Alert[] = [
@@ -234,21 +236,8 @@ export const MOCK_TABLE_LAYOUT: TableMapLayout = {
   ],
 }
 
-export const TABLE_STATUS_COLORS = {
-  libre: "#10b981", // green
-  ocupada: "#f59e0b", // amber
-  pidió: "#3b82f6", // blue
-  cuenta_solicitada: "#8b5cf6", // violet
-  pago_confirmado: "#06b6d4", // cyan
-} as const
-
-export const TABLE_STATUS_LABELS = {
-  libre: "Libre",
-  ocupada: "Ocupada",
-  pidió: "Pidió",
-  cuenta_solicitada: "Cuenta Solicitada",
-  pago_confirmado: "Pago Confirmado",
-} as const
+export const TABLE_STATUS_COLORS = TABLE_STATE_COLORS
+export const TABLE_STATUS_LABELS = TABLE_STATE_LABELS
 
 export const ALERT_PRIORITIES = {
   quiere_pagar_efectivo: 1,

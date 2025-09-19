@@ -2,11 +2,12 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { BrandAwareBadge } from "@/components/brand-aware-badge"
 import { MOCK_TABLES, MOCK_ALERTS, MOCK_ANALYTICS } from "@/lib/mock-data"
+import { TABLE_STATE } from "@/lib/table-states"
 import { Bell, DollarSign, Users, TrendingUp } from "lucide-react"
 
 export default function DashboardPage() {
   const activeAlerts = MOCK_ALERTS.filter((alert) => !alert.acknowledged)
-  const occupiedTables = MOCK_TABLES.filter((table) => table.status !== "libre")
+  const occupiedTables = MOCK_TABLES.filter((table) => table.status !== TABLE_STATE.FREE)
 
   return (
     <DashboardLayout>
