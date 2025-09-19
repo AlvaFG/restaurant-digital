@@ -1,7 +1,8 @@
-﻿"use client"
+"use client"
 
 import type { Alert, Order, Table, TableMapLayout } from "@/lib/mock-data"
 
+import { TABLE_STATE_CODES } from "./table-states"
 export type SocketEvents = {
   "alert.created": {
     type: Alert["type"]
@@ -91,7 +92,7 @@ export class MockSocketClient {
     if (this.intervalId) return
 
     const tableIds: Table["id"][] = ["1", "2", "3", "4"]
-    const tableStatuses: Table["status"][] = ["libre", "ocupada", "pidiA3", "cuenta_solicitada", "pago_confirmado"]
+    const tableStatuses: Table["status"][] = [...TABLE_STATE_CODES]
     const alertTypes: Alert["type"][] = ["llamar_mozo", "pedido_entrante", "quiere_pagar_efectivo", "pago_aprobado"]
     const orderStatuses: Order["status"][] = ["abierto", "preparando", "listo", "entregado", "cerrado"]
 
@@ -120,7 +121,7 @@ export class MockSocketClient {
           this.notify(event, {
             tableId: tableIds[Math.floor(Math.random() * tableIds.length)],
             type: alertTypes[Math.floor(Math.random() * alertTypes.length)],
-            message: "ActualizaciA3n simulada de alertas",
+            message: "Actualizacion simulada de alertas",
           })
           break
         }
