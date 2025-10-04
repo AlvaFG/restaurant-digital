@@ -5,12 +5,17 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useSocket } from "@/hooks/use-socket"
 import {
   fetchOrders,
+  toOrdersPanelOrder,
+  toSummaryClient,
   type FetchOrdersParams,
   type OrdersPanelOrder,
   type OrdersQueryResult,
   type OrdersSummaryClient,
+  type SerializedOrder,
 } from "@/lib/order-service"
 import type { OrderStatus, PaymentStatus } from "@/lib/server/order-types"
+import type { OrdersSummary } from "@/lib/server/order-store"
+import type { OrderEventPayload, OrderSummaryEventPayload } from "@/lib/socket-events"
 
 const DEFAULT_STATUS_FILTERS: OrderStatus[] = ["abierto", "preparando", "listo"]
 const POLLING_INTERVAL_MS = 30_000
@@ -34,7 +39,7 @@ export interface UseOrdersPanelResult {
 }
 
 export function useOrdersPanel(): UseOrdersPanelResult {
-  const { on, off } = useSocket()
+  const { on, off, lastReadyPayload, state } = useSocket()
 
   const [orders, setOrders] = useState<OrdersPanelOrder[]>([])
   const [summary, setSummary] = useState<OrdersSummaryClient | null>(null)
@@ -49,6 +54,67 @@ export function useOrdersPanel(): UseOrdersPanelResult {
 
   const abortRef = useRef<AbortController | null>(null)
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const ordersVersionRef = useRef<number>(0)
+
+  const applyOrderEvent = useCallback((payload: OrderEventPayload) => {
+    const version = payload.metadata?.version ?? 0
+    if (version < ordersVersionRef.current) {
+      return
+    }
+
+    const normalized = toOrdersPanelOrder(payload.order as SerializedOrder)
+
+    setOrders((previous) => {
+      const index = previous.findIndex((order) => order.id === normalized.id)
+      if (index === -1) {
+        const next = [normalized, ...previous]
+        return next.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+      }
+
+      const next = previous.map((order) => (order.id === normalized.id ? normalized : order))
+      return next.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime())
+    })
+
+    ordersVersionRef.current = version
+    if (payload.metadata?.updatedAt) {
+      setLastUpdated(new Date(payload.metadata.updatedAt))
+    }
+  }, [])
+
+  const applySummaryEvent = useCallback((payload: OrderSummaryEventPayload) => {
+    const version = payload.metadata?.version ?? 0
+    if (version < ordersVersionRef.current) {
+      return
+    }
+
+    setSummary(toSummaryClient(payload.summary as OrdersSummary))
+    ordersVersionRef.current = version
+    setLastUpdated(new Date(payload.metadata.updatedAt))
+  }, [])
+
+  useEffect(() => {
+    const handleCreated = (payload: OrderEventPayload) => {
+      applyOrderEvent(payload)
+    }
+
+    const handleUpdated = (payload: OrderEventPayload) => {
+      applyOrderEvent(payload)
+    }
+
+    const handleSummary = (payload: OrderSummaryEventPayload) => {
+      applySummaryEvent(payload)
+    }
+
+    on("order.created", handleCreated)
+    on("order.updated", handleUpdated)
+    on("order.summary.updated", handleSummary)
+
+    return () => {
+      off("order.created", handleCreated)
+      off("order.updated", handleUpdated)
+      off("order.summary.updated", handleSummary)
+    }
+  }, [applyOrderEvent, applySummaryEvent, off, on])
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -95,6 +161,7 @@ export function useOrdersPanel(): UseOrdersPanelResult {
         setSummary(result.summary)
         setLastUpdated(result.receivedAt)
         setError(null)
+        ordersVersionRef.current = result.storeMetadata.version
       } catch (error) {
         if (controller.signal.aborted) {
           return
@@ -125,6 +192,24 @@ export function useOrdersPanel(): UseOrdersPanelResult {
   }, [loadOrders])
 
   useEffect(() => {
+    const snapshot = lastReadyPayload?.orders
+    if (!state.isReady || !snapshot?.summary) {
+      return
+    }
+
+    const version = snapshot.metadata?.version ?? 0
+    if (version < ordersVersionRef.current) {
+      return
+    }
+
+    setSummary(toSummaryClient(snapshot.summary as OrdersSummary))
+    ordersVersionRef.current = version
+    if (snapshot.metadata?.updatedAt) {
+      setLastUpdated(new Date(snapshot.metadata.updatedAt))
+    }
+  }, [lastReadyPayload, state.isReady])
+
+  useEffect(() => {
     if (pollingRef.current) {
       clearInterval(pollingRef.current)
     }
@@ -140,29 +225,6 @@ export function useOrdersPanel(): UseOrdersPanelResult {
       }
     }
   }, [loadOrders])
-
-  useEffect(() => {
-    const handleOrderUpdated = (payload: { orderId: string; status: OrderStatus }) => {
-      setOrders((previous) =>
-        previous.map((order) =>
-          order.id === payload.orderId
-            ? {
-                ...order,
-                status: payload.status,
-              }
-            : order,
-        ),
-      )
-
-      void loadOrders({ silent: true })
-    }
-
-    on("order.updated", handleOrderUpdated)
-
-    return () => {
-      off("order.updated", handleOrderUpdated)
-    }
-  }, [loadOrders, off, on])
 
   const setStatusFilters = useCallback((next: OrderStatus[]) => {
     setStatusFiltersState(Array.from(new Set(next)))

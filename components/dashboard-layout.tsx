@@ -1,41 +1,50 @@
-﻿"use client"
+"use client"
 
-import type React from "react"
-import { SidebarNav } from "@/components/sidebar-nav"
-import { ProtectedRoute } from "@/components/protected-route"
+import { useEffect, type ReactNode } from "react"
+
 import { ErrorBoundary } from "@/components/error-boundary"
+import { ProtectedRoute } from "@/components/protected-route"
+import { SidebarNav } from "@/components/sidebar-nav"
+import { Badge } from "@/components/ui/badge"
+import { useToast } from "@/hooks/use-toast"
 import { useSocket } from "@/hooks/use-socket"
-import { useEffect } from "react"
-import { toast } from "@/hooks/use-toast"
+import { deserializeAlert, deserializeTable } from "@/lib/socket-client-utils"
+import { TABLE_STATE_LABELS } from "@/lib/table-states"
 import type { SocketEventPayload } from "@/lib/socket"
 
 interface DashboardLayoutProps {
-  children: React.ReactNode
+  children: ReactNode
   requiredRole?: "admin" | "staff"
 }
 
 export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
-  const { on, off } = useSocket()
+  const { on, off, isConnected, isReconnecting } = useSocket()
+  const { toast } = useToast()
 
   useEffect(() => {
-    const handleTableUpdate = ({ tableId, status }: SocketEventPayload<"table.updated">) => {
+    const handleTableUpdate = (payload: SocketEventPayload<"table.updated">) => {
+      const table = deserializeTable(payload.table)
+      const label = table.number ? "Mesa " + table.number : "Mesa " + table.id
+      const statusLabel = TABLE_STATE_LABELS[table.status] ?? table.status
       toast({
         title: "Mesa actualizada",
-        description: `La mesa ${tableId} cambió a estado ${status}`,
+        description: label + " ahora está " + statusLabel.toLowerCase(),
       })
     }
 
-    const handleOrderUpdate = ({ orderId, status }: SocketEventPayload<"order.updated">) => {
+    const handleOrderUpdate = (payload: SocketEventPayload<"order.updated">) => {
+      const order = payload.order
       toast({
         title: "Pedido actualizado",
-        description: `El pedido ${orderId} ahora está ${status}`,
+        description: "Pedido " + order.id + " ahora está " + order.status,
       })
     }
 
-    const handleNewAlert = ({ message }: SocketEventPayload<"alert.created">) => {
+    const handleNewAlert = (payload: SocketEventPayload<"alert.created">) => {
+      const alert = deserializeAlert(payload.alert)
       toast({
         title: "Nueva alerta",
-        description: message,
+        description: alert.message,
         variant: "destructive",
       })
     }
@@ -49,7 +58,7 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
       off("order.updated", handleOrderUpdate)
       off("alert.created", handleNewAlert)
     }
-  }, [off, on])
+  }, [off, on, toast])
 
   return (
     <ProtectedRoute requiredRole={requiredRole}>
@@ -57,7 +66,17 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
         <div className="flex h-screen bg-background">
           <SidebarNav />
           <main className="flex-1 overflow-auto">
-            <div className="container mx-auto p-6 max-w-7xl">{children}</div>
+            <div className="container mx-auto max-w-7xl p-6 space-y-4">
+              <div className="flex justify-end">
+                <Badge
+                  variant={isConnected ? "secondary" : "outline"}
+                  className={isReconnecting ? "animate-pulse" : undefined}
+                >
+                  {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
+                </Badge>
+              </div>
+              {children}
+            </div>
           </main>
         </div>
       </ErrorBoundary>

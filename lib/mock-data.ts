@@ -1,4 +1,12 @@
-import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
+﻿import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
+
+export interface TableCovers {
+  current: number
+  total: number
+  sessions: number
+  lastUpdatedAt: string | null
+  lastSessionAt: string | null
+}
 
 export interface Table {
   id: string
@@ -6,6 +14,7 @@ export interface Table {
   zone?: string
   status: TableState
   seats?: number
+  covers: TableCovers
   qrcodeUrl?: string
 }
 
@@ -52,10 +61,35 @@ export interface TableMapLayout {
   }>
 }
 
+export type AllergenCode =
+  | "gluten"
+  | "lacteos"
+  | "huevo"
+  | "frutos_secos"
+  | "soja"
+  | "pescado"
+  | "mariscos"
+  | "sulfitos"
+
+export interface MenuAllergen {
+  code: AllergenCode
+  name: string
+  description?: string
+  icon?: string
+}
+
+export interface MenuItemAllergen {
+  code: AllergenCode
+  contains: boolean
+  traces?: boolean
+  notes?: string
+}
+
 export interface MenuCategory {
   id: string
   name: string
   sort: number
+  description?: string
 }
 
 export interface MenuItem {
@@ -65,16 +99,32 @@ export interface MenuItem {
   description: string
   priceCents: number
   available: boolean
+  allergens: MenuItemAllergen[]
+  tags?: string[]
+  imageUrl?: string
+}
+
+export interface MenuMetadata {
+  currency: string
+  version: number
+  updatedAt: string
+}
+
+export interface MenuResponse {
+  categories: MenuCategory[]
+  items: MenuItem[]
+  allergens: MenuAllergen[]
+  metadata: MenuMetadata
 }
 
 // Mock data
 export const MOCK_TABLES: Table[] = [
-  { id: "1", number: 1, zone: "Salon Principal", status: TABLE_STATE.FREE, seats: 4 },
-  { id: "2", number: 2, zone: "Salon Principal", status: TABLE_STATE.OCCUPIED, seats: 2 },
-  { id: "3", number: 3, zone: "Salon Principal", status: TABLE_STATE.ORDER_IN_PROGRESS, seats: 6 },
-  { id: "4", number: 4, zone: "Terraza", status: TABLE_STATE.BILL_REQUESTED, seats: 4 },
-  { id: "5", number: 5, zone: "Terraza", status: TABLE_STATE.PAYMENT_CONFIRMED, seats: 2 },
-  { id: "6", number: 6, zone: "Terraza", status: TABLE_STATE.FREE, seats: 8 },
+  { id: "1", number: 1, zone: "Salon Principal", status: TABLE_STATE.FREE, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "2", number: 2, zone: "Salon Principal", status: TABLE_STATE.OCCUPIED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "3", number: 3, zone: "Salon Principal", status: TABLE_STATE.ORDER_IN_PROGRESS, seats: 6, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "4", number: 4, zone: "Terraza", status: TABLE_STATE.BILL_REQUESTED, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "5", number: 5, zone: "Terraza", status: TABLE_STATE.PAYMENT_CONFIRMED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "6", number: 6, zone: "Terraza", status: TABLE_STATE.FREE, seats: 8, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
 ]
 
 export const MOCK_ALERTS: Alert[] = [
@@ -131,6 +181,49 @@ export const MOCK_ORDERS: Order[] = [
   },
 ]
 
+export const MOCK_MENU_ALLERGENS: MenuAllergen[] = [
+  {
+    code: "gluten",
+    name: "Gluten",
+    description: "Cereales que contienen gluten (trigo, cebada, centeno).",
+  },
+  {
+    code: "lacteos",
+    name: "Lácteos",
+    description: "Leche y derivados como queso o crema.",
+  },
+  {
+    code: "huevo",
+    name: "Huevo",
+    description: "Huevos y productos derivados.",
+  },
+  {
+    code: "frutos_secos",
+    name: "Frutos secos",
+    description: "Nueces, almendras y otros frutos secos.",
+  },
+  {
+    code: "soja",
+    name: "Soja",
+    description: "Soja y productos basados en soja.",
+  },
+  {
+    code: "pescado",
+    name: "Pescado",
+    description: "Pescados y derivados.",
+  },
+  {
+    code: "mariscos",
+    name: "Mariscos",
+    description: "Crustáceos y moluscos.",
+  },
+  {
+    code: "sulfitos",
+    name: "Sulfitos",
+    description: "Aditivos conservantes a base de sulfito.",
+  },
+]
+
 export const MOCK_MENU_CATEGORIES: MenuCategory[] = [
   { id: "1", name: "Entradas", sort: 1 },
   { id: "2", name: "Platos Principales", sort: 2 },
@@ -146,6 +239,10 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Empanadas caseras (x6)",
     priceCents: 1800,
     available: true,
+    allergens: [
+      { code: "gluten", contains: true },
+      { code: "huevo", contains: true },
+    ],
   },
   {
     id: "2",
@@ -154,6 +251,7 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Provoleta a la parrilla",
     priceCents: 1500,
     available: true,
+    allergens: [{ code: "lacteos", contains: true }],
   },
   {
     id: "3",
@@ -162,6 +260,11 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Milanesa napolitana con papas fritas",
     priceCents: 2500,
     available: true,
+    allergens: [
+      { code: "gluten", contains: true },
+      { code: "huevo", contains: true },
+      { code: "lacteos", contains: true },
+    ],
   },
   {
     id: "4",
@@ -170,6 +273,7 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Bife de chorizo 400g",
     priceCents: 3500,
     available: true,
+    allergens: [],
   },
   {
     id: "5",
@@ -178,6 +282,10 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Fideos con salsa bolognesa",
     priceCents: 2200,
     available: true,
+    allergens: [
+      { code: "gluten", contains: true },
+      { code: "soja", contains: false, traces: true },
+    ],
   },
   {
     id: "6",
@@ -186,9 +294,33 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Flan con dulce de leche",
     priceCents: 800,
     available: true,
+    allergens: [
+      { code: "lacteos", contains: true },
+      { code: "huevo", contains: true },
+    ],
   },
-  { id: "7", categoryId: "3", name: "Tiramisu", description: "Tiramisu italiano", priceCents: 1200, available: true },
-  { id: "8", categoryId: "4", name: "Coca Cola", description: "Coca Cola 500ml", priceCents: 600, available: true },
+  {
+    id: "7",
+    categoryId: "3",
+    name: "Tiramisu",
+    description: "Tiramisu italiano",
+    priceCents: 1200,
+    available: true,
+    allergens: [
+      { code: "gluten", contains: true },
+      { code: "lacteos", contains: true },
+      { code: "huevo", contains: true },
+    ],
+  },
+  {
+    id: "8",
+    categoryId: "4",
+    name: "Coca Cola",
+    description: "Coca Cola 500ml",
+    priceCents: 600,
+    available: true,
+    allergens: [],
+  },
   {
     id: "9",
     categoryId: "4",
@@ -196,6 +328,7 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     description: "Vino tinto de la casa",
     priceCents: 2800,
     available: true,
+    allergens: [{ code: "sulfitos", contains: true }],
   },
 ]
 
@@ -280,13 +413,45 @@ export class TableService {
 }
 
 export class OrderService {
+  private static async loadMenuItems(menuItemIds: string[]): Promise<Map<string, MenuItem>> {
+    const uniqueIds = Array.from(new Set(menuItemIds.map((id) => String(id))))
+
+    if (uniqueIds.length === 0) {
+      return new Map<string, MenuItem>()
+    }
+
+    if (typeof window === "undefined") {
+      const { getMenuItemsSnapshot } = await import("@/lib/server/menu-store")
+      const snapshot = await getMenuItemsSnapshot(uniqueIds)
+      return snapshot.items
+    }
+
+    const fallbackMap = new Map<string, MenuItem>()
+    for (const id of uniqueIds) {
+      const match = MOCK_MENU_ITEMS.find((item) => item.id === id)
+      if (match) {
+        fallbackMap.set(id, match)
+      }
+    }
+
+    return fallbackMap
+  }
+
   static async createOrder(tableId: string, items: Array<{ menuItemId: string; quantity: number }>): Promise<Order> {
-    console.log(`[MOCK] Creating order for table ${tableId}`, items)
+    console.log("[MOCK] Creating order for table " + tableId, items)
+
+    const ids = items.map((item) => String(item.menuItemId))
+    const menuItemsMap = await this.loadMenuItems(ids)
+    const missing = Array.from(new Set(ids.filter((id) => !menuItemsMap.has(id))))
+
+    if (missing.length > 0) {
+      throw new Error("Menu item not found: " + missing[0])
+    }
 
     const orderItems = items.map((item) => {
-      const menuItem = MOCK_MENU_ITEMS.find((mi) => mi.id === item.menuItemId)!
+      const menuItem = menuItemsMap.get(String(item.menuItemId))!
       return {
-        id: item.menuItemId,
+        id: menuItem.id,
         name: menuItem.name,
         quantity: item.quantity,
         price: menuItem.priceCents,
@@ -296,7 +461,7 @@ export class OrderService {
     const subtotal = orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0)
 
     const newOrder: Order = {
-      id: `order-${Date.now()}`,
+      id: "order-" + Date.now(),
       tableId,
       items: orderItems,
       subtotal,
@@ -307,21 +472,49 @@ export class OrderService {
     }
 
     // Mock: emit order.created event
-    console.log(`[MOCK] Emitting order.created event`, newOrder)
+    console.log("[MOCK] Emitting order.created event", newOrder)
 
     return newOrder
   }
 
   static async updateOrderStatus(orderId: string, status: Order["status"]): Promise<void> {
-    console.log(`[MOCK] Updating order ${orderId} status to ${status}`)
+    console.log("[MOCK] Updating order " + orderId + " status to " + status)
     // Mock: emit order.updated event
+  }
+}
+
+type AlertSocketEvent = "alert.created" | "alert.updated" | "alert.acknowledged"
+
+type SocketBusLike = {
+  publish: <TEvent extends AlertSocketEvent>(
+    event: TEvent,
+    payload: import("@/lib/socket-events").SocketEventPayload<TEvent>,
+  ) => void
+}
+
+function getServerSocketBus(): SocketBusLike | null {
+  if (typeof window !== "undefined") {
+    return null
+  }
+  const globalAny = globalThis as unknown as { __SOCKET_BUS__?: { bus?: SocketBusLike } }
+  return globalAny.__SOCKET_BUS__?.bus ?? null
+}
+
+function serializeAlertForSocket(alert: Alert) {
+  return {
+    id: alert.id,
+    tableId: alert.tableId,
+    type: alert.type,
+    message: alert.message,
+    createdAt: alert.createdAt instanceof Date ? alert.createdAt.toISOString() : new Date(alert.createdAt).toISOString(),
+    acknowledged: Boolean(alert.acknowledged),
   }
 }
 
 export class AlertService {
   static async createAlert(tableId: string, type: Alert["type"], message: string): Promise<Alert> {
     const newAlert: Alert = {
-      id: `alert-${Date.now()}`,
+      id: "alert-" + Date.now().toString(),
       tableId,
       type,
       message,
@@ -329,18 +522,40 @@ export class AlertService {
       acknowledged: false,
     }
 
-    console.log(`[MOCK] Creating alert`, newAlert)
-    // Mock: emit alert.created event
+    MOCK_ALERTS.unshift(newAlert)
+
+    const bus = getServerSocketBus()
+    if (bus) {
+      try {
+        bus.publish("alert.created", { alert: serializeAlertForSocket(newAlert) })
+      } catch (error) {
+        console.error("[alert-service] Failed to broadcast alert.created", error)
+      }
+    }
 
     return newAlert
   }
 
   static async acknowledgeAlert(alertId: string): Promise<void> {
-    console.log(`[MOCK] Acknowledging alert ${alertId}`)
-    // Mock: emit alert.updated event
+    const target = MOCK_ALERTS.find((alert) => alert.id === alertId)
+    if (target) {
+      target.acknowledged = true
+    }
+
+    const bus = getServerSocketBus()
+    if (bus) {
+      try {
+        bus.publish("alert.updated", { alertId, acknowledged: true })
+        bus.publish("alert.acknowledged", { alertId, acknowledged: true })
+      } catch (error) {
+        console.error("[alert-service] Failed to broadcast alert acknowledgement", error)
+      }
+    }
   }
 
   static async getActiveAlerts(): Promise<Alert[]> {
     return MOCK_ALERTS.filter((alert) => !alert.acknowledged)
   }
 }
+
+

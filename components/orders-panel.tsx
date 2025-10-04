@@ -102,7 +102,6 @@ export function OrdersPanel() {
     setSearch,
     refetch,
   } = useOrdersPanel()
-
   const tablesById = useTablesIndex()
 
   const currencyFormatter = useMemo(

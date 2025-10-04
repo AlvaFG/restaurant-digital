@@ -1,65 +1,109 @@
-﻿"use client"
+"use client"
 
-import { useState, useEffect } from "react"
+import { useEffect, useMemo, useState } from "react"
+
 import {
+  ALERT_PRIORITIES,
+  ALERT_TYPE_COLORS,
+  ALERT_TYPE_LABELS,
+  AlertService,
   MOCK_ALERTS,
   MOCK_TABLES,
-  ALERT_TYPE_LABELS,
-  ALERT_TYPE_COLORS,
-  ALERT_PRIORITIES,
-  AlertService,
   type Alert,
 } from "@/lib/mock-data"
-import type { SocketEventPayload } from "@/lib/socket"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { ScrollArea } from "@/components/ui/scroll-area"
-import { Bell, Check, Clock, Filter, RefreshCw } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { deserializeAlert, getReadyAlerts, getReadyTables } from "@/lib/socket-client-utils"
+import { cn } from "@/lib/utils"
 import { useSocket } from "@/hooks/use-socket"
+import { useToast } from "@/hooks/use-toast"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { ScrollArea } from "@/components/ui/scroll-area"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { Bell, Check, Clock, Filter, RefreshCw } from "lucide-react"
+import type { SocketEventPayload } from "@/lib/socket"
+
+type TableMeta = { number?: number }
+
+function cloneAlerts(source: Alert[]): Alert[] {
+  return source.map((alert) => ({ ...alert, createdAt: new Date(alert.createdAt) }))
+}
 
 export function AlertsCenter() {
-  const [alerts, setAlerts] = useState<Alert[]>(MOCK_ALERTS)
+  const { on, off, emit, state, lastReadyPayload, isConnected, isReconnecting } = useSocket()
+  const { toast } = useToast()
+
+  const [alerts, setAlerts] = useState<Alert[]>(() => {
+    const snapshot = getReadyAlerts(lastReadyPayload)
+    return snapshot ?? cloneAlerts(MOCK_ALERTS)
+  })
   const [filter, setFilter] = useState<"all" | Alert["type"]>("all")
   const [isLoading, setIsLoading] = useState(false)
-  const { toast } = useToast()
-  const { on, off, emit } = useSocket()
+
+  const readyAlerts = useMemo(() => getReadyAlerts(lastReadyPayload), [lastReadyPayload])
+  const readyTables = useMemo(() => getReadyTables(lastReadyPayload), [lastReadyPayload])
+
+  const tablesIndex = useMemo(() => {
+    const lookup = new Map<string, TableMeta>()
+    readyTables?.tables.forEach((table) => {
+      lookup.set(table.id, { number: table.number })
+    })
+    if (lookup.size === 0) {
+      for (const table of MOCK_TABLES) {
+        lookup.set(table.id, { number: table.number })
+      }
+    }
+    return lookup
+  }, [readyTables])
 
   useEffect(() => {
-    const handleNewAlert = (data: SocketEventPayload<"alert.created">) => {
-      const newAlert: Alert = {
-        id: `alert-${Date.now()}`,
-        type: data.type,
-        tableId: data.tableId,
-        message: data.message,
-        createdAt: new Date(),
-        acknowledged: false,
+    if (!state.isReady || !readyAlerts) {
+      return
+    }
+    setAlerts(readyAlerts)
+  }, [readyAlerts, state.isReady])
+
+  useEffect(() => {
+    const handleReady = (payload: SocketEventPayload<"socket.ready">) => {
+      const snapshot = getReadyAlerts(payload)
+      if (snapshot) {
+        setAlerts(snapshot)
       }
+    }
 
-      setAlerts((prev) => [newAlert, ...prev])
-
+    const handleCreated = (payload: SocketEventPayload<"alert.created">) => {
+      const alert = deserializeAlert(payload.alert)
+      setAlerts((previous) => [alert, ...previous])
       toast({
         title: "Nueva alerta",
-        description: newAlert.message,
+        description: alert.message,
         variant: "destructive",
       })
     }
 
-    const handleAlertUpdate = (data: SocketEventPayload<"alert.updated">) => {
-      setAlerts((prev) =>
-        prev.map((alert) => (alert.id === data.alertId ? { ...alert, acknowledged: data.acknowledged } : alert)),
+    const handleUpdated = (payload: SocketEventPayload<"alert.updated">) => {
+      setAlerts((previous) =>
+        previous.map((alert) =>
+          alert.id === payload.alertId ? { ...alert, acknowledged: payload.acknowledged } : alert,
+        ),
       )
     }
 
-    on("alert.created", handleNewAlert)
-    on("alert.updated", handleAlertUpdate)
+    const handleAcknowledged = (payload: SocketEventPayload<"alert.acknowledged">) => {
+      setAlerts((previous) => previous.filter((alert) => alert.id !== payload.alertId))
+    }
+
+    on("socket.ready", handleReady)
+    on("alert.created", handleCreated)
+    on("alert.updated", handleUpdated)
+    on("alert.acknowledged", handleAcknowledged)
 
     return () => {
-      off("alert.created", handleNewAlert)
-      off("alert.updated", handleAlertUpdate)
+      off("socket.ready", handleReady)
+      off("alert.created", handleCreated)
+      off("alert.updated", handleUpdated)
+      off("alert.acknowledged", handleAcknowledged)
     }
   }, [off, on, toast])
 
@@ -67,7 +111,6 @@ export function AlertsCenter() {
   const acknowledgedAlerts = alerts.filter((alert) => alert.acknowledged)
 
   const filteredActiveAlerts = filter === "all" ? activeAlerts : activeAlerts.filter((alert) => alert.type === filter)
-
   const sortedActiveAlerts = [...filteredActiveAlerts].sort(
     (a, b) => ALERT_PRIORITIES[a.type] - ALERT_PRIORITIES[b.type],
   )
@@ -76,17 +119,13 @@ export function AlertsCenter() {
     setIsLoading(true)
     try {
       await AlertService.acknowledgeAlert(alertId)
-
-      setAlerts((prev) => prev.map((alert) => (alert.id === alertId ? { ...alert, acknowledged: true } : alert)))
-
       emit("alert.acknowledged", { alertId, acknowledged: true })
-
       toast({
         title: "Alerta confirmada",
         description: "La alerta ha sido marcada como atendida",
       })
     } catch (error) {
-      console.error("[v0] Error acknowledging alert", error)
+      console.error("[alerts-center] Error acknowledging alert", error)
       toast({
         title: "Error",
         description: "No se pudo confirmar la alerta",
@@ -100,14 +139,14 @@ export function AlertsCenter() {
   const handleRefresh = async () => {
     setIsLoading(true)
     try {
-      await new Promise((resolve) => setTimeout(resolve, 1000))
-
+      const data = await AlertService.getActiveAlerts()
+      setAlerts(cloneAlerts(data))
       toast({
-        title: "Alertas actualizadas",
-        description: "Se han sincronizado las alertas más recientes",
+        title: "Alertas sincronizadas",
+        description: "Se actualizaron las alertas activas",
       })
     } catch (error) {
-      console.error("[v0] Error refreshing alerts", error)
+      console.error("[alerts-center] Error refreshing alerts", error)
       toast({
         title: "Error",
         description: "No se pudieron actualizar las alertas",
@@ -121,14 +160,16 @@ export function AlertsCenter() {
   const getTimeAgo = (date: Date) => {
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
     if (minutes < 1) return "Ahora"
-    if (minutes < 60) return `${minutes}m`
+    if (minutes < 60) return minutes.toString() + "m"
     const hours = Math.floor(minutes / 60)
-    if (hours < 24) return `${hours}h`
-    return `${Math.floor(hours / 24)}d`
+    if (hours < 24) return hours.toString() + "h"
+    const days = Math.floor(hours / 24)
+    return days.toString() + "d"
   }
 
   const AlertCard = ({ alert, showAcknowledge = true }: { alert: Alert; showAcknowledge?: boolean }) => {
-    const table = MOCK_TABLES.find((table) => table.id === alert.tableId)
+    const tableMeta = tablesIndex.get(alert.tableId)
+    const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + alert.tableId
 
     return (
       <Card className="mb-3 border-l-4" style={{ borderLeftColor: ALERT_TYPE_COLORS[alert.type] }}>
@@ -142,13 +183,13 @@ export function AlertsCenter() {
                 <Bell className="h-5 w-5" />
               </div>
               <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="font-medium">Mesa {table?.number}</span>
+                <div className="mb-1 flex items-center gap-2">
+                  <span className="font-medium">{label}</span>
                   <Badge variant="outline" className="text-xs">
                     {ALERT_TYPE_LABELS[alert.type]}
                   </Badge>
                 </div>
-                <p className="text-sm text-muted-foreground mb-2">{alert.message}</p>
+                <p className="mb-2 text-sm text-muted-foreground">{alert.message}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
                   <span>{getTimeAgo(alert.createdAt)}</span>
@@ -157,7 +198,7 @@ export function AlertsCenter() {
             </div>
             {showAcknowledge && !alert.acknowledged && (
               <Button variant="outline" size="sm" onClick={() => handleAcknowledge(alert.id)} disabled={isLoading}>
-                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+                {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Check className="mr-2 h-4 w-4" />}
                 Atender
               </Button>
             )}
@@ -175,12 +216,25 @@ export function AlertsCenter() {
           <p className="text-muted-foreground">{activeAlerts.length} alertas activas requieren atención</p>
         </div>
         <div className="flex items-center gap-2">
+          <Badge
+            variant={isConnected ? "secondary" : "outline"}
+            className={cn("flex items-center gap-2", isReconnecting && "animate-pulse")}
+          >
+            <span
+              className={cn("h-2 w-2 rounded-full", {
+                "bg-emerald-500": isConnected,
+                "bg-amber-500": !isConnected && isReconnecting,
+                "bg-muted-foreground": !isConnected && !isReconnecting,
+              })}
+            />
+            {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
+          </Badge>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
-            {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+            {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <RefreshCw className="mr-2 h-4 w-4" />}
             Actualizar
           </Button>
           <Badge variant="destructive" className="text-sm">
-            <Bell className="h-4 w-4 mr-2" />
+            <Bell className="mr-2 h-4 w-4" />
             {activeAlerts.length}
           </Badge>
         </div>
@@ -195,77 +249,63 @@ export function AlertsCenter() {
         <TabsContent value="active" className="space-y-4">
           <Card>
             <CardHeader className="pb-3">
-              <CardTitle className="text-sm flex items-center gap-2">
+              <CardTitle className="flex items-center gap-2 text-sm">
                 <Filter className="h-4 w-4" />
                 Filtros
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="flex flex-wrap gap-2">
-                <Button variant={filter === "all" ? "default" : "outline"} size="sm" onClick={() => setFilter("all")}>
-                  Todas ({activeAlerts.length})
-                </Button>
-                {Object.entries(ALERT_TYPE_LABELS).map(([type, label]) => {
-                  const count = activeAlerts.filter((a) => a.type === type).length
-                  return (
-                    <Button
-                      key={type}
-                      variant={filter === type ? "default" : "outline"}
-                      size="sm"
-                      onClick={() => setFilter(type as Alert["type"])}
-                      disabled={count === 0}
-                    >
-                      {label} ({count})
-                    </Button>
-                  )
-                })}
+                <Badge
+                  variant={filter === "all" ? "secondary" : "outline"}
+                  className="cursor-pointer"
+                  onClick={() => setFilter("all")}
+                >
+                  Todas
+                </Badge>
+                {Object.keys(ALERT_TYPE_LABELS).map((type) => (
+                  <Badge
+                    key={type}
+                    variant={filter === type ? "secondary" : "outline"}
+                    className="cursor-pointer capitalize"
+                    onClick={() => setFilter(type as Alert["type"])}
+                  >
+                    {ALERT_TYPE_LABELS[type as Alert["type"]]}
+                  </Badge>
+                ))}
               </div>
             </CardContent>
           </Card>
 
-          <ScrollArea className="h-96">
+          <ScrollArea className="max-h-[480px] pr-3">
             {sortedActiveAlerts.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Bell className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    {filter === "all"
-                      ? "No hay alertas activas"
-                      : `No hay alertas de tipo "${ALERT_TYPE_LABELS[filter as Alert["type"]]}"`}
-                  </p>
+              <Card className="border-dashed">
+                <CardContent className="py-8 text-center text-muted-foreground">
+                  No hay alertas activas para el filtro seleccionado.
                 </CardContent>
               </Card>
             ) : (
-              <div>
-                {sortedActiveAlerts.map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} />
-                ))}
-              </div>
+              sortedActiveAlerts.map((alert) => <AlertCard key={alert.id} alert={alert} />)
             )}
           </ScrollArea>
         </TabsContent>
 
-        <TabsContent value="history" className="space-y-4">
-          <ScrollArea className="h-96">
-            {acknowledgedAlerts.length === 0 ? (
-              <Card>
-                <CardContent className="p-8 text-center">
-                  <Check className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No hay alertas en el historial</p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div>
-                {acknowledgedAlerts.map((alert) => (
-                  <AlertCard key={alert.id} alert={alert} showAcknowledge={false} />
-                ))}
-              </div>
-            )}
-          </ScrollArea>
+        <TabsContent value="history">
+          {acknowledgedAlerts.length === 0 ? (
+            <Card className="border-dashed">
+              <CardContent className="py-8 text-center text-muted-foreground">
+                No hay alertas históricas.
+              </CardContent>
+            </Card>
+          ) : (
+            <ScrollArea className="max-h-[480px] pr-3">
+              {acknowledgedAlerts.map((alert) => (
+                <AlertCard key={alert.id} alert={alert} showAcknowledge={false} />
+              ))}
+            </ScrollArea>
+          )}
         </TabsContent>
       </Tabs>
     </div>
   )
 }
-
-

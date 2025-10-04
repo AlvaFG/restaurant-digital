@@ -21,7 +21,7 @@ Ofrecer al staff y administradores una vista centralizada para controlar pedidos
 ## Hook `useOrdersPanel`
 - Ubicado en `app/pedidos/_hooks/use-orders-panel.ts`.
 - Gestiona `orders`, `summary`, `lastUpdated`, flags (`isLoading`, `isRefreshing`, `error`) y filtros (`statusFilters`, `paymentFilter`, `search`).
-- Debounce de busqueda (300 ms), polling cada 30 s y escucha `order.updated` via `useSocket` (aun mock).
+- Debounce de busqueda (300 ms), polling cada 30 s y escucha los eventos order.created, order.updated y order.summary.updated vía useSocket para sincronizar sin refetch completo.
 - `refetch(options?: { silent?: boolean })` permite refrescos manuales o forzados (retry usa `silent: false`). Cancela fetches previos con `AbortController` y limpia timers al desmontar.
 
 ## Accesibilidad

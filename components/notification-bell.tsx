@@ -1,10 +1,9 @@
-﻿"use client"
+"use client"
 
-import { useState, useEffect } from "react"
-import { MOCK_ALERTS, MOCK_TABLES } from "@/lib/mock-data"
-import type { SocketEventPayload } from "@/lib/socket"
-import { Button } from "@/components/ui/button"
+import { useEffect, useMemo, useState } from "react"
+
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,64 +12,125 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { deserializeAlert, getReadyAlerts, getReadyTables } from "@/lib/socket-client-utils"
+import { useSocket } from "@/hooks/use-socket"
+import { AlertService, MOCK_ALERTS, MOCK_TABLES, type Alert } from "@/lib/mock-data"
+import type { SocketEventPayload } from "@/lib/socket"
 import { Bell } from "lucide-react"
 import Link from "next/link"
-import { useSocket } from "@/hooks/use-socket"
+
+type TableMeta = { number?: number }
+
+function cloneAlerts(source: Alert[]): Alert[] {
+  return source.map((alert) => ({ ...alert, createdAt: new Date(alert.createdAt) }))
+}
 
 export function NotificationBell() {
-  const [alerts, setAlerts] = useState(MOCK_ALERTS)
-  const { on, off } = useSocket()
+  const { on, off, emit, state, lastReadyPayload, isConnected, isReconnecting } = useSocket()
+  const [alerts, setAlerts] = useState<Alert[]>(() => {
+    const snapshot = getReadyAlerts(lastReadyPayload)
+    return snapshot ?? cloneAlerts(MOCK_ALERTS)
+  })
+
+  const readyAlerts = useMemo(() => getReadyAlerts(lastReadyPayload), [lastReadyPayload])
+  const readyTables = useMemo(() => getReadyTables(lastReadyPayload), [lastReadyPayload])
+
+  const tablesIndex = useMemo(() => {
+    const lookup = new Map<string, TableMeta>()
+    readyTables?.tables.forEach((table) => {
+      lookup.set(table.id, { number: table.number })
+    })
+    if (lookup.size === 0) {
+      for (const table of MOCK_TABLES) {
+        lookup.set(table.id, { number: table.number })
+      }
+    }
+    return lookup
+  }, [readyTables])
 
   useEffect(() => {
-    const handleNewAlert = (data: SocketEventPayload<"alert.created">) => {
-      const newAlert = {
-        id: `alert-${Date.now()}`,
-        type: data.type,
-        tableId: data.tableId,
-        message: data.message,
-        createdAt: new Date(),
-        acknowledged: false,
-      }
+    if (!state.isReady || !readyAlerts) {
+      return
+    }
+    setAlerts(readyAlerts)
+  }, [readyAlerts, state.isReady])
 
-      setAlerts((prev) => [newAlert, ...prev])
+  useEffect(() => {
+    const handleReady = (payload: SocketEventPayload<"socket.ready">) => {
+      const snapshot = getReadyAlerts(payload)
+      if (snapshot) {
+        setAlerts(snapshot)
+      }
     }
 
-    const handleAlertUpdate = (data: SocketEventPayload<"alert.updated">) => {
-      setAlerts((prev) =>
-        prev.map((alert) => (alert.id === data.alertId ? { ...alert, acknowledged: data.acknowledged } : alert)),
+    const handleCreated = (payload: SocketEventPayload<"alert.created">) => {
+      const alert = deserializeAlert(payload.alert)
+      setAlerts((previous) => [alert, ...previous])
+    }
+
+    const handleUpdated = (payload: SocketEventPayload<"alert.updated">) => {
+      setAlerts((previous) =>
+        previous.map((alert) =>
+          alert.id === payload.alertId ? { ...alert, acknowledged: payload.acknowledged } : alert,
+        ),
       )
     }
 
-    on("alert.created", handleNewAlert)
-    on("alert.updated", handleAlertUpdate)
-    on("alert.acknowledged", handleAlertUpdate)
+    const handleAcknowledged = (payload: SocketEventPayload<"alert.acknowledged">) => {
+      setAlerts((previous) => previous.filter((alert) => alert.id !== payload.alertId))
+    }
+
+    on("socket.ready", handleReady)
+    on("alert.created", handleCreated)
+    on("alert.updated", handleUpdated)
+    on("alert.acknowledged", handleAcknowledged)
 
     return () => {
-      off("alert.created", handleNewAlert)
-      off("alert.updated", handleAlertUpdate)
-      off("alert.acknowledged", handleAlertUpdate)
+      off("socket.ready", handleReady)
+      off("alert.created", handleCreated)
+      off("alert.updated", handleUpdated)
+      off("alert.acknowledged", handleAcknowledged)
     }
   }, [off, on])
 
-  const activeAlerts = alerts.filter((alert) => !alert.acknowledged)
-  const recentAlerts = activeAlerts.slice(0, 5)
+  const handleAcknowledge = async (alertId: string) => {
+    try {
+      await AlertService.acknowledgeAlert(alertId)
+      emit("alert.acknowledged", { alertId, acknowledged: true })
+    } catch (error) {
+      console.error("[notification-bell] Error acknowledging alert", error)
+    }
+  }
 
   const getTimeAgo = (date: Date) => {
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
     if (minutes < 1) return "Ahora"
-    if (minutes < 60) return `${minutes}m`
-    return `${Math.floor(minutes / 60)}h`
+    if (minutes < 60) return minutes.toString() + "m"
+    const hours = Math.floor(minutes / 60)
+    if (hours < 24) return hours.toString() + "h"
+    const days = Math.floor(hours / 24)
+    return days.toString() + "d"
   }
+
+  const activeAlerts = alerts.filter((alert) => !alert.acknowledged)
+  const recentAlerts = activeAlerts.slice(0, 5)
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" size="sm" className="relative">
           <Bell className="h-5 w-5" />
+          <span
+            className={
+              "absolute -top-1 -right-1 h-2 w-2 rounded-full " +
+              (isConnected ? "bg-emerald-500" : isReconnecting ? "bg-amber-500" : "bg-muted-foreground") +
+              (isReconnecting ? " animate-pulse" : "")
+            }
+          />
           {activeAlerts.length > 0 && (
             <Badge
               variant="destructive"
-              className="absolute -top-1 -right-1 h-5 w-5 rounded-full p-0 flex items-center justify-center text-xs animate-pulse"
+              className="absolute -top-1 -right-1 mt-4 h-5 w-5 rounded-full p-0 text-xs"
             >
               {activeAlerts.length > 9 ? "9+" : activeAlerts.length}
             </Badge>
@@ -78,7 +138,12 @@ export function NotificationBell() {
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
-        <DropdownMenuLabel>Notificaciones ({activeAlerts.length})</DropdownMenuLabel>
+        <DropdownMenuLabel className="flex items-center justify-between">
+          <span>Notificaciones ({activeAlerts.length})</span>
+          <Badge variant={isConnected ? "secondary" : "outline"} className={isReconnecting ? "animate-pulse" : undefined}>
+            {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
+          </Badge>
+        </DropdownMenuLabel>
         <DropdownMenuSeparator />
 
         {recentAlerts.length === 0 ? (
@@ -86,14 +151,22 @@ export function NotificationBell() {
         ) : (
           <>
             {recentAlerts.map((alert) => {
-              const table = MOCK_TABLES.find((t) => t.id === alert.tableId)
+              const tableMeta = tablesIndex.get(alert.tableId)
+              const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + alert.tableId
               return (
-                <DropdownMenuItem key={alert.id} className="flex flex-col items-start p-3 hover:bg-muted/50">
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-medium text-sm">Mesa {table?.number || alert.tableId}</span>
+                <DropdownMenuItem key={alert.id} className="flex flex-col items-start gap-1 p-3">
+                  <div className="flex w-full items-center justify-between text-sm font-medium">
+                    <span>{label}</span>
                     <span className="text-xs text-muted-foreground">{getTimeAgo(alert.createdAt)}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">{alert.message}</span>
+                  <button
+                    type="button"
+                    className="text-xs text-primary hover:underline"
+                    onClick={() => handleAcknowledge(alert.id)}
+                  >
+                    Marcar como atendida
+                  </button>
                 </DropdownMenuItem>
               )
             })}

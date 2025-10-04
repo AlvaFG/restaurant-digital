@@ -5,10 +5,12 @@ import { Stage, Layer, Rect, Circle, Text, Group } from "react-konva"
 import type Konva from "konva"
 import type { Table, TableMapLayout } from "@/lib/mock-data"
 import { MOCK_TABLE_LAYOUT, MOCK_TABLES } from "@/lib/mock-data"
+import { deserializeTable, deserializeTableLayout, getReadyTables } from "@/lib/socket-client-utils"
 import { TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
 import { fetchLayout, persistLayout } from "@/lib/table-service"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocket } from "@/hooks/use-socket"
+import type { SocketEventPayload } from "@/lib/socket"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -55,7 +57,7 @@ function generateNodeId() {
 
 export function TableMap({ onTableClick, editable = false }: TableMapProps) {
   const { user } = useAuth()
-  const { emit } = useSocket()
+  const { on, off, lastReadyPayload } = useSocket()
   const stageRef = useRef<Konva.Stage>(null)
 
   const [tables, setTables] = useState<Table[]>([])
@@ -133,6 +135,66 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
       cancelled = true
     }
   }, [])
+
+  useEffect(() => {
+    const snapshot = getReadyTables(lastReadyPayload)
+    if (!snapshot || snapshot.tables.length === 0) {
+      return
+    }
+    if (isEditing || hasUnsavedChanges) {
+      return
+    }
+
+    const nextLayout = snapshot.layout ? cloneLayout(snapshot.layout) : layout
+    const nextTables = snapshot.tables.length ? cloneTables(snapshot.tables) : tables
+
+    if (nextLayout) {
+      setLayout(nextLayout)
+    }
+    if (nextTables) {
+      setTables(nextTables)
+    }
+    if (nextLayout && nextTables) {
+      setBaseline({ layout: cloneLayout(nextLayout), tables: cloneTables(nextTables) })
+      setHasUnsavedChanges(false)
+    }
+  }, [hasUnsavedChanges, isEditing, lastReadyPayload, layout, tables])
+
+  useEffect(() => {
+    const handleTableUpdated = (payload: SocketEventPayload<"table.updated">) => {
+      const table = deserializeTable(payload.table)
+      setTables((current) => {
+        const index = current.findIndex((item) => item.id === table.id)
+        if (index === -1) {
+          return current
+        }
+        const next = cloneTables(current)
+        next[index] = table
+        return next
+      })
+    }
+
+    const handleLayoutUpdated = (payload: SocketEventPayload<"table.layout.updated">) => {
+      if (isEditing || hasUnsavedChanges) {
+        return
+      }
+      const nextLayout = deserializeTableLayout(payload.layout)
+      const nextTables = payload.tables.map((table) => deserializeTable(table))
+      setLayout(nextLayout)
+      setTables(nextTables)
+      setBaseline({ layout: cloneLayout(nextLayout), tables: cloneTables(nextTables) })
+      setHasUnsavedChanges(false)
+      setSelectedNodeId(null)
+    }
+
+    on("table.updated", handleTableUpdated)
+    on("table.layout.updated", handleLayoutUpdated)
+
+    return () => {
+      off("table.updated", handleTableUpdated)
+      off("table.layout.updated", handleLayoutUpdated)
+    }
+  }, [hasUnsavedChanges, isEditing, off, on])
 
   const markDirty = useCallback(() => setHasUnsavedChanges(true), [])
 
@@ -267,18 +329,13 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
       setBaseline(newBaseline)
       setHasUnsavedChanges(false)
       setIsEditing(false)
-      emit("table.layout.updated", {
-        layout: newBaseline.layout,
-        tables: newBaseline.tables,
-        timestamp: new Date().toISOString(),
-      })
     } catch (error) {
       console.error("[TableMap] Failed to persist layout", error)
       setErrorMessage("No se pudo guardar el layout. Intenta nuevamente.")
     } finally {
       setIsSaving(false)
     }
-  }, [emit, layout, tables])
+  }, [layout, tables])
 
   if (isLoading || !layout) {
     return (
