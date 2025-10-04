@@ -31,6 +31,7 @@ Ofrecer al staff y administradores una vista centralizada para controlar pedidos
 - Empty state y errores descriptivos via `Alert`.
 
 ## Pruebas manuales sugeridas
+> Nota QA: El endpoint GET/POST `/api/order` esta cubierto por la suite `app/api/__tests__/orders-api.test.ts`; ejecuta `npm test` antes de QA manual.
 1. Cambiar filtros de estado/pago y verificar actualizacion en listas y metricas.
 2. Probar busqueda por mesa o nombre de item.
 3. Pulsar "Actualizar" y confirmar animacion en icono (sin bloquear lista).
@@ -42,3 +43,4 @@ Ofrecer al staff y administradores una vista centralizada para controlar pedidos
 - Depende de `feature/lib-socket-events` para eventos reales (payload extendido con totales/mesa).
 - Integrar `POST /api/order` con el panel (refetch post-creacion) en proximas iteraciones.
 - Milestone websockets en vivo permanecera en la feature `feature/lib-socket-events`.
+
