@@ -40,7 +40,7 @@ if (dom) {
 }
 import type { OrdersPanelOrder, OrdersSummaryClient } from "@/lib/order-service"
 
-const mockUseOrdersPanel = vi.fn()
+const mockUseOrdersPanelContext = vi.fn()
 const mockFetchTables = vi.fn().mockResolvedValue({
   data: [
     {
@@ -53,8 +53,8 @@ const mockFetchTables = vi.fn().mockResolvedValue({
   ],
 })
 
-vi.mock("@/app/pedidos/_hooks/use-orders-panel", () => ({
-  useOrdersPanel: mockUseOrdersPanel,
+vi.mock("@/app/pedidos/_providers/orders-panel-provider", () => ({
+  useOrdersPanelContext: mockUseOrdersPanelContext,
 }))
 
 vi.mock("@/lib/table-service", () => ({
@@ -65,10 +65,10 @@ vi.mock("@/lib/table-service", () => ({
 describe("<OrdersPanel />", () => {
   let baseOrder: OrdersPanelOrder
   let baseSummary: OrdersSummaryClient
-  let baseReturn: ReturnType<typeof mockUseOrdersPanel>
+  let baseReturn: ReturnType<typeof mockUseOrdersPanelContext>
 
   beforeEach(() => {
-    mockUseOrdersPanel.mockReset()
+    mockUseOrdersPanelContext.mockReset()
     mockFetchTables.mockClear()
 
     baseOrder = {
@@ -125,7 +125,7 @@ describe("<OrdersPanel />", () => {
       refetch: vi.fn().mockResolvedValue(undefined),
     }
 
-    mockUseOrdersPanel.mockReturnValue(baseReturn)
+    mockUseOrdersPanelContext.mockReturnValue(baseReturn)
   })
 
   it("renderiza resumen y lista de pedidos", async () => {
@@ -143,7 +143,7 @@ describe("<OrdersPanel />", () => {
 
   it("permite cambiar filtros de estado", async () => {
     const setStatusFilters = vi.fn()
-    mockUseOrdersPanel.mockReturnValue({
+    mockUseOrdersPanelContext.mockReturnValue({
       ...baseReturn,
       setStatusFilters,
     })
@@ -160,7 +160,7 @@ describe("<OrdersPanel />", () => {
   })
 
   it("muestra estado de carga inicial", async () => {
-    mockUseOrdersPanel.mockReturnValue({
+    mockUseOrdersPanelContext.mockReturnValue({
       ...baseReturn,
       orders: [],
       filteredOrders: [],
@@ -176,7 +176,7 @@ describe("<OrdersPanel />", () => {
 
   it("renderiza alerta en caso de error y permite reintentar", async () => {
     const refetch = vi.fn().mockResolvedValue(undefined)
-    mockUseOrdersPanel.mockReturnValue({
+    mockUseOrdersPanelContext.mockReturnValue({
       ...baseReturn,
       orders: [],
       filteredOrders: [],
@@ -199,7 +199,7 @@ describe("<OrdersPanel />", () => {
 
   it("permite refrescar manualmente", async () => {
     const refetch = vi.fn().mockResolvedValue(undefined)
-    mockUseOrdersPanel.mockReturnValue({
+    mockUseOrdersPanelContext.mockReturnValue({
       ...baseReturn,
       refetch,
     })
@@ -214,3 +214,4 @@ describe("<OrdersPanel />", () => {
     expect(refetch).toHaveBeenCalledWith({ silent: true })
   })
 })
+

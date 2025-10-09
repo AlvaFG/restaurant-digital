@@ -3,6 +3,8 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 import {
   ORDER_STATUS_BADGE_VARIANT,
   PAYMENT_STATUS_BADGE_VARIANT,
+  OrderServiceError,
+  createOrder,
   fetchOrders,
 } from "@/lib/order-service"
 
@@ -81,6 +83,110 @@ describe("fetchOrders", () => {
   })
 })
 
+
+
+describe("createOrder", () => {
+  const basePayload = {
+    tableId: "1",
+    items: [{ menuItemId: "item-1", quantity: 2 }],
+  }
+
+  it("envia el payload y normaliza la respuesta", async () => {
+    const apiResponse = {
+      data: {
+        id: "order-1",
+        tableId: "1",
+        status: "abierto",
+        paymentStatus: "pendiente",
+        subtotal: 2000,
+        total: 2420,
+        discountTotalCents: 0,
+        taxTotalCents: 420,
+        tipCents: 0,
+        serviceChargeCents: 0,
+        items: [{
+          id: "item-1",
+          name: "Cafe",
+          price: 1000,
+          quantity: 2,
+          totalCents: 2000,
+        }],
+        discounts: [],
+        taxes: [],
+        createdAt: "2025-10-03T10:00:00Z",
+        updatedAt: "2025-10-03T10:00:00Z",
+      },
+      metadata: {
+        version: 2,
+        updatedAt: "2025-10-03T10:05:00Z",
+      },
+    }
+
+    const fetchSpy = vi
+      .spyOn(global, "fetch" as const)
+      .mockResolvedValue(
+        new Response(JSON.stringify(apiResponse), {
+          status: 201,
+          headers: { "Content-Type": "application/json" },
+        }),
+      )
+
+    const result = await createOrder(basePayload)
+
+    expect(fetchSpy).toHaveBeenCalledWith(
+      "/api/order",
+      expect.objectContaining({
+        method: "POST",
+        cache: "no-store",
+        body: JSON.stringify(basePayload),
+      }),
+    )
+    expect(result.order.id).toBe("order-1")
+    expect(result.order.createdAt).toBeInstanceOf(Date)
+    expect(result.metadata.version).toBe(2)
+  })
+
+  it("propaga errores 4xx con el mensaje del backend", async () => {
+    const errorResponse = {
+      error: { code: "STOCK_INSUFFICIENT", message: "Sin stock disponible" },
+    }
+
+    vi.spyOn(global, "fetch" as const).mockResolvedValue(
+      new Response(JSON.stringify(errorResponse), {
+        status: 409,
+        headers: { "Content-Type": "application/json" },
+      }),
+    )
+
+    await createOrder(basePayload).catch((error) => {
+      expect(error).toBeInstanceOf(OrderServiceError)
+      expect(error).toMatchObject({
+        message: "Sin stock disponible",
+        code: "STOCK_INSUFFICIENT",
+      })
+    })
+  })
+
+  it("lanza un error generico para fallos 5xx o de red", async () => {
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {})
+
+    vi.spyOn(global, "fetch" as const).mockResolvedValue(
+      new Response("", { status: 500 }),
+    )
+
+    await expect(createOrder(basePayload)).rejects.toMatchObject({
+      message: "No se pudo crear el pedido",
+    })
+
+    consoleError.mockRestore()
+
+    vi.spyOn(global, "fetch" as const).mockRejectedValue(new Error("offline"))
+
+    await expect(createOrder(basePayload)).rejects.toMatchObject({
+      message: "No se pudo crear el pedido",
+    })
+  })
+})
 
 describe("status badge tokens", () => {
   it("define variantes consistentes", () => {

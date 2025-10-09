@@ -11,7 +11,11 @@ export default defineConfig({
     },
   },
   test: {
-    environment: "node",
+    environment: "jsdom",
     clearMocks: true,
+    setupFiles: ["./vitest.setup.ts"],
+  },
+  esbuild: {
+    jsx: "automatic",
   },
 })

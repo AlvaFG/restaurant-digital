@@ -200,6 +200,23 @@ export interface AlertAcknowledgedPayload {
   acknowledged: boolean
 }
 
+export interface SerializedPayment {
+  id: string
+  orderId: string
+  amount: number
+  status: string
+  provider: string
+  externalId?: string
+  checkoutUrl?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface PaymentEventPayload {
+  payment: SerializedPayment
+  metadata: SocketStoreMetadata
+}
+
 export interface SocketEventMap {
   "socket.ready": SocketReadyPayload
   "socket.heartbeat": SocketHeartbeatPayload
@@ -211,6 +228,7 @@ export interface SocketEventMap {
   "alert.created": AlertCreatedPayload
   "alert.updated": AlertUpdatedPayload
   "alert.acknowledged": AlertAcknowledgedPayload
+  "payment:updated": PaymentEventPayload
 }
 
 export type SocketEventName = keyof SocketEventMap

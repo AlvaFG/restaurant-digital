@@ -17,11 +17,12 @@ Ofrecer al staff y administradores una vista centralizada para controlar pedidos
   - Peticiones con `cache: "no-store"`; errores `400 INVALID_QUERY` (parametros invalidos) y `500 INTERNAL_ERROR` (fallo general).
 - Servicios internos: `listOrders`, `getOrdersSummary` en `lib/server/order-store.ts` filtran y ordenan pedidos, devolviendo clones inmutables.
 - Cliente: `fetchOrders` (`lib/order-service.ts`) arma query params, normaliza fechas a `Date`, expone labels (`ORDER_STATUS_LABELS`, `PAYMENT_STATUS_LABELS`) y variantes de badge (`ORDER_STATUS_BADGE_VARIANT`, `PAYMENT_STATUS_BADGE_VARIANT`). Caidas retornan `MOCK_ORDERS` con warning `[order-service]`.
+- Formulario `OrderForm` usa `createOrder` (`lib/order-service.ts`) para llamar a **POST `/api/order`**. Valida respuestas 201, propaga errores 4xx con el mensaje del backend y muestra un mensaje generico ante 5xx. Tras un alta exitosa se confia en los eventos de socket; si `NEXT_PUBLIC_DISABLE_SOCKET === "1"`, se fuerza `refetch({ silent: false })` para mantener el estado consistente.
 
 ## Hook `useOrdersPanel`
 - Ubicado en `app/pedidos/_hooks/use-orders-panel.ts`.
 - Gestiona `orders`, `summary`, `lastUpdated`, flags (`isLoading`, `isRefreshing`, `error`) y filtros (`statusFilters`, `paymentFilter`, `search`).
-- Debounce de busqueda (300 ms), polling cada 30 s y escucha los eventos order.created, order.updated y order.summary.updated vía useSocket para sincronizar sin refetch completo.
+- Debounce de busqueda (300 ms), polling cada 30 s y escucha los eventos order.created, order.updated y order.summary.updated via `useSocket` para sincronizar sin refetch completo.
 - `refetch(options?: { silent?: boolean })` permite refrescos manuales o forzados (retry usa `silent: false`). Cancela fetches previos con `AbortController` y limpia timers al desmontar.
 
 ## Accesibilidad
@@ -37,10 +38,8 @@ Ofrecer al staff y administradores una vista centralizada para controlar pedidos
 3. Pulsar "Actualizar" y confirmar animacion en icono (sin bloquear lista).
 4. Forzar error (offline) para comprobar alerta y CTA "Reintentar".
 5. Reducir viewport a 768 px para validar layout en columna.
-6. Emitir `order.updated` desde `MockSocketClient` y confirmar refetch silencioso.
+6. Crear un pedido manual y verificar toast de exito; el nuevo pedido debe aparecer en el panel (con sockets deshabilitados usar `NEXT_PUBLIC_DISABLE_SOCKET=1` para validar el refetch de respaldo).
+7. Emitir `order.updated` desde `MockSocketClient` y confirmar refetch silencioso.
 
 ## Dependencias y proximos pasos
-- Depende de `feature/lib-socket-events` para eventos reales (payload extendido con totales/mesa).
-- Integrar `POST /api/order` con el panel (refetch post-creacion) en proximas iteraciones.
 - Milestone websockets en vivo permanecera en la feature `feature/lib-socket-events`.
-

@@ -1,10 +1,11 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { RefreshCw, Search } from "lucide-react"
+import { RefreshCw, Search, CreditCard } from "lucide-react"
 
-import { useOrdersPanel } from "@/app/pedidos/_hooks/use-orders-panel"
+import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
 import { LoadingSpinner } from "@/components/loading-spinner"
+import { PaymentModal } from "@/components/payment-modal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -101,8 +102,12 @@ export function OrdersPanel() {
     setPaymentFilter,
     setSearch,
     refetch,
-  } = useOrdersPanel()
+  } = useOrdersPanelContext()
   const tablesById = useTablesIndex()
+
+  // Estado para el modal de pago
+  const [paymentModalOpen, setPaymentModalOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<OrdersPanelOrder | null>(null)
 
   const currencyFormatter = useMemo(
     () =>
@@ -432,6 +437,21 @@ export function OrdersPanel() {
                                   Nota del cliente: {order.notes}
                                 </p>
                               ) : null}
+
+                              <div className="mt-3 flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() => {
+                                    setSelectedOrder(order)
+                                    setPaymentModalOpen(true)
+                                  }}
+                                  disabled={order.paymentStatus === 'pagado'}
+                                >
+                                  <CreditCard className="mr-2 h-4 w-4" />
+                                  {order.paymentStatus === 'pagado' ? 'Pagado' : 'Pagar'}
+                                </Button>
+                              </div>
                             </article>
                           )
                         })}
@@ -443,6 +463,23 @@ export function OrdersPanel() {
             ))}
         </section>
       </div>
+
+      {selectedOrder && (
+        <PaymentModal
+          open={paymentModalOpen}
+          onOpenChange={setPaymentModalOpen}
+          order={{
+            id: selectedOrder.id,
+            tableId: getTableLabel(selectedOrder, tablesById),
+            items: selectedOrder.items.map(item => ({
+              name: item.name,
+              quantity: item.quantity,
+              price: item.price,
+            })),
+            total: selectedOrder.total,
+          }}
+        />
+      )}
     </div>
   )
 }

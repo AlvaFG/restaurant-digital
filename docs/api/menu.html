@@ -1,0 +1,305 @@
+<h1>API de Menú</h1>
+<h2>Introducción</h2>
+<p>La API de Menú expone el catálogo vigente de categorías, platos, precios y alérgenos que consumen el tablero web (<code>/menu</code>), el flujo QR móvil (<code>/qr/{tableId}</code>) y futuros clientes de backoffice. Los endpoints son públicos dentro del dominio de la aplicación y actualmente trabajan sobre los mocks persistidos en <code>data/menu-store.json</code>.</p>
+<h2>Resumen de endpoints</h2>
+<table>
+<thead>
+<tr>
+<th>Método</th>
+<th>Ruta</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>GET</td>
+<td><code>/api/menu</code></td>
+<td>Devuelve el catálogo completo de menú y metadatos.</td>
+</tr>
+<tr>
+<td>HEAD</td>
+<td><code>/api/menu</code></td>
+<td>Expone únicamente los encabezados de versión del menú.</td>
+</tr>
+<tr>
+<td>POST</td>
+<td><code>/api/menu/orders</code></td>
+<td>Registra una orden a partir de ítems del catálogo activo.</td>
+</tr>
+</tbody></table>
+<h2>Convenciones de documentación</h2>
+<ul>
+<li><strong>Autenticación</strong>: Indicar si el endpoint requiere credenciales. En este módulo todos los endpoints son públicos por ahora.</li>
+<li><strong>Encabezados</strong>: Enumerar encabezados de solicitud y respuesta obligatorios, incluyendo versiones y cache.</li>
+<li><strong>Esquemas</strong>: Documentar cada campo del body o respuesta usando tipos nativos (string, number, boolean, array, object).</li>
+<li><strong>Ejemplos</strong>: Aportar snippets JSON válidos y un ejemplo de <code>curl</code> por endpoint.</li>
+<li><strong>Versionado</strong>: Mencionar semántica de los encabezados de versión y cómo impactan en caching.</li>
+<li><strong>Performance y compatibilidad</strong>: Registrar límites esperados y dependencias externas.</li>
+</ul>
+<h2>Dependencias y entorno</h2>
+<ul>
+<li><strong>Origen de datos</strong>: <code>lib/server/menu-store.ts</code> lee y escribe <code>data/menu-store.json</code>.</li>
+<li><strong>Servicios asociados</strong>: <code>OrderService</code> (en <code>lib/mock-data.ts</code>) valida ítems y arma órdenes.</li>
+<li><strong>Clientes actuales</strong>: Hook <code>useMenuCatalog</code> (front web) y flujo QR móvil.</li>
+<li><strong>Mocks vs producción</strong>: En producción estos servicios deberán conectarse al backend real y aplicar autenticación; mantener la forma de los contratos para evitar breaking changes.</li>
+</ul>
+<hr>
+<h2>GET /api/menu</h2>
+<h3>Propósito</h3>
+<p>Entrega el catálogo completo del menú, incluyendo categorías, ítems, alérgenos y metadatos de versionado. El cuerpo de la respuesta siempre viene envuelto en <code>{ "data": MenuResponse }</code>.</p>
+<h3>Requisitos de solicitud</h3>
+<ul>
+<li><strong>Autenticación</strong>: No requerida.</li>
+<li><strong>Cache control</strong>: Se recomienda <code>Cache-Control: no-store</code> desde los clientes que necesiten datos frescos.</li>
+</ul>
+<h3>Encabezados de respuesta</h3>
+<table>
+<thead>
+<tr>
+<th>Encabezado</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>x-menu-version</code></td>
+<td>Entero incremental. Cambia cuando se actualiza el catálogo.</td>
+</tr>
+<tr>
+<td><code>x-menu-updated-at</code></td>
+<td>Fecha ISO 8601 con el timestamp de la última actualización.</td>
+</tr>
+<tr>
+<td><code>content-type</code></td>
+<td><code>application/json; charset=utf-8</code>.</td>
+</tr>
+</tbody></table>
+<h3>Esquema de MenuResponse</h3>
+<table>
+<thead>
+<tr>
+<th>Campo</th>
+<th>Tipo</th>
+<th>Descripción</th>
+</tr>
+</thead>
+<tbody><tr>
+<td><code>categories</code></td>
+<td><code>MenuCategory[]</code></td>
+<td>Categorías ordenadas por <code>sort</code>. Cada categoría incluye <code>id</code>, <code>name</code> y <code>description</code> opcional.</td>
+</tr>
+<tr>
+<td><code>items</code></td>
+<td><code>MenuItem[]</code></td>
+<td>Platos disponibles. Campos clave: <code>priceCents</code> (precio en centavos de <code>metadata.currency</code>), <code>available</code> (booleano), <code>allergens</code> (lista de códigos con flags <code>contains</code>/<code>traces</code>).</td>
+</tr>
+<tr>
+<td><code>allergens</code></td>
+<td><code>MenuAllergen[]</code></td>
+<td>Catálogo de alérgenos con <code>code</code>, <code>name</code>, <code>description</code> e íconos opcionales.</td>
+</tr>
+<tr>
+<td><code>metadata</code></td>
+<td><code>MenuMetadata</code></td>
+<td>Metadatos globales (<code>currency</code>, <code>version</code>, <code>updatedAt</code>).</td>
+</tr>
+</tbody></table>
+<p>Tipos de apoyo definidos en <code>lib/mock-data.ts</code>:</p>
+<pre><code>interface MenuItem {
+  id: string
+  categoryId: string
+  name: string
+  description: string
+  priceCents: number
+  available: boolean
+  allergens: Array&lt;{ code: string; contains: boolean; traces?: boolean; notes?: string }&gt;
+  tags?: string[]
+  imageUrl?: string
+}
+</code></pre>
+<h3>Ejemplo de respuesta 200</h3>
+<pre><code>{
+  &quot;data&quot;: {
+    &quot;categories&quot;: [
+      { &quot;id&quot;: &quot;1&quot;, &quot;name&quot;: &quot;Entradas&quot;, &quot;sort&quot;: 1 },
+      { &quot;id&quot;: &quot;2&quot;, &quot;name&quot;: &quot;Platos Principales&quot;, &quot;sort&quot;: 2 }
+    ],
+    &quot;items&quot;: [
+      {
+        &quot;id&quot;: &quot;3&quot;,
+        &quot;categoryId&quot;: &quot;2&quot;,
+        &quot;name&quot;: &quot;Milanesa con papas&quot;,
+        &quot;description&quot;: &quot;Milanesa napolitana con papas fritas&quot;,
+        &quot;priceCents&quot;: 2500,
+        &quot;available&quot;: true,
+        &quot;allergens&quot;: [
+          { &quot;code&quot;: &quot;gluten&quot;, &quot;contains&quot;: true },
+          { &quot;code&quot;: &quot;huevo&quot;, &quot;contains&quot;: true },
+          { &quot;code&quot;: &quot;lacteos&quot;, &quot;contains&quot;: true }
+        ]
+      }
+    ],
+    &quot;allergens&quot;: [
+      { &quot;code&quot;: &quot;gluten&quot;, &quot;name&quot;: &quot;Gluten&quot; },
+      { &quot;code&quot;: &quot;lacteos&quot;, &quot;name&quot;: &quot;Lácteos&quot; }
+    ],
+    &quot;metadata&quot;: {
+      &quot;currency&quot;: &quot;ARS&quot;,
+      &quot;version&quot;: 1,
+      &quot;updatedAt&quot;: &quot;2025-09-26T00:15:53.796Z&quot;
+    }
+  }
+}
+</code></pre>
+<h3>Ejemplo de error 500</h3>
+<pre><code>{
+  &quot;error&quot;: &quot;No se pudo obtener el catálogo de menú&quot;
+}
+</code></pre>
+<h3>Ejemplo curl</h3>
+<pre><code>curl -s https://app.local/api/menu -H &quot;Cache-Control: no-store&quot;
+</code></pre>
+<h3>Notas de uso</h3>
+<ul>
+<li><code>useMenuCatalog</code> cachea la respuesta en memoria y revalida si cambian los encabezados de versión. Si detectas cambios en <code>x-menu-version</code>, fuerza un refetch.</li>
+<li>El endpoint está optimizado para lecturas rápidas: el catálogo está precargado en memoria (el módulo <code>menu-store</code> mantiene caché). Evitar consultas reiteradas en loops apretados.</li>
+<li>En futuras etapas se agregará localidad e internacionalización; mantén los códigos de alérgenos como identificadores estables.</li>
+</ul>
+<hr>
+<h2>HEAD /api/menu</h2>
+<ul>
+<li>Devuelve código 200 con los mismos encabezados de GET (<code>x-menu-version</code>, <code>x-menu-updated-at</code>).</li>
+<li>No retorna cuerpo. Útil para comprobar si el catálogo cambió sin transferir payload.</li>
+</ul>
+<p>Ejemplo:</p>
+<pre><code>curl -I https://app.local/api/menu
+</code></pre>
+<hr>
+<h2>POST /api/menu/orders</h2>
+<h3>Propósito</h3>
+<p>Crea una orden mock en base a ítems existentes en el catálogo.</p>
+<h3>Requisitos de solicitud</h3>
+<ul>
+<li><strong>Autenticación</strong>: No requerida (se agregará en producción).</li>
+<li><strong>Encabezados</strong>: <code>Content-Type: application/json</code>.</li>
+<li><strong>Body</strong>: JSON válido que cumpla con el siguiente esquema.</li>
+</ul>
+<h3>Esquema de solicitud</h3>
+<pre><code>{
+  &quot;tableId&quot;: &quot;string&quot;,
+  &quot;items&quot;: [
+    {
+      &quot;menuItemId&quot;: &quot;string&quot;,
+      &quot;quantity&quot;: &quot;integer &gt;= 1&quot;
+    }
+  ]
+}
+</code></pre>
+<p>Validaciones (Zod):</p>
+<ul>
+<li><code>tableId</code>: string no vacía.</li>
+<li><code>items</code>: arreglo con al menos un elemento.</li>
+<li><code>items[].menuItemId</code>: string no vacío; debe existir en el catálogo.</li>
+<li><code>items[].quantity</code>: entero mayor o igual a 1.</li>
+</ul>
+<h3>Ejemplo de solicitud válida</h3>
+<pre><code>curl -X POST https://app.local/api/menu/orders -H &quot;Content-Type: application/json&quot; -d &#39;{
+    &quot;tableId&quot;: &quot;3&quot;,
+    &quot;items&quot;: [
+      { &quot;menuItemId&quot;: &quot;3&quot;, &quot;quantity&quot;: 2 },
+      { &quot;menuItemId&quot;: &quot;6&quot;, &quot;quantity&quot;: 1 }
+    ]
+  }&#39;
+</code></pre>
+<h3>Respuesta 201</h3>
+<pre><code>{
+  &quot;data&quot;: {
+    &quot;id&quot;: &quot;order-1737312000000&quot;,
+    &quot;tableId&quot;: &quot;3&quot;,
+    &quot;items&quot;: [
+      { &quot;id&quot;: &quot;3&quot;, &quot;name&quot;: &quot;Milanesa con papas&quot;, &quot;quantity&quot;: 2, &quot;price&quot;: 2500 },
+      { &quot;id&quot;: &quot;6&quot;, &quot;name&quot;: &quot;Flan casero&quot;, &quot;quantity&quot;: 1, &quot;price&quot;: 800 }
+    ],
+    &quot;subtotal&quot;: 5800,
+    &quot;total&quot;: 5800,
+    &quot;status&quot;: &quot;abierto&quot;,
+    &quot;paymentStatus&quot;: &quot;pendiente&quot;,
+    &quot;createdAt&quot;: &quot;2025-01-19T12:00:00.000Z&quot;
+  }
+}
+</code></pre>
+<p>Encabezados: incluye <code>x-menu-version</code> y <code>x-menu-updated-at</code> (sincronizados con GET).</p>
+<h3>Errores comunes</h3>
+<table>
+<thead>
+<tr>
+<th>Código</th>
+<th>Mensaje</th>
+<th>Causa probable</th>
+<th>Acción sugerida</th>
+</tr>
+</thead>
+<tbody><tr>
+<td>400</td>
+<td>Cuerpo JSON inválido</td>
+<td>JSON mal formado.</td>
+<td>Validar y reenviar.</td>
+</tr>
+<tr>
+<td>400</td>
+<td>El identificador del plato es obligatorio</td>
+<td>Campo vacío o con espacios.</td>
+<td>Proveer <code>menuItemId</code> válido.</td>
+</tr>
+<tr>
+<td>400</td>
+<td>La cantidad debe ser al menos 1</td>
+<td><code>quantity</code> menor a 1 o no numérico.</td>
+<td>Enviar entero positivo.</td>
+</tr>
+<tr>
+<td>404</td>
+<td>Menu item not found: {id}</td>
+<td><code>menuItemId</code> no existe en catálogo.</td>
+<td>Re-sincronizar catálogo o corregir ID.</td>
+</tr>
+<tr>
+<td>500</td>
+<td>No se pudo crear la orden</td>
+<td>Error interno al persistir o emitir evento.</td>
+<td>Reintentar y revisar logs del backend.</td>
+</tr>
+</tbody></table>
+<h3>Flujo posterior sugerido</h3>
+<ol>
+<li>Mostrar confirmación al comensal y al staff en espera.</li>
+<li>Esperar evento <em>order.created</em> (mock) para actualizar la interfaz.</li>
+<li>Mantener referencia al encabezado <code>x-menu-version</code> para validar coherencia con el catálogo actual.</li>
+</ol>
+<h3>Notas de performance</h3>
+<ul>
+<li>El servicio reusa <code>OrderService.createOrder</code> que carga ítems desde el menú en memoria. El costo escala con la cantidad de ítems distintos enviados.</li>
+<li>Evitar enviar órdenes con cientos de líneas hasta definir paginado o mock parcial.</li>
+</ul>
+<hr>
+<h2>Errores comunes (globales)</h2>
+<ul>
+<li>Los mensajes se devuelven en español con acentos correctos; los clientes deben mostrar el texto tal como viene para facilitar soporte.</li>
+<li>Ante un error 500 repetido, sincronizar <code>data/menu-store.json</code> o contactar a Backend Architect; los mocks pueden haber quedado corruptos.</li>
+</ul>
+<h2>Checklist de consumo</h2>
+<ul>
+<li><strong>Frontend web</strong>: Usa <code>useMenuCatalog</code> para cachear; respeta encabezados de versión; manejar estados de carga y error que muestra la UI.</li>
+<li><strong>Aplicación móvil/QR</strong>: Guardar <code>x-menu-version</code> para invalidar caché local; reintentar la orden si el staff no confirma en 30 segundos.</li>
+<li><strong>Integradores externos</strong>: Respetar límites actuales (hasta 100 ítems por orden); registrar <code>tableId</code> y cantidades enteras; diseñar reintentos idempotentes (se sugiere usar llave propia de idempotencia en futuros releases).</li>
+</ul>
+<h2>Pruebas recomendadas antes de modificar contratos</h2>
+<ul>
+<li><code>npm run lint</code></li>
+<li><code>npm run build</code></li>
+<li>En clientes: verificar que los enlaces relativos funcionan y que los ejemplos JSON mantienen acentos (ñ, tildes).</li>
+</ul>
+<h2>Siguientes pasos sugeridos</h2>
+<ol>
+<li>Autenticar endpoints para ambientes productivos (JWT o API Keys).</li>
+<li>Internacionalizar mensajes de error y catálogos.</li>
+<li>Publicar especificación OpenAPI a partir de estos contratos.</li>
+</ol>

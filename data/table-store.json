@@ -1,0 +1,178 @@
+{
+  "layout": {
+    "zones": [
+      {
+        "id": "salon",
+        "name": "Salón Principal",
+        "color": "#e3f2fd"
+      },
+      {
+        "id": "terraza",
+        "name": "Terraza",
+        "color": "#f3e5f5"
+      }
+    ],
+    "nodes": [
+      {
+        "id": "node-1",
+        "tableId": "1",
+        "x": 50,
+        "y": 50,
+        "width": 80,
+        "height": 60,
+        "shape": "rectangle",
+        "zone": "salon"
+      },
+      {
+        "id": "node-2",
+        "tableId": "2",
+        "x": 200,
+        "y": 50,
+        "width": 60,
+        "height": 60,
+        "shape": "circle",
+        "zone": "salon"
+      },
+      {
+        "id": "node-3",
+        "tableId": "3",
+        "x": 350,
+        "y": 50,
+        "width": 100,
+        "height": 80,
+        "shape": "rectangle",
+        "zone": "salon"
+      },
+      {
+        "id": "node-4",
+        "tableId": "4",
+        "x": 50,
+        "y": 200,
+        "width": 80,
+        "height": 60,
+        "shape": "rectangle",
+        "zone": "terraza"
+      },
+      {
+        "id": "node-5",
+        "tableId": "5",
+        "x": 200,
+        "y": 200,
+        "width": 60,
+        "height": 60,
+        "shape": "circle",
+        "zone": "terraza"
+      },
+      {
+        "id": "node-6",
+        "tableId": "6",
+        "x": 350,
+        "y": 200,
+        "width": 120,
+        "height": 80,
+        "shape": "rectangle",
+        "zone": "terraza"
+      }
+    ]
+  },
+  "tables": [
+    {
+      "id": "1",
+      "number": 1,
+      "zone": "Salon Principal",
+      "status": "libre",
+      "seats": 4,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/1"
+    },
+    {
+      "id": "2",
+      "number": 2,
+      "zone": "Salon Principal",
+      "status": "ocupada",
+      "seats": 2,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/2"
+    },
+    {
+      "id": "3",
+      "number": 3,
+      "zone": "Salon Principal",
+      "status": "pedido_en_curso",
+      "seats": 6,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/3"
+    },
+    {
+      "id": "4",
+      "number": 4,
+      "zone": "Terraza",
+      "status": "cuenta_solicitada",
+      "seats": 4,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/4"
+    },
+    {
+      "id": "5",
+      "number": 5,
+      "zone": "Terraza",
+      "status": "pago_confirmado",
+      "seats": 2,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/5"
+    },
+    {
+      "id": "6",
+      "number": 6,
+      "zone": "Terraza",
+      "status": "libre",
+      "seats": 8,
+      "covers": {
+        "current": 0,
+        "total": 0,
+        "sessions": 0,
+        "lastUpdatedAt": null,
+        "lastSessionAt": null
+      },
+      "qrcodeUrl": "https://restaurant360.local/qr/6"
+    }
+  ],
+  "history": [],
+  "updatedAt": "2025-10-09T20:13:28.955Z",
+  "version": 1,
+  "coverTotals": {
+    "current": 0,
+    "total": 0,
+    "sessions": 0
+  }
+}

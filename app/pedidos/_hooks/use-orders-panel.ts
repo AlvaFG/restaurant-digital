@@ -16,6 +16,7 @@ import {
 import type { OrderStatus, PaymentStatus } from "@/lib/server/order-types"
 import type { OrdersSummary } from "@/lib/server/order-store"
 import type { OrderEventPayload, OrderSummaryEventPayload } from "@/lib/socket-events"
+import type { SocketConnectionState } from "@/lib/socket"
 
 const DEFAULT_STATUS_FILTERS: OrderStatus[] = ["abierto", "preparando", "listo"]
 const POLLING_INTERVAL_MS = 30_000
@@ -39,7 +40,16 @@ export interface UseOrdersPanelResult {
 }
 
 export function useOrdersPanel(): UseOrdersPanelResult {
-  const { on, off, lastReadyPayload, state } = useSocket()
+  const { on, off, lastReadyPayload, state: socketState } = useSocket()
+
+  const state: SocketConnectionState = socketState ?? {
+    isReady: false,
+    isConnected: false,
+    isReconnecting: false,
+    connectionId: null,
+    lastReadyAt: null,
+    lastHeartbeatAt: null,
+  }
 
   const [orders, setOrders] = useState<OrdersPanelOrder[]>([])
   const [summary, setSummary] = useState<OrdersSummaryClient | null>(null)
@@ -56,10 +66,14 @@ export function useOrdersPanel(): UseOrdersPanelResult {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const ordersVersionRef = useRef<number>(0)
 
-  const applyOrderEvent = useCallback((payload: OrderEventPayload) => {
+  const applyOrderEvent = useCallback((payload: OrderEventPayload | Partial<OrderEventPayload>) => {
+    if (!payload?.order) {
+      return false
+    }
+
     const version = payload.metadata?.version ?? 0
     if (version < ordersVersionRef.current) {
-      return
+      return false
     }
 
     const normalized = toOrdersPanelOrder(payload.order as SerializedOrder)
@@ -79,42 +93,28 @@ export function useOrdersPanel(): UseOrdersPanelResult {
     if (payload.metadata?.updatedAt) {
       setLastUpdated(new Date(payload.metadata.updatedAt))
     }
+
+    return true
   }, [])
 
-  const applySummaryEvent = useCallback((payload: OrderSummaryEventPayload) => {
+  const applySummaryEvent = useCallback((payload: OrderSummaryEventPayload | Partial<OrderSummaryEventPayload>) => {
+    if (!payload?.summary) {
+      return false
+    }
+
     const version = payload.metadata?.version ?? 0
     if (version < ordersVersionRef.current) {
-      return
+      return false
     }
 
     setSummary(toSummaryClient(payload.summary as OrdersSummary))
     ordersVersionRef.current = version
-    setLastUpdated(new Date(payload.metadata.updatedAt))
+    if (payload.metadata?.updatedAt) {
+      setLastUpdated(new Date(payload.metadata.updatedAt))
+    }
+
+    return true
   }, [])
-
-  useEffect(() => {
-    const handleCreated = (payload: OrderEventPayload) => {
-      applyOrderEvent(payload)
-    }
-
-    const handleUpdated = (payload: OrderEventPayload) => {
-      applyOrderEvent(payload)
-    }
-
-    const handleSummary = (payload: OrderSummaryEventPayload) => {
-      applySummaryEvent(payload)
-    }
-
-    on("order.created", handleCreated)
-    on("order.updated", handleUpdated)
-    on("order.summary.updated", handleSummary)
-
-    return () => {
-      off("order.created", handleCreated)
-      off("order.updated", handleUpdated)
-      off("order.summary.updated", handleSummary)
-    }
-  }, [applyOrderEvent, applySummaryEvent, off, on])
 
   useEffect(() => {
     const handle = setTimeout(() => {
@@ -182,6 +182,39 @@ export function useOrdersPanel(): UseOrdersPanelResult {
     },
     [statusFilters, paymentFilter, debouncedSearch],
   )
+
+  useEffect(() => {
+    const handleCreated = (payload: OrderEventPayload) => {
+      const applied = applyOrderEvent(payload)
+      if (!applied) {
+        void loadOrders({ silent: true })
+      }
+    }
+
+    const handleUpdated = (payload: OrderEventPayload) => {
+      const applied = applyOrderEvent(payload)
+      if (!applied) {
+        void loadOrders({ silent: true })
+      }
+    }
+
+    const handleSummary = (payload: OrderSummaryEventPayload) => {
+      const applied = applySummaryEvent(payload)
+      if (!applied) {
+        void loadOrders({ silent: true })
+      }
+    }
+
+    on("order.created", handleCreated)
+    on("order.updated", handleUpdated)
+    on("order.summary.updated", handleSummary)
+
+    return () => {
+      off("order.created", handleCreated)
+      off("order.updated", handleUpdated)
+      off("order.summary.updated", handleSummary)
+    }
+  }, [applyOrderEvent, applySummaryEvent, loadOrders, off, on])
 
   useEffect(() => {
     void loadOrders()

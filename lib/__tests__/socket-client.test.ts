@@ -1,8 +1,13 @@
-import { afterEach, describe, expect, it, vi } from "vitest"
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest"
 
 import { socketClient } from "@/lib/socket"
 
 describe("socketClient (mock fallback)", () => {
+  beforeAll(() => {
+    // Ensure we use the mock implementation
+    process.env.NEXT_PUBLIC_DISABLE_SOCKET = "1"
+  })
+
   afterEach(() => {
     socketClient.disconnect()
   })

@@ -1,6 +1,6 @@
 import { MOCK_ORDERS } from "@/lib/mock-data"
 import type { OrdersSummary } from "@/lib/server/order-store"
-import type { PaymentStatus, StoredOrder } from "@/lib/server/order-types"
+import type { CreateOrderPayload, PaymentStatus, StoredOrder } from "@/lib/server/order-types"
 import type { OrderStatus } from "@/lib/server/order-types"
 
 export type OrdersSortOption = "newest" | "oldest"
@@ -70,6 +70,22 @@ interface OrdersApiResponse {
   }
 }
 
+interface CreateOrderApiResponse {
+  data: SerializedOrder
+  metadata: {
+    version: number
+    updatedAt: string
+  }
+}
+
+export interface CreateOrderResult {
+  order: OrdersPanelOrder
+  metadata: {
+    version: number
+    updatedAt: string
+  }
+}
+
 interface SerializedOrder extends Omit<StoredOrder, "createdAt" | "updatedAt" | "items" | "discounts" | "taxes" | "payment" | "customer" | "metadata"> {
   createdAt: string
   updatedAt: string
@@ -82,6 +98,20 @@ interface SerializedOrder extends Omit<StoredOrder, "createdAt" | "updatedAt" | 
 }
 
 const API_TIMEOUT_MESSAGE = "No se pudieron obtener los pedidos"
+const CREATE_ORDER_GENERIC_ERROR_MESSAGE = "No se pudo crear el pedido"
+
+
+export class OrderServiceError extends Error {
+  code?: string
+  status?: number
+
+  constructor(message: string, options: { code?: string; status?: number } = {}) {
+    super(message)
+    this.name = "OrderServiceError"
+    this.code = options.code
+    this.status = options.status
+  }
+}
 
 function buildSearchParams(params: FetchOrdersParams) {
   const searchParams = new URLSearchParams()
@@ -115,7 +145,7 @@ function buildSearchParams(params: FetchOrdersParams) {
   return searchParams
 }
 
-function toOrdersPanelOrder(order: SerializedOrder): OrdersPanelOrder {
+export function toOrdersPanelOrder(order: SerializedOrder): OrdersPanelOrder {
   return {
     id: order.id,
     tableId: order.tableId,
@@ -138,7 +168,7 @@ function toOrdersPanelOrder(order: SerializedOrder): OrdersPanelOrder {
   }
 }
 
-function toSummaryClient(summary: OrdersSummary): OrdersSummaryClient {
+export function toSummaryClient(summary: OrdersSummary): OrdersSummaryClient {
   const byStatus = { ...summary.byStatus }
   const byPaymentStatus = { ...summary.byPaymentStatus }
 
@@ -214,6 +244,56 @@ function fallbackOrdersResult(): OrdersQueryResult {
   }
 }
 
+export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResult> {
+  try {
+    const response = await fetch("/api/order", {
+      method: "POST",
+      cache: "no-store",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (response.status === 201) {
+      const payloadBody = (await response.json()) as CreateOrderApiResponse
+
+      return {
+        order: toOrdersPanelOrder(payloadBody.data),
+        metadata: payloadBody.metadata,
+      }
+    }
+
+    if (response.status >= 400 && response.status < 500) {
+      let errorCode: string | undefined
+      let errorMessage = CREATE_ORDER_GENERIC_ERROR_MESSAGE
+
+      try {
+        const errorBody = (await response.json()) as { error?: { code?: string; message?: string } }
+        errorCode = errorBody.error?.code
+        errorMessage = errorBody.error?.message ?? errorMessage
+      } catch {
+        // ignore parse errors for non-JSON responses
+      }
+
+      throw new OrderServiceError(errorMessage, { code: errorCode, status: response.status })
+    }
+
+    if (response.status >= 500) {
+      throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE, { status: response.status })
+    }
+
+    throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE, { status: response.status })
+  } catch (error) {
+    if (error instanceof OrderServiceError) {
+      throw error
+    }
+
+    console.error("[order-service]", CREATE_ORDER_GENERIC_ERROR_MESSAGE, error)
+    throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE)
+  }
+}
+
 export async function fetchOrders(params: FetchOrdersParams = {}): Promise<OrdersQueryResult> {
   const searchParams = buildSearchParams(params)
   const queryString = searchParams.toString()
@@ -282,3 +362,4 @@ export const ORDER_STATUS_GROUPS: Record<"en_curso" | "terminados" | "cerrados",
   terminados: ["listo", "entregado"],
   cerrados: ["cerrado"],
 }
+

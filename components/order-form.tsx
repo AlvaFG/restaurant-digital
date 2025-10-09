@@ -1,17 +1,27 @@
-﻿"use client"
+"use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
-import { MOCK_MENU_CATEGORIES, MOCK_MENU_ITEMS, OrderService, type MenuItem, type Table } from "@/lib/mock-data"
+
+import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
+import { MOCK_MENU_CATEGORIES, MOCK_MENU_ITEMS, type MenuItem, type Table } from "@/lib/mock-data"
+import { createOrder, OrderServiceError } from "@/lib/order-service"
+import type { CreateOrderPayload } from "@/lib/server/order-types"
 import { TABLE_STATE, TABLE_STATE_LABELS } from "@/lib/table-states"
 import { fetchTables } from "@/lib/table-service"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Separator } from "@/components/ui/separator"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { LoadingSpinner } from "@/components/loading-spinner"
-import { Plus, Minus, ShoppingCart, X } from "lucide-react"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
+import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
+import { ChevronDown, Minus, Plus, ShoppingCart, X } from "lucide-react"
 
 interface OrderItem {
   menuItem: MenuItem
@@ -26,6 +36,8 @@ export function OrderForm() {
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const { refetch } = useOrdersPanelContext()
   const { toast } = useToast()
 
   const loadTables = useCallback(async () => {
@@ -52,11 +64,24 @@ export function OrderForm() {
   )
 
   const filteredMenuItems = useMemo(() => {
+    const availableItems = MOCK_MENU_ITEMS.filter((item) => item.available)
     if (selectedCategory !== "all") {
-      return MOCK_MENU_ITEMS.filter((item) => item.categoryId === selectedCategory && item.available)
+      return availableItems.filter((item) => item.categoryId === selectedCategory)
     }
-    return MOCK_MENU_ITEMS.filter((item) => item.available)
+    return availableItems
   }, [selectedCategory])
+
+  const categoryOptions = useMemo(
+    () => [
+      { id: "all", name: "Todas las categorias" },
+      ...MOCK_MENU_CATEGORIES.map((category) => ({ id: category.id, name: category.name })),
+    ],
+    [],
+  )
+
+  const selectedCategoryLabel = useMemo(() => {
+    return categoryOptions.find((option) => option.id === selectedCategory)?.name ?? "Todas las categorias"
+  }, [categoryOptions, selectedCategory])
 
   const addToOrder = (menuItem: MenuItem) => {
     setOrderItems((current) => {
@@ -97,28 +122,39 @@ export function OrderForm() {
 
     setIsSubmitting(true)
     try {
-      const orderData = orderItems.map((item) => ({
-        menuItemId: item.menuItem.id,
-        quantity: item.quantity,
-      }))
+      const payload = {
+        tableId: selectedTableId,
+        items: orderItems.map((item) => ({
+          menuItemId: item.menuItem.id,
+          quantity: item.quantity,
+        })),
+        source: "staff",
+      } satisfies CreateOrderPayload
 
-      await OrderService.createOrder(selectedTableId, orderData)
+      await createOrder(payload)
 
       const tableNumber = tables.find((table) => table.id === selectedTableId)?.number
+      const description = tableNumber
+        ? `Pedido creado para la mesa ${tableNumber}`
+        : "Pedido creado correctamente"
+
       toast({
         title: "Pedido creado",
-        description: tableNumber
-          ? `Pedido creado para la mesa ${tableNumber}`
-          : "Pedido creado correctamente",
+        description,
       })
 
       setSelectedTableId("")
       setOrderItems([])
+
+      if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DISABLE_SOCKET === "1") {
+        await refetch({ silent: false })
+      }
     } catch (error) {
       console.error("[OrderForm] Error creating order", error)
+      const message = error instanceof OrderServiceError ? error.message : "No se pudo crear el pedido"
       toast({
-        title: "Error",
-        description: "No se pudo crear el pedido",
+        title: "No se pudo crear el pedido",
+        description: message,
         variant: "destructive",
       })
     } finally {
@@ -143,7 +179,7 @@ export function OrderForm() {
                 {tablesError}
               </div>
             ) : (
-              <Select value={selectedTableId} onValueChange={setSelectedTableId}>
+              <Select disabled={isSubmitting} value={selectedTableId} onValueChange={setSelectedTableId}>
                 <SelectTrigger>
                   <SelectValue placeholder="Selecciona una mesa" />
                 </SelectTrigger>
@@ -169,19 +205,31 @@ export function OrderForm() {
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>Menu</CardTitle>
-              <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Todas las categorias" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Todas las categorias</SelectItem>
-                  {MOCK_MENU_CATEGORIES.map((category) => (
-                    <SelectItem key={category.id} value={category.id}>
-                      {category.name}
-                    </SelectItem>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    className="w-48 justify-between"
+                    disabled={isSubmitting}
+                  >
+                    <span>{selectedCategoryLabel}</span>
+                    <ChevronDown className="h-4 w-4 opacity-50" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {categoryOptions.map((option) => (
+                    <DropdownMenuItem
+                      key={option.id}
+                      onSelect={() => setSelectedCategory(option.id)}
+                      data-state={selectedCategory === option.id ? "checked" : undefined}
+                    >
+                      {option.name}
+                    </DropdownMenuItem>
                   ))}
-                </SelectContent>
-              </Select>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </CardHeader>
           <CardContent>
@@ -194,7 +242,12 @@ export function OrderForm() {
                       <p className="text-sm text-muted-foreground">{item.description}</p>
                       <p className="text-sm font-medium">${(item.priceCents / 100).toFixed(2)}</p>
                     </div>
-                    <Button onClick={() => addToOrder(item)} size="sm">
+                    <Button
+                      onClick={() => addToOrder(item)}
+                      size="sm"
+                      disabled={isSubmitting}
+                      aria-label={`Agregar ${item.name}`}
+                    >
                       <Plus className="h-4 w-4" />
                     </Button>
                   </div>
@@ -229,6 +282,8 @@ export function OrderForm() {
                         variant="outline"
                         size="sm"
                         onClick={() => updateQuantity(item.menuItem.id, item.quantity - 1)}
+                        disabled={isSubmitting}
+                        aria-label={`Reducir ${item.menuItem.name}`}
                       >
                         <Minus className="h-3 w-3" />
                       </Button>
@@ -237,10 +292,18 @@ export function OrderForm() {
                         variant="outline"
                         size="sm"
                         onClick={() => updateQuantity(item.menuItem.id, item.quantity + 1)}
+                        disabled={isSubmitting}
+                        aria-label={`Incrementar ${item.menuItem.name}`}
                       >
                         <Plus className="h-3 w-3" />
                       </Button>
-                      <Button variant="ghost" size="sm" onClick={() => removeFromOrder(item.menuItem.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFromOrder(item.menuItem.id)}
+                        disabled={isSubmitting}
+                        aria-label={`Eliminar ${item.menuItem.name}`}
+                      >
                         <X className="h-3 w-3" />
                       </Button>
                     </div>
