@@ -31,7 +31,11 @@ import {
 } from './payment-types'
 
 const logger = createLogger('payment-store')
-const STORE_PATH = path.join(process.cwd(), 'data', 'payment-store.json')
+
+// Use test path in test environment
+const STORE_PATH = process.env.NODE_ENV === 'test'
+  ? path.join(process.cwd(), 'data', '__test__', 'payment-store.json')
+  : path.join(process.cwd(), 'data', 'payment-store.json')
 
 // ============================================================================
 // PAYMENT STORE IMPLEMENTATION

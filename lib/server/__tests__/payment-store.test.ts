@@ -12,12 +12,13 @@ vi.mock('@/lib/server/socket-bus', () => ({
   assertServerOnly: vi.fn(),
 }));
 
-const TEST_STORE_PATH = path.join(process.cwd(), 'data', 'payment-store.json');
+const TEST_STORE_DIR = path.join(process.cwd(), 'data', '__test__');
+const TEST_STORE_PATH = path.join(TEST_STORE_DIR, 'payment-store.json');
 
 describe('PaymentStore', () => {
   beforeAll(async () => {
-    // Ensure data directory exists
-    await fs.mkdir(path.dirname(TEST_STORE_PATH), { recursive: true });
+    // Ensure test directory exists
+    await fs.mkdir(TEST_STORE_DIR, { recursive: true });
   });
 
   beforeEach(async () => {

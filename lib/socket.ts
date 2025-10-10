@@ -495,15 +495,12 @@ class MockSocketClient implements SocketClientInstance {
       lastHeartbeatAt: nowIso(),
     }
 
-    this.broadcastState()
-
+    // Notify listeners immediately in mock mode
     const readyEnvelope: SocketEnvelope = {
       event: "socket.ready",
       payload: this.readyPayload,
       ts: this.readyPayload.issuedAt,
     }
-
-    this.notify(readyEnvelope)
 
     const summaryEnvelope: SocketEnvelope = {
       event: "order.summary.updated",
@@ -514,7 +511,12 @@ class MockSocketClient implements SocketClientInstance {
       ts: nowIso(),
     }
 
-    this.notify(summaryEnvelope)
+    // Use setTimeout to ensure listeners are registered before notifying
+    setTimeout(() => {
+      this.broadcastState()
+      this.notify(readyEnvelope)
+      this.notify(summaryEnvelope)
+    }, 0)
   }
 
   disconnect() {
