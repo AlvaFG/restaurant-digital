@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
 import { getDataDir, getDataFile } from "./data-path"
+import { createLogger } from "@/lib/logger"
 
 import {
   MOCK_MENU_ALLERGENS,
@@ -14,6 +15,8 @@ import {
   type MenuMetadata,
   type MenuResponse,
 } from "@/lib/mock-data"
+
+const logger = createLogger('menu-store')
 
 const DATA_DIR = getDataDir()
 const DATA_FILE = getDataFile("menu-store.json")
@@ -190,7 +193,10 @@ async function loadStore(): Promise<MenuStoreData> {
     cache = sanitizeStoreData(parsed)
     return deepClone(cache)
   } catch (error) {
-    console.error("[menu-store] Failed to read data, using defaults", error)
+    logger.warn('Failed to read menu store, using defaults', {
+      error: error instanceof Error ? error.message : String(error),
+      dataFile: DATA_FILE,
+    })
     const fallback = sanitizeStoreData({})
     cache = fallback
     return deepClone(fallback)
@@ -234,7 +240,7 @@ async function withStoreMutation<T>(mutation: Mutation<T>): Promise<T> {
   writeQueue = next.then(
     () => undefined,
     (error) => {
-      console.error("[menu-store] Mutation failed", error)
+      logger.error('Menu store mutation failed', error as Error)
       return undefined
     },
   )

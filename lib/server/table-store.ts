@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
 import { getDataDir, getDataFile } from "./data-path"
+import { createLogger } from "@/lib/logger"
 
 import {
   MOCK_TABLES,
@@ -18,6 +19,8 @@ import {
 import { MAX_COVERS } from "@/lib/constants"
 import { getSocketBus } from "./socket-bus"
 import { buildTableLayoutUpdatedPayload, buildTableUpdatedPayload } from "./socket-payloads"
+
+const logger = createLogger('table-store')
 
 export { MAX_COVERS }
 
@@ -244,7 +247,10 @@ async function loadStore(): Promise<TableStoreData> {
 
     return deepClone(cache)
   } catch (error) {
-    console.error("[table-store] Failed to read data, using defaults", error)
+    logger.warn('Failed to read store data, using defaults', { 
+      error: error instanceof Error ? error.message : String(error),
+      dataFile: DATA_FILE,
+    })
     const fallback = defaultStore()
     cache = fallback
     return deepClone(fallback)
@@ -292,7 +298,7 @@ async function withStoreMutation<T>(mutation: MaybeAsyncStoreMutation<T>): Promi
   writeQueue = next.then(
     () => undefined,
     (error) => {
-      console.error("[table-store] Mutation failed", error)
+      logger.error('Store mutation failed', error as Error)
       return undefined
     },
   )
@@ -310,7 +316,9 @@ async function emitTableUpdatedEvent(table: Table) {
     const bus = getSocketBus()
     bus.publish("table.updated", buildTableUpdatedPayload(table, metadata))
   } catch (error) {
-    console.error("[table-store] Failed to broadcast table.update", table.id, error)
+    logger.error('Failed to broadcast table update', error as Error, {
+      tableId: table.id,
+    })
   }
 }
 
@@ -328,7 +336,7 @@ async function emitTableLayoutEvent() {
     const bus = getSocketBus()
     bus.publish("table.layout.updated", buildTableLayoutUpdatedPayload(layout, tables, metadata))
   } catch (error) {
-    console.error("[table-store] Failed to broadcast layout update", error)
+    logger.error('Failed to broadcast layout update', error as Error)
   }
 }
 
@@ -569,6 +577,39 @@ function generateHistoryId() {
   }
 
   return `hst-${Math.random().toString(36).slice(2, 10)}`
+}
+
+/**
+ * Actualiza el token QR de una mesa
+ */
+export async function updateTableQR(
+  tableId: string,
+  token: string,
+  expiry: Date
+): Promise<void> {
+  await withStoreMutation((store) => {
+    const table = store.tables.find((t) => t.id === tableId)
+    if (!table) {
+      throw new Error(`Table ${tableId} not found`)
+    }
+
+    table.qrToken = token
+    table.qrTokenExpiry = expiry
+
+    logger.info('Table QR updated', {
+      tableId,
+      expiresAt: expiry.toISOString(),
+    })
+  })
+}
+
+/**
+ * Obtiene una mesa por su token QR
+ */
+export async function getTableByQRToken(token: string): Promise<Table | null> {
+  const store = await loadStore()
+  const table = store.tables.find((t) => t.qrToken === token)
+  return table ? prepareTable(deepClone(table)) : null
 }
 
 export const DEFAULT_STATE = TABLE_STATE.FREE

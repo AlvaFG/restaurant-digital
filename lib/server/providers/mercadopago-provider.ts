@@ -6,6 +6,7 @@
  */
 
 import { MercadoPagoConfig, Preference, Payment as MPPayment } from 'mercadopago'
+import { createLogger } from '@/lib/logger'
 import type { IPaymentProvider } from './base-provider'
 import type {
   CreatePaymentOptions,
@@ -16,6 +17,8 @@ import type {
   MercadoPagoConfig as MPConfig,
 } from '../payment-types'
 import { PaymentError, PAYMENT_ERROR_CODES } from '../payment-types'
+
+const logger = createLogger('mercadopago-provider')
 
 // Mapeo de estados de Mercado Pago a nuestros PaymentStatus
 const MP_STATUS_MAP: Record<string, PaymentStatus> = {
@@ -53,9 +56,10 @@ export class MercadoPagoProvider implements IPaymentProvider {
     this.preferenceClient = new Preference(this.client)
     this.paymentClient = new MPPayment(this.client)
 
-    console.log('[MercadoPagoProvider] Initialized', {
+    logger.info('Provider initialized', {
       sandbox: config.sandbox,
       timeout: config.timeout,
+      hasWebhook: !!webhookUrl,
     })
   }
 
@@ -64,9 +68,10 @@ export class MercadoPagoProvider implements IPaymentProvider {
    */
   async createPayment(options: CreatePaymentOptions): Promise<PaymentResult> {
     try {
-      console.log('[MercadoPagoProvider] Creating preference', {
+      logger.debug('Creating preference', {
         amount: options.amount,
         orderId: options.orderId,
+        currency: options.currency,
       })
 
       // Crear preference
@@ -111,9 +116,10 @@ export class MercadoPagoProvider implements IPaymentProvider {
         ? preference.sandbox_init_point!
         : preference.init_point!
 
-      console.log('[MercadoPagoProvider] Preference created', {
+      logger.info('Preference created successfully', {
         preferenceId: preference.id,
-        checkoutUrl,
+        hasCheckoutUrl: !!checkoutUrl,
+        orderId: options.orderId,
       })
 
       return {
@@ -125,7 +131,10 @@ export class MercadoPagoProvider implements IPaymentProvider {
           : undefined,
       }
     } catch (error) {
-      console.error('[MercadoPagoProvider] Error creating preference:', error)
+      logger.error('Failed to create preference', error as Error, {
+        orderId: options.orderId,
+        amount: options.amount,
+      })
       throw this.handleError(error)
     }
   }
@@ -153,7 +162,9 @@ export class MercadoPagoProvider implements IPaymentProvider {
 
       return MP_STATUS_MAP[mpStatus] || 'pending'
     } catch (error) {
-      console.error('[MercadoPagoProvider] Error getting payment status:', error)
+      logger.error('Failed to get payment status', error as Error, {
+        externalId,
+      })
       throw this.handleError(error)
     }
   }
@@ -163,8 +174,9 @@ export class MercadoPagoProvider implements IPaymentProvider {
    */
   async processWebhook(payload: WebhookPayload): Promise<WebhookResult> {
     try {
-      console.log('[MercadoPagoProvider] Processing webhook', {
+      logger.debug('Processing webhook', {
         event: payload.event,
+        hasData: !!payload.data,
       })
 
       // Ignorar eventos que no sean de payment
@@ -182,7 +194,7 @@ export class MercadoPagoProvider implements IPaymentProvider {
       const mpPaymentId = data?.id
 
       if (!mpPaymentId) {
-        console.warn('[MercadoPagoProvider] No payment ID in webhook')
+        logger.warn('Webhook missing payment ID', { event: payload.event })
         return {
           paymentId: '',
           status: 'pending',
@@ -195,7 +207,7 @@ export class MercadoPagoProvider implements IPaymentProvider {
       const payment = await this.paymentClient.get({ id: mpPaymentId })
 
       if (!payment || !payment.status) {
-        console.warn('[MercadoPagoProvider] Payment not found:', mpPaymentId)
+        logger.warn('Payment not found in MercadoPago', { mpPaymentId })
         return {
           paymentId: '',
           status: 'pending',
@@ -207,11 +219,12 @@ export class MercadoPagoProvider implements IPaymentProvider {
       const status = MP_STATUS_MAP[payment.status] || 'pending'
       const method = this.mapPaymentMethod(payment.payment_type_id || '')
 
-      console.log('[MercadoPagoProvider] Webhook processed', {
+      logger.info('Webhook processed successfully', {
         mpPaymentId,
-        status: payment.status,
+        mpStatus: payment.status,
         mappedStatus: status,
         method,
+        externalReference: payment.external_reference,
       })
 
       return {
@@ -224,7 +237,9 @@ export class MercadoPagoProvider implements IPaymentProvider {
         failureCode: payment.status_detail,
       }
     } catch (error) {
-      console.error('[MercadoPagoProvider] Error processing webhook:', error)
+      logger.error('Failed to process webhook', error as Error, {
+        event: payload.event,
+      })
       throw this.handleError(error)
     }
   }

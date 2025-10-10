@@ -13,6 +13,7 @@ import fs from 'fs/promises'
 import path from 'path'
 import { randomBytes } from 'crypto'
 import { getSocketBus } from '@/lib/server/socket-bus'
+import { createLogger } from '@/lib/logger'
 import {
   type Payment,
   type PaymentStatus,
@@ -29,6 +30,7 @@ import {
   calculateSuccessRate,
 } from './payment-types'
 
+const logger = createLogger('payment-store')
 const STORE_PATH = path.join(process.cwd(), 'data', 'payment-store.json')
 
 // ============================================================================
@@ -63,7 +65,10 @@ class PaymentStore {
       this.cache = data
       return data
     } catch (error) {
-      console.error('[payment-store] Error reading store:', error)
+      logger.debug('Store file not found, initializing new store', { 
+        path: STORE_PATH,
+        error: error instanceof Error ? error.message : String(error),
+      })
       
       // Inicializar store si no existe
       const initialData: PaymentStoreData = {
@@ -102,12 +107,21 @@ class PaymentStore {
           })),
         }
 
+        // Ensure directory exists before writing
+        const dir = path.dirname(STORE_PATH)
+        await fs.mkdir(dir, { recursive: true })
+        
         await fs.writeFile(STORE_PATH, JSON.stringify(serialized, null, 2), 'utf-8')
         this.cache = data
 
-        console.log(`[payment-store] Written version ${data.metadata.version}`)
+        logger.debug('Store written successfully', { 
+          version: data.metadata.version,
+          paymentsCount: data.payments.length,
+        })
       } catch (error) {
-        console.error('[payment-store] Error writing store:', error)
+        logger.error('Failed to persist payment data', error as Error, {
+          paymentsCount: data.payments.length,
+        })
         throw new PaymentError(
           'Failed to persist payment data',
           PAYMENT_ERROR_CODES.INTERNAL_ERROR,
@@ -137,9 +151,9 @@ class PaymentStore {
       const bus = getSocketBus()
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       bus.publish(event as any, payload as any)
-      console.log(`[payment-store] Event emitted: ${event}`)
+      logger.debug('Event emitted', { event, hasPayload: !!payload })
     } catch (error) {
-      console.error('[payment-store] Error emitting event:', error)
+      logger.error('Failed to emit event', error as Error, { event })
     }
   }
 
@@ -209,7 +223,12 @@ class PaymentStore {
       metadata: data.metadata,
     })
 
-    console.log(`[payment-store] Payment created: ${payment.id} for order ${params.orderId}`)
+    logger.info('Payment created', { 
+      paymentId: payment.id,
+      orderId: params.orderId,
+      amount: payment.amount,
+      provider: payment.provider,
+    })
     return payment
   }
 
@@ -331,7 +350,7 @@ class PaymentStore {
       metadata: data.metadata,
     })
 
-    console.log(`[payment-store] Payment updated: ${id}`)
+    logger.info('Payment updated', { paymentId: id })
     return updatedPayment
   }
 
@@ -406,7 +425,12 @@ class PaymentStore {
       })
     }
 
-    console.log(`[payment-store] Payment ${id} status: ${previousStatus} -> ${newStatus}`)
+    logger.info('Payment status updated', { 
+      paymentId: id,
+      previousStatus,
+      newStatus,
+      method: options.method,
+    })
     return updatedPayment
   }
 

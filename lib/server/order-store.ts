@@ -2,6 +2,7 @@ import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
 import { getDataDir, getDataFile } from "./data-path"
+import { createLogger } from "@/lib/logger"
 
 import type { MenuItem } from "@/lib/mock-data"
 import { TABLE_STATE } from "@/lib/table-states"
@@ -29,6 +30,8 @@ import { getMenuItemsSnapshot } from "./menu-store"
 import { getTableById, updateTableState } from "./table-store"
 import { getSocketBus } from "./socket-bus"
 import { buildOrderEventPayload, buildOrderSummaryPayload } from "./socket-payloads"
+
+const logger = createLogger('order-store')
 
 const DATA_DIR = getDataDir()
 const DATA_FILE = getDataFile("order-store.json")
@@ -150,7 +153,10 @@ async function loadStore(): Promise<OrdersStoreData> {
     cache = reviveStore(parsed)
     return deepClone(cache)
   } catch (error) {
-    console.error("[order-store] Failed to read data, using defaults", error)
+    logger.warn('Failed to read order store, using defaults', {
+      error: error instanceof Error ? error.message : String(error),
+      dataFile: DATA_FILE,
+    })
     const fallback = defaultStore()
     cache = reviveStore(prepareForPersist(fallback))
     return deepClone(cache)
@@ -179,7 +185,10 @@ async function emitOrderEvent(event: "order.created" | "order.updated", order: S
     bus.publish(event, buildOrderEventPayload(order, metadata))
     bus.publish("order.summary.updated", buildOrderSummaryPayload(summary, metadata))
   } catch (error) {
-    console.error("[order-store] Failed to broadcast", event, error)
+    logger.error('Failed to broadcast order event', error as Error, {
+      event,
+      orderId: order.id,
+    })
   }
 }
 
@@ -205,7 +214,7 @@ async function withStoreMutation<T>(mutation: StoreMutation<T>): Promise<T> {
   writeQueue = next.then(
     () => undefined,
     (error) => {
-      console.error("[order-store] Mutation failed", error)
+      logger.error('Order store mutation failed', error as Error)
       return undefined
     },
   )
@@ -461,7 +470,7 @@ function reserveStock(draft: OrdersStoreData, items: Array<{ menuItemId: string;
     record.updatedAt = now
 
     if (record.stock < record.minStock) {
-      console.warn("[order-store] Stock por debajo del mínimo", {
+      logger.warn('Stock below minimum threshold', {
         menuItemId: item.menuItemId,
         stock: record.stock,
         minStock: record.minStock,
@@ -507,7 +516,9 @@ async function syncTableState(tableId: string, currentState: string) {
       return
     }
   } catch (error) {
-    console.error("[order-store] Failed to update table state", error)
+    logger.error('Failed to update table state', error as Error, {
+      tableId,
+    })
     throw new OrderStoreError("No se pudo actualizar el estado de la mesa", {
       code: "TABLE_UPDATE_FAILED",
       status: 500,
@@ -643,11 +654,11 @@ export async function createOrder(payload: CreateOrderPayload): Promise<StoredOr
 
     draft.orders.unshift(storedOrder)
 
-    console.info("[order-store] Created order", {
+    logger.info('Order created successfully', {
       orderId,
       tableId: payload.tableId,
       total: storedOrder.total,
-      items: storedOrder.items.length,
+      itemsCount: storedOrder.items.length,
     })
 
     return storedOrder

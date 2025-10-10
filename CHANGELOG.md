@@ -12,6 +12,24 @@ y este proyecto adhiere a [Semantic Versioning](https://semver.org/spec/v2.0.0.h
 - Mejoras de performance en stores
 - Optimización de WebSocket reconnection
 
+### Fixed
+- Todos los tests de payment-store pasando (14/14)
+- Eliminados console.logs en producción (34 instancias)
+- File I/O en payment-store con creación automática de directorios
+
+### Added
+- Sistema de logging estructurado (`lib/logger.ts`)
+- Niveles de log apropiados: debug, info, warn, error
+- Contexto estructurado en todos los logs
+- Test utilities en `lib/server/__tests__/setup.ts`
+- Documentación completa de resolución de deuda técnica
+
+### Changed
+- Migrado todo el logging de stores a sistema estructurado
+- payment-store, order-store, table-store, menu-store, mercadopago-provider
+- Tests de payment-store completamente reescritos con mejor aislamiento
+- Logger config con soporte para desarrollo y producción
+
 ---
 
 ## [0.5.0] - 2025-01-09

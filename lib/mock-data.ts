@@ -16,6 +16,8 @@ export interface Table {
   seats?: number
   covers: TableCovers
   qrcodeUrl?: string
+  qrToken?: string
+  qrTokenExpiry?: Date
 }
 
 export interface Alert {
