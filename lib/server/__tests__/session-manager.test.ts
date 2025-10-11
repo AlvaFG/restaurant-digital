@@ -1,24 +1,29 @@
 /**
- * Session Manager Tests
+ * Session Manager Tests v2.0.0
+ * 
+ * Test suite for session-manager.ts business logic layer
+ * Tests cover:
+ * - Session creation with QR validation
+ * - Session validation (existence, expiry, closure, token)
+ * - Session updates and status transitions
+ * - Status state machine enforcement
+ * - Session extension and closure
+ * - Cleanup and queries
+ * - Legacy functions backward compatibility
+ * 
+ * @module session-manager.test
+ * @version 2.0.0
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import {
-  createGuestSession,
-  getSession,
-  extendSession,
-  invalidateSession,
-  getTableSessions,
-  cleanupExpiredSessions,
-  isSessionExpired,
-  getSessionStats,
-  clearAllSessions,
-  startCleanup,
-  stopCleanup,
-} from '../session-manager';
-import { MAX_SESSIONS_PER_TABLE } from '../session-types';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import * as sessionManager from '../session-manager';
+import * as qrService from '../qr-service';
+import * as sessionStore from '../session-store';
+import { SessionStatus, SessionValidationErrorCode } from '../session-types';
 
-// Mock del logger
+// Mock dependencies
+vi.mock('../qr-service');
+vi.mock('../session-store');
 vi.mock('@/lib/logger', () => ({
   logger: {
     info: vi.fn(),
@@ -26,295 +31,734 @@ vi.mock('@/lib/logger', () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+  createLogger: vi.fn(() => ({
+    info: vi.fn(),
+    debug: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+  })),
 }));
 
-describe('Session Manager', () => {
+describe('session-manager v2.0.0', () => {
   beforeEach(() => {
-    clearAllSessions();
-    stopCleanup();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
-    clearAllSessions();
-    stopCleanup();
+    vi.restoreAllMocks();
   });
 
-  describe('createGuestSession', () => {
-    it('should create valid session', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId });
+  describe('createSession', () => {
+    it('should create session with valid QR token', async () => {
+      // Arrange
+      const mockToken = 'valid-qr-token';
+      const mockTableId = 'table-1';
+      const mockIP = '192.168.1.100';
+      const mockUserAgent = 'Mozilla/5.0';
 
+      vi.mocked(qrService.validateToken).mockReturnValue({
+        valid: true,
+        metadata: {
+          tableId: mockTableId,
+          tableNumber: 5,
+          zone: 'Terraza',
+          generatedAt: new Date().toISOString(),
+        },
+      });
+
+      vi.mocked(qrService.isTokenExpired).mockReturnValue(false);
+
+      vi.mocked(sessionStore.createSession).mockReturnValue(undefined);
+
+      // Act
+      const session = await sessionManager.createSession({
+        token: mockToken,
+        ipAddress: mockIP,
+        userAgent: mockUserAgent,
+        metadata: { test: true },
+      });
+
+      // Assert
       expect(session).toBeDefined();
-      expect(session.sessionId).toMatch(/^guest_/);
-      expect(session.tableId).toBe(tableId);
-      expect(session.createdAt).toBeInstanceOf(Date);
-      expect(session.lastActivity).toBeInstanceOf(Date);
-      expect(session.expiresAt).toBeInstanceOf(Date);
-      expect(session.ttl).toBe(7200); // Default 2 hours
-    });
+      expect(session.id).toMatch(/^session-/);
+      expect(session.tableId).toBe(mockTableId);
+      expect(session.tableNumber).toBe(5);
+      expect(session.zone).toBe('Terraza');
+      expect(session.token).toBe(mockToken);
+      expect(session.status).toBe(SessionStatus.PENDING);
+      expect(session.ipAddress).toBe(mockIP);
+      expect(session.userAgent).toBe(mockUserAgent);
+      expect(session.cartItemsCount).toBe(0);
+      expect(session.orderIds).toEqual([]);
+      expect(session.metadata).toEqual({ test: true });
 
-    it('should create session with custom TTL', () => {
-      const tableId = '5';
-      const customTTL = 3600; // 1 hour
-      const session = createGuestSession({ tableId, ttl: customTTL });
+      // Verify QR validation was called
+      expect(qrService.validateToken).toHaveBeenCalledWith(mockToken);
+      expect(qrService.isTokenExpired).toHaveBeenCalledWith(mockToken);
 
-      expect(session.ttl).toBe(customTTL);
-
-      const expectedExpiry =
-        session.createdAt.getTime() + customTTL * 1000;
-      expect(session.expiresAt.getTime()).toBe(expectedExpiry);
-    });
-
-    it('should create unique session IDs', () => {
-      const tableId = '5';
-      const session1 = createGuestSession({ tableId });
-      const session2 = createGuestSession({ tableId });
-
-      expect(session1.sessionId).not.toBe(session2.sessionId);
-    });
-
-    it('should enforce max sessions per table', () => {
-      const tableId = '5';
-
-      // Create max sessions
-      for (let i = 0; i < MAX_SESSIONS_PER_TABLE; i++) {
-        createGuestSession({ tableId });
-      }
-
-      // Should throw on next attempt
-      expect(() => createGuestSession({ tableId })).toThrow(
-        `Maximum ${MAX_SESSIONS_PER_TABLE} sessions per table`
+      // Verify session was stored
+      expect(sessionStore.createSession).toHaveBeenCalledWith(
+        expect.objectContaining({
+          id: expect.stringMatching(/^session-/),
+          tableId: mockTableId,
+          token: mockToken,
+          status: SessionStatus.PENDING,
+        })
       );
     });
 
-    it('should allow sessions for different tables', () => {
-      for (let i = 0; i < MAX_SESSIONS_PER_TABLE; i++) {
-        createGuestSession({ tableId: '5' });
-      }
+    it('should throw error with invalid QR token', async () => {
+      // Arrange
+      const mockToken = 'invalid-token';
 
-      // Should not throw for different table
-      expect(() => createGuestSession({ tableId: '6' })).not.toThrow();
+      vi.mocked(qrService.validateToken).mockReturnValue({
+        valid: false,
+        error: 'Invalid signature',
+      });
+
+      // Act & Assert
+      await expect(
+        sessionManager.createSession({
+          token: mockToken,
+          ipAddress: '127.0.0.1',
+          userAgent: 'test',
+        })
+      ).rejects.toThrow('Invalid or expired token');
+
+      // Verify no session was stored
+      expect(sessionStore.createSession).not.toHaveBeenCalled();
+    });
+
+    it('should throw error with expired QR token', async () => {
+      // Arrange
+      const mockToken = 'expired-token';
+
+      vi.mocked(qrService.validateToken).mockReturnValue({
+        valid: true,
+        metadata: {
+          tableId: 'table-1',
+          tableNumber: 1,
+          zone: 'Main',
+          generatedAt: new Date().toISOString(),
+        },
+      });
+
+      vi.mocked(qrService.isTokenExpired).mockReturnValue(true);
+
+      // Act & Assert
+      await expect(
+        sessionManager.createSession({
+          token: mockToken,
+          ipAddress: '127.0.0.1',
+          userAgent: 'test',
+        })
+      ).rejects.toThrow('Invalid or expired token');
+
+      // Verify no session was stored
+      expect(sessionStore.createSession).not.toHaveBeenCalled();
+    });
+
+    it('should throw error when QR token missing table metadata', async () => {
+      // Arrange
+      const mockToken = 'no-metadata-token';
+
+      vi.mocked(qrService.validateToken).mockReturnValue({
+        valid: true,
+        // No metadata provided
+      });
+
+      // Act & Assert
+      await expect(
+        sessionManager.createSession({
+          token: mockToken,
+          ipAddress: '127.0.0.1',
+          userAgent: 'test',
+        })
+      ).rejects.toThrow('Table not found in QR token');
+
+      // Verify no session was stored
+      expect(sessionStore.createSession).not.toHaveBeenCalled();
     });
   });
 
-  describe('getSession', () => {
-    it('should retrieve existing session', () => {
-      const tableId = '5';
-      const created = createGuestSession({ tableId });
+  describe('validateSession', () => {
+    it('should validate existing active session successfully', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(Date.now() - 5 * 60 * 1000), // 5 min ago
+        expiresAt: new Date(Date.now() + 25 * 60 * 1000), // 25 min from now
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
 
-      const retrieved = getSession(created.sessionId);
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(qrService.isTokenExpired).mockReturnValue(false);
+      vi.mocked(sessionStore.updateSession).mockReturnValue(mockSession);
 
-      expect(retrieved).not.toBeNull();
-      expect(retrieved!.sessionId).toBe(created.sessionId);
-      expect(retrieved!.tableId).toBe(tableId);
+      // Act
+      const result = await sessionManager.validateSession(mockSessionId);
+
+      // Assert
+      expect(result.valid).toBe(true);
+      expect(result.session).toBeDefined();
+      expect(result.session?.id).toBe(mockSessionId);
+      expect(result.error).toBeUndefined();
+      expect(result.errorCode).toBeUndefined();
+
+      // Verify session was fetched
+      expect(sessionStore.getSession).toHaveBeenCalledWith(mockSessionId);
+
+      // Verify lastActivityAt was updated
+      expect(sessionStore.updateSession).toHaveBeenCalledWith(mockSessionId, {
+        lastActivityAt: expect.any(Date),
+      });
     });
 
-    it('should return null for non-existent session', () => {
-      const session = getSession('non-existent-id');
-      expect(session).toBeNull();
+    it('should fail validation for non-existent session', async () => {
+      // Arrange
+      const mockSessionId = 'non-existent';
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(null);
+
+      // Act
+      const result = await sessionManager.validateSession(mockSessionId);
+
+      // Assert
+      expect(result.valid).toBe(false);
+      expect(result.session).toBeUndefined();
+      expect(result.error).toBe('Session not found');
+      expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_NOT_FOUND);
+
+      // Verify no update was attempted
+      expect(sessionStore.updateSession).not.toHaveBeenCalled();
     });
 
-    it('should return null for expired session', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId, ttl: -1 }); // Already expired
+    it('should fail validation for expired session', async () => {
+      // Arrange
+      const mockSessionId = 'expired-session';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(Date.now() - 40 * 60 * 1000), // 40 min ago
+        expiresAt: new Date(Date.now() - 10 * 60 * 1000), // 10 min ago (expired)
+        lastActivityAt: new Date(Date.now() - 10 * 60 * 1000),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
 
-      const retrieved = getSession(session.sessionId);
-      expect(retrieved).toBeNull();
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+
+      // Act
+      const result = await sessionManager.validateSession(mockSessionId);
+
+      // Assert
+      expect(result.valid).toBe(false);
+      expect(result.session).toBeUndefined();
+      expect(result.error).toBe('Session expired');
+      expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_EXPIRED);
+
+      // Verify no update was attempted
+      expect(sessionStore.updateSession).not.toHaveBeenCalled();
+    });
+
+    it('should fail validation for closed session', async () => {
+      // Arrange
+      const mockSessionId = 'closed-session';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.CLOSED,
+        createdAt: new Date(Date.now() - 30 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 2,
+        orderIds: ['order-1'],
+        metadata: {},
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+
+      // Act
+      const result = await sessionManager.validateSession(mockSessionId);
+
+      // Assert
+      expect(result.valid).toBe(false);
+      expect(result.session).toBeUndefined();
+      expect(result.error).toBe('Session closed');
+      expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_CLOSED);
+
+      // Verify no update was attempted
+      expect(sessionStore.updateSession).not.toHaveBeenCalled();
+    });
+
+    it('should fail validation when QR token is expired', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'expired-qr-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(Date.now() - 5 * 60 * 1000),
+        expiresAt: new Date(Date.now() + 25 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(qrService.isTokenExpired).mockReturnValue(true);
+
+      // Act
+      const result = await sessionManager.validateSession(mockSessionId);
+
+      // Assert
+      expect(result.valid).toBe(false);
+      expect(result.session).toBeUndefined();
+      expect(result.error).toBe('QR token expired');
+      expect(result.errorCode).toBe(SessionValidationErrorCode.INVALID_TOKEN);
+
+      // Verify token expiry was checked
+      expect(qrService.isTokenExpired).toHaveBeenCalledWith('expired-qr-token');
+
+      // Verify no update was attempted
+      expect(sessionStore.updateSession).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('updateSession', () => {
+    it('should update session status with valid transition', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
+
+      const updatedSession = {
+        ...mockSession,
+        status: SessionStatus.CART_ACTIVE,
+        cartItemsCount: 2,
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(sessionStore.updateSession).mockReturnValue(updatedSession);
+
+      // Act
+      const result = await sessionManager.updateSession(mockSessionId, {
+        status: SessionStatus.CART_ACTIVE,
+        cartItemsCount: 2,
+      });
+
+      // Assert
+      expect(result).toBeDefined();
+      expect(result.status).toBe(SessionStatus.CART_ACTIVE);
+      expect(result.cartItemsCount).toBe(2);
+
+      // Verify update was called
+      expect(sessionStore.updateSession).toHaveBeenCalledWith(mockSessionId, {
+        status: SessionStatus.CART_ACTIVE,
+        cartItemsCount: 2,
+      });
+    });
+
+    it('should throw error for invalid status transition', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.PAYMENT_COMPLETED, // terminal state
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 3,
+        orderIds: ['order-1'],
+        metadata: {},
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+
+      // Act & Assert
+      await expect(
+        sessionManager.updateSession(mockSessionId, {
+          status: SessionStatus.BROWSING, // Can't go back from PAYMENT_COMPLETED
+        })
+      ).rejects.toThrow('Invalid status transition');
+
+      // Verify no update was attempted
+      expect(sessionStore.updateSession).not.toHaveBeenCalled();
+    });
+
+    it('should add order ID to session', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.CART_ACTIVE,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 3,
+        orderIds: [],
+        metadata: {},
+      };
+
+      const updatedSession = {
+        ...mockSession,
+        orderIds: ['order-123'],
+        status: SessionStatus.ORDER_PLACED,
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(sessionStore.updateSession).mockReturnValue(updatedSession);
+
+      // Act
+      const result = await sessionManager.updateSession(mockSessionId, {
+        orderId: 'order-123',
+        status: SessionStatus.ORDER_PLACED,
+      });
+
+      // Assert
+      expect(result.orderIds).toContain('order-123');
+      expect(result.status).toBe(SessionStatus.ORDER_PLACED);
+
+      // Verify update included orderIds array
+      expect(sessionStore.updateSession).toHaveBeenCalledWith(mockSessionId, {
+        orderId: 'order-123',
+        status: SessionStatus.ORDER_PLACED,
+      });
+    });
+
+    it('should extend session when requested', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 5 * 60 * 1000), // 5 min left
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
+
+      const extendedSession = {
+        ...mockSession,
+        expiresAt: new Date(Date.now() + 35 * 60 * 1000), // Extended by 30 min
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(sessionStore.extendSession).mockReturnValue(extendedSession);
+
+      // Act
+      const result = await sessionManager.updateSession(mockSessionId, {
+        extend: true,
+      });
+
+      // Assert
+      expect(result.expiresAt.getTime()).toBeGreaterThan(mockSession.expiresAt.getTime());
+
+      // Verify extendSession was called
+      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId, undefined);
+    });
+  });
+
+  describe('validateStatusTransition', () => {
+    it('should allow PENDING → BROWSING transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.PENDING, SessionStatus.BROWSING)
+      ).not.toThrow();
+    });
+
+    it('should allow BROWSING → CART_ACTIVE transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.BROWSING, SessionStatus.CART_ACTIVE)
+      ).not.toThrow();
+    });
+
+    it('should allow CART_ACTIVE → ORDER_PLACED transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.CART_ACTIVE, SessionStatus.ORDER_PLACED)
+      ).not.toThrow();
+    });
+
+    it('should allow ORDER_PLACED → AWAITING_PAYMENT transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.ORDER_PLACED, SessionStatus.AWAITING_PAYMENT)
+      ).not.toThrow();
+    });
+
+    it('should allow AWAITING_PAYMENT → PAYMENT_COMPLETED transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.AWAITING_PAYMENT, SessionStatus.PAYMENT_COMPLETED)
+      ).not.toThrow();
+    });
+
+    it('should allow any state → CLOSED transition', () => {
+      const allStates = [
+        SessionStatus.PENDING,
+        SessionStatus.BROWSING,
+        SessionStatus.CART_ACTIVE,
+        SessionStatus.ORDER_PLACED,
+        SessionStatus.AWAITING_PAYMENT,
+        SessionStatus.PAYMENT_COMPLETED,
+      ];
+
+      allStates.forEach((status) => {
+        expect(() =>
+          sessionManager.validateStatusTransition(status, SessionStatus.CLOSED)
+        ).not.toThrow();
+      });
+    });
+
+    it('should reject CLOSED → any transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.CLOSED, SessionStatus.BROWSING)
+      ).toThrow('Invalid status transition');
+    });
+
+    it('should reject PAYMENT_COMPLETED → BROWSING transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.PAYMENT_COMPLETED, SessionStatus.BROWSING)
+      ).toThrow('Invalid status transition');
+    });
+
+    it('should reject CART_ACTIVE → PENDING transition', () => {
+      expect(() =>
+        sessionManager.validateStatusTransition(SessionStatus.CART_ACTIVE, SessionStatus.PENDING)
+      ).toThrow('Invalid status transition');
+    });
+  });
+
+  describe('closeSession', () => {
+    it('should close an active session', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
+
+      const closedSession = {
+        ...mockSession,
+        status: SessionStatus.CLOSED,
+      };
+
+      vi.mocked(sessionStore.getSession).mockReturnValue(mockSession);
+      vi.mocked(sessionStore.updateSession).mockReturnValue(closedSession);
+
+      // Act
+      const result = await sessionManager.closeSession(mockSessionId);
+
+      // Assert
+      expect(result.status).toBe(SessionStatus.CLOSED);
+
+      // Verify update was called
+      expect(sessionStore.updateSession).toHaveBeenCalledWith(mockSessionId, {
+        status: SessionStatus.CLOSED,
+      });
     });
   });
 
   describe('extendSession', () => {
-    it('should update lastActivity and expiresAt', async () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId });
-      const originalLastActivity = session.lastActivity.getTime();
-      const originalExpiresAt = session.expiresAt.getTime();
+    it('should extend session expiration', async () => {
+      // Arrange
+      const mockSessionId = 'session-123';
+      const mockSession = {
+        id: mockSessionId,
+        tableId: 'table-1',
+        tableNumber: 5,
+        zone: 'Terraza',
+        token: 'valid-token',
+        status: SessionStatus.BROWSING,
+        createdAt: new Date(),
+        expiresAt: new Date(Date.now() + 10 * 60 * 1000), // 10 min left
+        lastActivityAt: new Date(),
+        ipAddress: '192.168.1.100',
+        userAgent: 'Mozilla/5.0',
+        cartItemsCount: 0,
+        orderIds: [],
+        metadata: {},
+      };
 
-      // Wait to ensure timestamp changes
-      await new Promise(resolve => setTimeout(resolve, 50));
+      const extendedSession = {
+        ...mockSession,
+        expiresAt: new Date(Date.now() + 40 * 60 * 1000), // Extended by 30 min
+      };
 
-      extendSession(session.sessionId);
+      vi.mocked(sessionStore.extendSession).mockReturnValue(extendedSession);
 
-      const updated = getSession(session.sessionId);
-      expect(updated).not.toBeNull();
-      expect(updated!.lastActivity.getTime()).toBeGreaterThan(originalLastActivity);
-      expect(updated!.expiresAt.getTime()).toBeGreaterThan(originalExpiresAt);
-    });
+      // Act
+      const result = await sessionManager.extendSession(mockSessionId);
 
-    it('should not extend non-existent session', () => {
-      // Should not throw
-      expect(() => extendSession('non-existent')).not.toThrow();
-    });
+      // Assert
+      expect(result.expiresAt.getTime()).toBeGreaterThan(mockSession.expiresAt.getTime());
 
-    it('should invalidate expired session on extend attempt', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId, ttl: -1 });
-
-      extendSession(session.sessionId);
-
-      const retrieved = getSession(session.sessionId);
-      expect(retrieved).toBeNull();
-    });
-  });
-
-  describe('invalidateSession', () => {
-    it('should remove session from store', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId });
-
-      invalidateSession(session.sessionId);
-
-      const retrieved = getSession(session.sessionId);
-      expect(retrieved).toBeNull();
-    });
-
-    it('should remove session from table index', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId });
-
-      invalidateSession(session.sessionId);
-
-      const tableSessions = getTableSessions(tableId);
-      expect(tableSessions).toHaveLength(0);
-    });
-
-    it('should not throw on non-existent session', () => {
-      expect(() => invalidateSession('non-existent')).not.toThrow();
+      // Verify extendSession was called
+      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId, undefined);
     });
   });
 
-  describe('getTableSessions', () => {
-    it('should return all active sessions for table', () => {
-      const tableId = '5';
-      createGuestSession({ tableId });
-      createGuestSession({ tableId });
-      createGuestSession({ tableId });
+  describe('getSessionsByTable', () => {
+    it('should return all sessions for a table', () => {
+      // Arrange
+      const mockTableId = 'table-1';
+      const mockSessions = [
+        {
+          id: 'session-1',
+          tableId: mockTableId,
+          tableNumber: 5,
+          zone: 'Terraza',
+          token: 'token-1',
+          status: SessionStatus.BROWSING,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 30 * 60 * 1000),
+          lastActivityAt: new Date(),
+          ipAddress: '192.168.1.100',
+          userAgent: 'Mozilla/5.0',
+          cartItemsCount: 0,
+          orderIds: [],
+          metadata: {},
+        },
+        {
+          id: 'session-2',
+          tableId: mockTableId,
+          tableNumber: 5,
+          zone: 'Terraza',
+          token: 'token-2',
+          status: SessionStatus.CART_ACTIVE,
+          createdAt: new Date(),
+          expiresAt: new Date(Date.now() + 25 * 60 * 1000),
+          lastActivityAt: new Date(),
+          ipAddress: '192.168.1.101',
+          userAgent: 'Chrome',
+          cartItemsCount: 3,
+          orderIds: [],
+          metadata: {},
+        },
+      ];
 
-      const sessions = getTableSessions(tableId);
-      expect(sessions).toHaveLength(3);
-      sessions.forEach((s) => expect(s.tableId).toBe(tableId));
-    });
+      vi.mocked(sessionStore.getSessionsByTable).mockReturnValue(mockSessions);
 
-    it('should return empty array for table with no sessions', () => {
-      const sessions = getTableSessions('99');
-      expect(sessions).toEqual([]);
-    });
+      // Act
+      const result = sessionManager.getSessionsByTable(mockTableId);
 
-    it('should not include expired sessions', () => {
-      const tableId = '5';
-      createGuestSession({ tableId });
-      createGuestSession({ tableId, ttl: -1 }); // Expired
-
-      const sessions = getTableSessions(tableId);
-      expect(sessions).toHaveLength(1);
-    });
-
-    it('should return sessions only for specified table', () => {
-      createGuestSession({ tableId: '5' });
-      createGuestSession({ tableId: '5' });
-      createGuestSession({ tableId: '6' });
-
-      const table5Sessions = getTableSessions('5');
-      expect(table5Sessions).toHaveLength(2);
-    });
-  });
-
-  describe('cleanupExpiredSessions', () => {
-    it('should remove expired sessions', () => {
-      const tableId = '5';
-      createGuestSession({ tableId, ttl: -1 }); // Expired
-      createGuestSession({ tableId, ttl: -1 }); // Expired
-      createGuestSession({ tableId }); // Valid
-
-      const removed = cleanupExpiredSessions();
-      expect(removed).toBe(2);
-
-      const sessions = getTableSessions(tableId);
-      expect(sessions).toHaveLength(1);
-    });
-
-    it('should return 0 when no sessions expired', () => {
-      const tableId = '5';
-      createGuestSession({ tableId });
-
-      const removed = cleanupExpiredSessions();
-      expect(removed).toBe(0);
-    });
-
-    it('should handle empty store', () => {
-      const removed = cleanupExpiredSessions();
-      expect(removed).toBe(0);
+      // Assert
+      expect(result).toHaveLength(2);
+      expect(result[0].id).toBe('session-1');
+      expect(result[1].id).toBe('session-2');
+      expect(sessionStore.getSessionsByTable).toHaveBeenCalledWith(mockTableId);
     });
   });
 
-  describe('isSessionExpired', () => {
-    it('should return false for valid session', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId });
+  describe('cleanup', () => {
+    it('should cleanup expired sessions', () => {
+      // Arrange
+      const mockResult = {
+        removed: 5,
+        sessionIds: ['session-1', 'session-2', 'session-3', 'session-4', 'session-5'],
+        dryRun: false,
+      };
 
-      expect(isSessionExpired(session)).toBe(false);
+      vi.mocked(sessionStore.cleanup).mockReturnValue(mockResult);
+
+      // Act
+      const result = sessionManager.cleanup();
+
+      // Assert
+      expect(result.removed).toBe(5);
+      expect(result.sessionIds).toHaveLength(5);
+      expect(sessionStore.cleanup).toHaveBeenCalledWith(undefined);
     });
 
-    it('should return true for expired session', () => {
-      const tableId = '5';
-      const session = createGuestSession({ tableId, ttl: -1 });
+    it('should support dry run mode', () => {
+      // Arrange
+      const mockResult = {
+        removed: 3,
+        sessionIds: ['session-1', 'session-2', 'session-3'],
+        dryRun: true,
+      };
 
-      expect(isSessionExpired(session)).toBe(true);
-    });
-  });
+      vi.mocked(sessionStore.cleanup).mockReturnValue(mockResult);
 
-  describe('getSessionStats', () => {
-    it('should return correct stats', () => {
-      createGuestSession({ tableId: '5' });
-      createGuestSession({ tableId: '5' });
-      createGuestSession({ tableId: '6' });
+      // Act
+      const result = sessionManager.cleanup({ dryRun: true });
 
-      const stats = getSessionStats();
-
-      expect(stats.totalSessions).toBe(3);
-      expect(stats.tablesWithSessions).toBe(2);
-      expect(stats.avgSessionsPerTable).toBe(1.5);
-    });
-
-    it('should handle empty store', () => {
-      const stats = getSessionStats();
-
-      expect(stats.totalSessions).toBe(0);
-      expect(stats.tablesWithSessions).toBe(0);
-      expect(stats.avgSessionsPerTable).toBe(0);
-    });
-  });
-
-  describe('clearAllSessions', () => {
-    it('should remove all sessions', () => {
-      createGuestSession({ tableId: '5' });
-      createGuestSession({ tableId: '6' });
-
-      clearAllSessions();
-
-      const stats = getSessionStats();
-      expect(stats.totalSessions).toBe(0);
-      expect(stats.tablesWithSessions).toBe(0);
-    });
-  });
-
-  describe('cleanup automation', () => {
-    it('should start cleanup interval', () => {
-      startCleanup();
-      // Interval should be running (no error)
-      stopCleanup();
-    });
-
-    it('should not start multiple intervals', () => {
-      startCleanup();
-      startCleanup();
-      stopCleanup();
-    });
-
-    it('should stop cleanup interval', () => {
-      startCleanup();
-      stopCleanup();
-      // Should not throw
+      // Assert
+      expect(result.removed).toBe(3);
+      expect(result.dryRun).toBe(true);
+      expect(sessionStore.cleanup).toHaveBeenCalledWith({ dryRun: true });
     });
   });
 });

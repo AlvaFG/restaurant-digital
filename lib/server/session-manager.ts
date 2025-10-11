@@ -1,254 +1,475 @@
 /**
- * Session Manager
- * Gestión de sesiones guest para QR ordering con TTL y cleanup automático
+ * Session Manager - v2.0.0
+ * Business Logic for QR Sessions with lifecycle management
+ * 
+ * Integrates QR validation with session store. Handles session
+ * creation, validation, updates, and cleanup.
+ * 
+ * @module session-manager
+ * @version 2.0.0
  */
 
-import { randomBytes } from 'crypto';
+import { createLogger } from '@/lib/logger';
+import { validateToken as validateQRToken, isTokenExpired as isQRTokenExpired } from './qr-service';
+import * as sessionStore from './session-store';
 import type {
-  Session,
-  CreateSessionOptions,
-  SessionStore,
+  QRSession,
+  SessionStatus,
+  SessionCreateRequest,
+  SessionValidationResult,
+  SessionUpdateRequest,
+  SessionStatistics,
+  SessionCleanupOptions,
+  SessionCleanupResult,
+  // Legacy types
+  Session as LegacySession,
+  CreateSessionOptions as LegacyCreateOptions,
 } from './session-types';
 import {
+  SessionStatus as Status,
+  SessionValidationErrorCode,
   DEFAULT_SESSION_TTL,
-  MAX_SESSIONS_PER_TABLE,
-  CLEANUP_INTERVAL,
 } from './session-types';
-import { logger } from '@/lib/logger';
 
-// In-memory store
-const store: SessionStore = {
-  sessions: new Map(),
-  sessionsByTable: new Map(),
-};
+const logger = createLogger('session-manager');
 
-// Cleanup interval reference
-let cleanupIntervalId: NodeJS.Timeout | null = null;
+// ============================================================================
+// SESSION CREATION
+// ============================================================================
 
 /**
- * Inicializa el cleanup automático de sesiones expiradas
+ * Create a new session from QR token
+ * 
+ * @param request - Session create request
+ * @returns Created session
+ * @throws Error if token invalid or session creation fails
  */
-export function startCleanup(): void {
-  if (cleanupIntervalId) {
-    return; // Ya está corriendo
+export async function createSession(request: SessionCreateRequest): Promise<QRSession> {
+  logger.info('[createSession] Creating session');
+
+  // Validate QR token
+  const tokenValidation = await validateQRToken(request.token);
+  if (!tokenValidation.valid) {
+    throw new Error(`Invalid QR token: ${tokenValidation.error}`);
   }
 
-  cleanupIntervalId = setInterval(() => {
-    const removed = cleanupExpiredSessions();
-    if (removed > 0) {
-      logger.info('Session cleanup completed', { removedCount: removed });
-    }
-  }, CLEANUP_INTERVAL);
-
-  logger.info('Session cleanup started', { intervalMs: CLEANUP_INTERVAL });
-}
-
-/**
- * Detiene el cleanup automático
- */
-export function stopCleanup(): void {
-  if (cleanupIntervalId) {
-    clearInterval(cleanupIntervalId);
-    cleanupIntervalId = null;
-    logger.info('Session cleanup stopped');
-  }
-}
-
-/**
- * Crea una nueva sesión guest para una mesa
- */
-export function createGuestSession(options: CreateSessionOptions): Session {
-  const { tableId, ttl = DEFAULT_SESSION_TTL } = options;
-
-  // Verificar límite de sesiones por mesa
-  const tableSessions = store.sessionsByTable.get(tableId);
-  if (tableSessions && tableSessions.size >= MAX_SESSIONS_PER_TABLE) {
-    logger.warn('Max sessions per table reached', {
-      tableId,
-      currentSessions: tableSessions.size,
-    });
-    throw new Error(`Maximum ${MAX_SESSIONS_PER_TABLE} sessions per table`);
+  const { payload, tableData } = tokenValidation;
+  if (!payload || !tableData) {
+    throw new Error('Token validation succeeded but missing data');
   }
 
-  // Generar session ID único
-  const sessionId = `guest_${Date.now()}_${randomBytes(8).toString('hex')}`;
+  // Generate unique session ID
+  const sessionId = generateSessionId();
 
   const now = new Date();
+  const expiresAt = new Date(now.getTime() + DEFAULT_SESSION_TTL * 1000);
+
+  // Create session object
+  const session: QRSession = {
+    id: sessionId,
+    tableId: tableData.id,
+    tableNumber: tableData.number,
+    zone: tableData.zone,
+    token: request.token,
+    status: Status.PENDING,
+    createdAt: now,
+    lastActivityAt: now,
+    expiresAt,
+    ipAddress: request.ipAddress,
+    userAgent: request.userAgent,
+    cartItemsCount: 0,
+    orderIds: [],
+    metadata: request.metadata,
+  };
+
+  // Store session
+  const created = sessionStore.createSession(session);
+
+  logger.info('[createSession] Session created successfully', {
+    sessionId: created.id,
+    tableId: created.tableId,
+    expiresAt: created.expiresAt,
+  });
+
+  return created;
+}
+
+/**
+ * Generate unique session ID
+ */
+function generateSessionId(): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 15);
+  return `session_${timestamp}_${random}`;
+}
+
+// ============================================================================
+// SESSION VALIDATION
+// ============================================================================
+
+/**
+ * Validate session by ID
+ * 
+ * @param sessionId - Session ID
+ * @returns Validation result
+ */
+export async function validateSession(sessionId: string): Promise<SessionValidationResult> {
+  logger.debug('[validateSession] Validating session', { sessionId });
+
+  // Get session from store
+  const session = sessionStore.getSession(sessionId);
+
+  if (!session) {
+    return {
+      valid: false,
+      error: 'Session not found',
+      errorCode: SessionValidationErrorCode.SESSION_NOT_FOUND,
+    };
+  }
+
+  // Check if expired
+  if (session.expiresAt.getTime() <= Date.now()) {
+    return {
+      valid: false,
+      error: 'Session expired. Please scan QR code again.',
+      errorCode: SessionValidationErrorCode.SESSION_EXPIRED,
+      session,
+    };
+  }
+
+  // Check if closed
+  if (session.status === Status.CLOSED) {
+    return {
+      valid: false,
+      error: 'Session closed',
+      errorCode: SessionValidationErrorCode.SESSION_CLOSED,
+      session,
+    };
+  }
+
+  // Validate QR token if needed
+  if (isQRTokenExpired(session.token)) {
+    return {
+      valid: false,
+      error: 'QR token expired. Please request a new QR code.',
+      errorCode: SessionValidationErrorCode.INVALID_TOKEN,
+      session,
+    };
+  }
+
+  // Update last activity
+  sessionStore.updateSession(sessionId, {
+    lastActivityAt: new Date(),
+  });
+
+  return {
+    valid: true,
+    session,
+  };
+}
+
+/**
+ * Validate session by token
+ * 
+ * @param token - JWT token from QR
+ * @returns Validation result with session
+ */
+export async function validateSessionByToken(
+  token: string
+): Promise<SessionValidationResult> {
+  logger.debug('[validateSessionByToken] Validating by token');
+
+  // Find session with this token
+  const allSessions = sessionStore.getAllSessions();
+  const session = allSessions.find((s) => s.token === token);
+
+  if (!session) {
+    return {
+      valid: false,
+      error: 'No active session found for this QR code',
+      errorCode: SessionValidationErrorCode.SESSION_NOT_FOUND,
+    };
+  }
+
+  // Validate the session
+  return validateSession(session.id);
+}
+
+// ============================================================================
+// SESSION UPDATES
+// ============================================================================
+
+/**
+ * Update session
+ * 
+ * @param sessionId - Session ID
+ * @param request - Update request
+ * @returns Updated session
+ * @throws Error if session not found
+ */
+export async function updateSession(
+  sessionId: string,
+  request: SessionUpdateRequest
+): Promise<QRSession> {
+  logger.info('[updateSession] Updating session', { sessionId, updates: Object.keys(request) });
+
+  const session = sessionStore.getSession(sessionId);
+  if (!session) {
+    throw new Error(`Session ${sessionId} not found`);
+  }
+
+  const updates: Partial<QRSession> = {};
+
+  // Status update
+  if (request.status && request.status !== session.status) {
+    validateStatusTransition(session.status, request.status);
+    updates.status = request.status;
+  }
+
+  // Cart count update
+  if (typeof request.cartItemsCount === 'number') {
+    updates.cartItemsCount = Math.max(0, request.cartItemsCount);
+  }
+
+  // Order ID addition
+  if (request.orderId) {
+    updates.orderIds = [...session.orderIds, request.orderId];
+  }
+
+  // Metadata update
+  if (request.metadata) {
+    updates.metadata = {
+      ...session.metadata,
+      ...request.metadata,
+    };
+  }
+
+  // Extend expiration
+  if (request.extend) {
+    return sessionStore.extendSession(sessionId);
+  }
+
+  return sessionStore.updateSession(sessionId, updates);
+}
+
+/**
+ * Validate status transition
+ * 
+ * @throws Error if transition is invalid
+ */
+function validateStatusTransition(from: SessionStatus, to: SessionStatus): void {
+  // Define valid transitions
+  const validTransitions: Record<SessionStatus, SessionStatus[]> = {
+    [Status.PENDING]: [Status.BROWSING, Status.CLOSED, Status.EXPIRED],
+    [Status.BROWSING]: [Status.CART_ACTIVE, Status.CLOSED, Status.EXPIRED],
+    [Status.CART_ACTIVE]: [Status.ORDER_PLACED, Status.BROWSING, Status.CLOSED, Status.EXPIRED],
+    [Status.ORDER_PLACED]: [Status.AWAITING_PAYMENT, Status.PAYMENT_COMPLETED, Status.CLOSED],
+    [Status.AWAITING_PAYMENT]: [Status.PAYMENT_COMPLETED, Status.CLOSED],
+    [Status.PAYMENT_COMPLETED]: [Status.CLOSED],
+    [Status.CLOSED]: [], // No transitions from closed
+    [Status.EXPIRED]: [], // No transitions from expired
+  };
+
+  const allowed = validTransitions[from] || [];
+  if (!allowed.includes(to)) {
+    throw new Error(`Invalid status transition from ${from} to ${to}`);
+  }
+}
+
+/**
+ * Close session
+ * 
+ * @param sessionId - Session ID
+ * @returns Closed session
+ */
+export async function closeSession(sessionId: string): Promise<QRSession> {
+  logger.info('[closeSession] Closing session', { sessionId });
+
+  return sessionStore.updateSession(sessionId, {
+    status: Status.CLOSED,
+  });
+}
+
+/**
+ * Extend session expiration
+ * 
+ * @param sessionId - Session ID
+ * @returns Extended session
+ */
+export async function extendSession(sessionId: string): Promise<QRSession> {
+  logger.info('[extendSession] Extending session', { sessionId });
+
+  return sessionStore.extendSession(sessionId);
+}
+
+// ============================================================================
+// SESSION QUERIES
+// ============================================================================
+
+/**
+ * Get session by ID
+ * 
+ * @param sessionId - Session ID
+ * @returns Session or null
+ */
+export function getSession(sessionId: string): QRSession | null {
+  return sessionStore.getSession(sessionId);
+}
+
+/**
+ * Get all sessions for a table
+ * 
+ * @param tableId - Table ID
+ * @returns Array of sessions
+ */
+export function getSessionsByTable(tableId: string): QRSession[] {
+  return sessionStore.getSessionsByTable(tableId);
+}
+
+/**
+ * Get all active sessions
+ * 
+ * @returns Array of all sessions
+ */
+export function getAllSessions(): QRSession[] {
+  return sessionStore.getAllSessions();
+}
+
+/**
+ * Get session statistics
+ * 
+ * @returns Session statistics
+ */
+export function getStatistics(): SessionStatistics {
+  return sessionStore.getStatistics();
+}
+
+// ============================================================================
+// SESSION LIFECYCLE
+// ============================================================================
+
+/**
+ * Delete session
+ * 
+ * @param sessionId - Session ID
+ * @returns True if deleted
+ */
+export function deleteSession(sessionId: string): boolean {
+  logger.info('[deleteSession] Deleting session', { sessionId });
+  return sessionStore.deleteSession(sessionId);
+}
+
+/**
+ * Delete all sessions for a table
+ * 
+ * @param tableId - Table ID
+ * @returns Number of sessions deleted
+ */
+export function deleteSessionsByTable(tableId: string): number {
+  logger.info('[deleteSessionsByTable] Deleting sessions for table', { tableId });
+  return sessionStore.deleteSessionsByTable(tableId);
+}
+
+/**
+ * Cleanup sessions
+ * 
+ * @param options - Cleanup options
+ * @returns Cleanup result
+ */
+export function cleanup(options?: SessionCleanupOptions): SessionCleanupResult {
+  logger.info('[cleanup] Running cleanup', options ? { options: JSON.stringify(options) } : undefined);
+  return sessionStore.cleanup(options);
+}
+
+/**
+ * Clear all sessions (use with caution!)
+ */
+export function clearAll(): void {
+  logger.warn('[clearAll] Clearing all sessions');
+  sessionStore.clearAll();
+}
+
+// ============================================================================
+// LEGACY COMPATIBILITY
+// ============================================================================
+
+/**
+ * @deprecated Use createSession instead
+ */
+export function createGuestSession(options: LegacyCreateOptions): LegacySession {
+  logger.warn('[createGuestSession] Using deprecated function');
+  
+  const sessionId = generateSessionId();
+  const now = new Date();
+  const ttl = options.ttl || DEFAULT_SESSION_TTL;
   const expiresAt = new Date(now.getTime() + ttl * 1000);
 
-  const session: Session = {
+  const session: LegacySession = {
     sessionId,
-    tableId,
+    tableId: options.tableId,
     createdAt: now,
     lastActivity: now,
     ttl,
     expiresAt,
   };
 
-  // Guardar en store
-  store.sessions.set(sessionId, session);
-
-  // Actualizar índice por mesa
-  if (!store.sessionsByTable.has(tableId)) {
-    store.sessionsByTable.set(tableId, new Set());
-  }
-  store.sessionsByTable.get(tableId)!.add(sessionId);
-
-  logger.info('Guest session created', {
-    sessionId,
-    tableId,
-    expiresAt,
-  });
-
   return session;
 }
 
 /**
- * Obtiene una sesión por ID
+ * @deprecated Use getSessionsByTable instead
  */
-export function getSession(sessionId: string): Session | null {
-  const session = store.sessions.get(sessionId);
-
-  if (!session) {
-    return null;
-  }
-
-  // Verificar si está expirada
-  if (isSessionExpired(session)) {
-    logger.debug('Session expired', { sessionId });
-    invalidateSession(sessionId);
-    return null;
-  }
-
-  return session;
+export function getTableSessions(tableId: string): QRSession[] {
+  return getSessionsByTable(tableId);
 }
 
 /**
- * Extiende el TTL de una sesión actualizando lastActivity
- */
-export function extendSession(sessionId: string): void {
-  const session = store.sessions.get(sessionId);
-
-  if (!session) {
-    logger.warn('Attempt to extend non-existent session', { sessionId });
-    return;
-  }
-
-  if (isSessionExpired(session)) {
-    logger.warn('Attempt to extend expired session', { sessionId });
-    invalidateSession(sessionId);
-    return;
-  }
-
-  const now = new Date();
-  session.lastActivity = now;
-  session.expiresAt = new Date(now.getTime() + session.ttl * 1000);
-
-  store.sessions.set(sessionId, session);
-
-  logger.debug('Session extended', { sessionId, newExpiresAt: session.expiresAt });
-}
-
-/**
- * Invalida una sesión (la elimina del store)
+ * @deprecated Use deleteSession instead
  */
 export function invalidateSession(sessionId: string): void {
-  const session = store.sessions.get(sessionId);
-
-  if (!session) {
-    return;
-  }
-
-  // Remover de store principal
-  store.sessions.delete(sessionId);
-
-  // Remover de índice por mesa
-  const tableSessions = store.sessionsByTable.get(session.tableId);
-  if (tableSessions) {
-    tableSessions.delete(sessionId);
-    if (tableSessions.size === 0) {
-      store.sessionsByTable.delete(session.tableId);
-    }
-  }
-
-  logger.info('Session invalidated', { sessionId, tableId: session.tableId });
+  deleteSession(sessionId);
 }
 
 /**
- * Obtiene todas las sesiones activas de una mesa
- */
-export function getTableSessions(tableId: string): Session[] {
-  const sessionIds = store.sessionsByTable.get(tableId);
-
-  if (!sessionIds) {
-    return [];
-  }
-
-  const sessions: Session[] = [];
-
-  for (const sessionId of sessionIds) {
-    const session = getSession(sessionId);
-    if (session) {
-      sessions.push(session);
-    }
-  }
-
-  return sessions;
-}
-
-/**
- * Limpia todas las sesiones expiradas
- * @returns Número de sesiones eliminadas
- */
-export function cleanupExpiredSessions(): number {
-  let removedCount = 0;
-  const now = new Date();
-
-  for (const [sessionId, session] of store.sessions.entries()) {
-    if (now > session.expiresAt) {
-      invalidateSession(sessionId);
-      removedCount++;
-    }
-  }
-
-  if (removedCount > 0) {
-    logger.debug('Expired sessions cleaned up', { count: removedCount });
-  }
-
-  return removedCount;
-}
-
-/**
- * Verifica si una sesión está expirada
- */
-export function isSessionExpired(session: Session): boolean {
-  return new Date() > session.expiresAt;
-}
-
-/**
- * Obtiene estadísticas del store de sesiones
+ * @deprecated Use getStatistics instead
  */
 export function getSessionStats() {
+  const stats = getStatistics();
   return {
-    totalSessions: store.sessions.size,
-    tablesWithSessions: store.sessionsByTable.size,
+    totalSessions: stats.totalActive,
+    tablesWithSessions: Object.keys(stats.byTable).length,
     avgSessionsPerTable:
-      store.sessionsByTable.size > 0
-        ? store.sessions.size / store.sessionsByTable.size
+      Object.keys(stats.byTable).length > 0
+        ? stats.totalActive / Object.keys(stats.byTable).length
         : 0,
   };
 }
 
 /**
- * Limpia todas las sesiones (para testing)
+ * @deprecated Use cleanup instead
  */
-export function clearAllSessions(): void {
-  store.sessions.clear();
-  store.sessionsByTable.clear();
-  logger.info('All sessions cleared');
+export function cleanupExpiredSessions(): number {
+  const result = cleanup();
+  return result.removed;
 }
 
-// Iniciar cleanup automático al cargar el módulo
-if (process.env.NODE_ENV !== 'test') {
-  startCleanup();
+/**
+ * @deprecated Use clearAll instead
+ */
+export function clearAllSessions(): void {
+  clearAll();
+}
+
+/**
+ * @deprecated Handled automatically by session-store
+ */
+export function startCleanup(): void {
+  logger.warn('[startCleanup] Called deprecated function - cleanup is automatic');
+}
+
+/**
+ * @deprecated Handled automatically by session-store
+ */
+export function stopCleanup(): void {
+  logger.warn('[stopCleanup] Called deprecated function - use session-store');
 }
