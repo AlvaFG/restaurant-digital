@@ -1,21 +1,35 @@
 import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import bcrypt from 'bcryptjs'
+import { manejarError, validarBody, respuestaExitosa, logRequest, logResponse } from '@/lib/api-helpers'
+import { AuthenticationError, ValidationError, DatabaseError } from '@/lib/errors'
+import { MENSAJES } from '@/lib/i18n/mensajes'
+import { logger } from '@/lib/logger'
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
+  
   try {
-    const { email, password } = await request.json()
+    logRequest('POST', '/api/auth/login')
+
+    // Validar y extraer body
+    const { email, password } = await validarBody<{ email: string; password: string }>(request)
 
     // Validar inputs
     if (!email || !password) {
-      return NextResponse.json(
-        { error: 'Email y contraseña son requeridos' },
-        { status: 400 }
-      )
+      throw new ValidationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO, {
+        fields: ['email', 'password']
+      })
+    }
+
+    if (!email.includes('@')) {
+      throw new ValidationError(MENSAJES.VALIDACIONES.EMAIL_INVALIDO)
     }
 
     // Usar admin client para bypassear RLS
     const supabase = createAdminClient()
+
+    logger.info('Buscando usuario', { email })
 
     // 1. Buscar usuario
     const { data: users, error } = await supabase
@@ -33,29 +47,42 @@ export async function POST(request: Request) {
       .eq('active', true)
       .limit(1)
 
-    if (error || !users || users.length === 0) {
-      return NextResponse.json(
-        { error: 'Usuario no encontrado' },
-        { status: 401 }
-      )
+    if (error) {
+      logger.error('Error al buscar usuario', error as Error, { email })
+      throw new DatabaseError(MENSAJES.ERRORES.DB_ERROR, { 
+        operation: 'findUser',
+        email 
+      })
+    }
+
+    if (!users || users.length === 0) {
+      logger.warn('Usuario no encontrado o inactivo', { email })
+      throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
     }
 
     const userData: any = users[0]
 
     // 2. Verificar password
+    logger.debug('Verificando contraseña')
     const isValid = await bcrypt.compare(password, userData.password_hash)
+    
     if (!isValid) {
-      return NextResponse.json(
-        { error: 'Credenciales inválidas' },
-        { status: 401 }
-      )
+      logger.warn('Contraseña inválida', { email })
+      throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
     }
 
     // 3. Actualizar last_login_at
-    await supabase
+    const updateResult = await supabase
       .from('users')
-      .update({ last_login_at: new Date().toISOString() })
+      .update({ last_login_at: new Date().toISOString() } as any)
       .eq('id', userData.id)
+
+    if (updateResult.error) {
+      logger.warn('No se pudo actualizar last_login_at', { 
+        userId: userData.id,
+        error: updateResult.error.message 
+      })
+    }
 
     // 4. Preparar respuesta
     const user = {
@@ -84,12 +111,19 @@ export async function POST(request: Request) {
       },
     }
 
-    return NextResponse.json({ user, tenant }, { status: 200 })
+    const duration = Date.now() - startTime
+    logResponse('POST', '/api/auth/login', 200, duration)
+    
+    logger.info('Login exitoso', { 
+      userId: user.id, 
+      tenantId: tenant.id,
+      duration: `${duration}ms`
+    })
+
+    return respuestaExitosa({ user, tenant }, MENSAJES.EXITOS.LOGIN_EXITOSO)
   } catch (error) {
-    console.error('Login error:', error)
-    return NextResponse.json(
-      { error: 'Error interno del servidor' },
-      { status: 500 }
-    )
+    const duration = Date.now() - startTime
+    logResponse('POST', '/api/auth/login', error instanceof AuthenticationError ? 401 : 500, duration)
+    return manejarError(error, 'login')
   }
 }

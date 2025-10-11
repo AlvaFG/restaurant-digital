@@ -17,6 +17,9 @@ import {
   type PaymentStatus,
   type StoredOrder,
 } from "@/lib/server/order-types"
+import { logRequest, logResponse, manejarError } from '@/lib/api-helpers'
+import { logger } from '@/lib/logger'
+import { MENSAJES } from '@/lib/i18n/mensajes'
 
 const discountSchema = z
   .object({
@@ -241,42 +244,61 @@ function buildOrdersQuery(url: URL): { parsed: OrdersQuery | null; error?: z.Zod
 }
 
 export async function GET(request: Request) {
-  const url = new URL(request.url)
-  const { parsed, error } = buildOrdersQuery(url)
-
-  if (!parsed) {
-    const issue = error?.issues[0]
-    const message = issue?.message ?? "Parametros invalidos"
-
-    return NextResponse.json(
-      {
-        error: {
-          code: "INVALID_QUERY",
-          message,
-          details: issue?.path?.length ? { path: issue.path } : undefined,
-        },
-      },
-      { status: 400 },
-    )
-  }
-
-  const listOptions: ListOrdersOptions = {
-    status: parsed.status as OrderStatus[] | undefined,
-    paymentStatus: parsed.paymentStatus as PaymentStatus | undefined,
-    tableId: parsed.tableId,
-    search: parsed.search,
-    limit: parsed.limit,
-    sort: parsed.sort,
-  }
-
-  const summaryFilters: ListOrdersOptions = { ...listOptions, limit: undefined }
-
+  const startTime = Date.now()
+  
   try {
+    const url = new URL(request.url)
+    logRequest('GET', '/api/order', { query: url.search })
+    
+    const { parsed, error } = buildOrdersQuery(url)
+
+    if (!parsed) {
+      const issue = error?.issues[0]
+      const message = issue?.message ?? MENSAJES.ERRORES.VALIDACION_FALLIDA
+
+      logger.warn('Parámetros de query inválidos', {
+        error: message,
+        path: issue?.path
+      })
+
+      return NextResponse.json(
+        {
+          error: {
+            code: "INVALID_QUERY",
+            message,
+            details: issue?.path?.length ? { path: issue.path } : undefined,
+          },
+        },
+        { status: 400 },
+      )
+    }
+
+    const listOptions: ListOrdersOptions = {
+      status: parsed.status as OrderStatus[] | undefined,
+      paymentStatus: parsed.paymentStatus as PaymentStatus | undefined,
+      tableId: parsed.tableId,
+      search: parsed.search,
+      limit: parsed.limit,
+      sort: parsed.sort,
+    }
+
+    const summaryFilters: ListOrdersOptions = { ...listOptions, limit: undefined }
+
+    logger.debug('Obteniendo pedidos', { filters: listOptions })
+
     const [orders, storeMetadata, summary] = await Promise.all([
       listOrders(listOptions),
       getOrderStoreMetadata(),
       getOrdersSummary(summaryFilters),
     ])
+
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/order', 200, duration)
+    
+    logger.info('Pedidos obtenidos', {
+      count: orders.length,
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json<OrdersIndexResponse>({
       data: orders.map(serializeOrder),
@@ -286,9 +308,13 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error("[api/order] Error obteniendo pedidos", error)
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/order', 500, duration)
+    
+    logger.error('Error obteniendo pedidos', error as Error)
+    
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "No se pudieron obtener los pedidos" } },
+      { error: { code: "INTERNAL_ERROR", message: MENSAJES.ERRORES.GENERICO } },
       { status: 500 },
     )
   }
