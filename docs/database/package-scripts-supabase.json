@@ -1,0 +1,23 @@
+{
+  "scripts": {
+    "build": "next build",
+    "dev": "next dev",
+    "lint": "next lint",
+    "start": "next start",
+    "test": "vitest run",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:headed": "playwright test --headed",
+    "test:e2e:report": "playwright show-report",
+    "supabase:start": "npx supabase start",
+    "supabase:stop": "npx supabase stop",
+    "supabase:status": "npx supabase status",
+    "supabase:reset": "npx supabase db reset",
+    "supabase:types": "npx supabase gen types typescript --local > lib/supabase/types.ts",
+    "supabase:push": "npx supabase db push",
+    "supabase:studio": "npx supabase studio",
+    "db:migrate": "npx supabase migration new",
+    "db:reset": "npx supabase db reset",
+    "db:seed": "npx tsx scripts/seed-supabase.ts"
+  }
+}
