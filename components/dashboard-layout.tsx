@@ -5,6 +5,7 @@ import { useEffect, type ReactNode } from "react"
 import { ErrorBoundary } from "@/components/error-boundary"
 import { ProtectedRoute } from "@/components/protected-route"
 import { SidebarNav } from "@/components/sidebar-nav"
+import { ThemeToggle } from "@/components/theme-toggle"
 import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useSocket } from "@/hooks/use-socket"
@@ -67,13 +68,14 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
           <SidebarNav />
           <main className="flex-1 overflow-auto">
             <div className="container mx-auto max-w-7xl p-6 space-y-4">
-              <div className="flex justify-end">
+              <div className="flex justify-end gap-2 items-center">
                 <Badge
                   variant={isConnected ? "secondary" : "outline"}
                   className={isReconnecting ? "animate-pulse" : undefined}
                 >
                   {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
                 </Badge>
+                <ThemeToggle />
               </div>
               {children}
             </div>
