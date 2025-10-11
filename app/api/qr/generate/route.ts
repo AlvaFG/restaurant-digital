@@ -12,6 +12,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { generateQR, generateBatch } from '@/lib/server/qr-service';
 import { createLogger } from '@/lib/logger';
 import type { QRGenerationOptions, BatchQRGenerationRequest } from '@/lib/server/qr-types';
+import { logRequest, logResponse, validarBody } from '@/lib/api-helpers';
+import { MENSAJES } from '@/lib/i18n/mensajes';
+import { ValidationError } from '@/lib/errors';
 
 const logger = createLogger('api:qr:generate');
 
@@ -23,92 +26,52 @@ const logger = createLogger('api:qr:generate');
  * POST /api/qr/generate
  * 
  * Generate QR code for a single table
- * 
- * Request Body:
- * {
- *   tableId: string
- *   options?: QRGenerationOptions
- * }
- * 
- * Response:
- * {
- *   success: true
- *   data: GeneratedQRCode
- * }
- * 
- * @example
- * ```bash
- * curl -X POST http://localhost:3000/api/qr/generate \
- *   -H "Content-Type: application/json" \
- *   -d '{"tableId": "table-1"}'
- * ```
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    // TODO: Add staff authentication when implemented
-    // const session = await getSession(request);
-    // if (!session || session.user.role !== 'staff') {
-    //   return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    // }
-
-    const body = await request.json();
-    const { tableId, options } = body as {
+    logRequest('POST', '/api/qr/generate')
+    
+    const body = await validarBody<{
       tableId: string;
       options?: QRGenerationOptions;
-    };
+    }>(request);
+    
+    const { tableId, options } = body;
 
     // Validation
     if (!tableId || typeof tableId !== 'string') {
-      logger.warn('[POST /api/qr/generate] Missing or invalid tableId', { body });
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'tableId is required and must be a string',
-        },
-        { status: 400 }
-      );
+      logger.warn('tableId faltante o inválido en generación de QR', { body });
+      throw new ValidationError('tableId is required and must be a string')
     }
 
     // Validate options if provided
     if (options) {
       if (options.size && (typeof options.size !== 'number' || options.size < 100 || options.size > 1000)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'size must be a number between 100 and 1000',
-          },
-          { status: 400 }
-        );
+        throw new ValidationError('size must be a number between 100 and 1000')
       }
 
       if (options.errorCorrectionLevel && !['L', 'M', 'Q', 'H'].includes(options.errorCorrectionLevel)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'errorCorrectionLevel must be L, M, Q, or H',
-          },
-          { status: 400 }
-        );
+        throw new ValidationError('errorCorrectionLevel must be L, M, Q, or H')
       }
 
       if (options.margin && (typeof options.margin !== 'number' || options.margin < 0 || options.margin > 10)) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'margin must be a number between 0 and 10',
-          },
-          { status: 400 }
-        );
+        throw new ValidationError('margin must be a number between 0 and 10')
       }
     }
 
     // Generate QR
-    logger.info(`[POST /api/qr/generate] Generating QR for table ${tableId}`);
+    logger.info('Generando QR para mesa', { tableId });
     const qrCode = await generateQR(tableId, options);
 
-    logger.info(`[POST /api/qr/generate] QR generated successfully`, {
+    const duration = Date.now() - startTime
+    logResponse('POST', '/api/qr/generate', 200, duration)
+    
+    logger.info('QR generado exitosamente', {
       tableId,
       expiresAt: qrCode.expiresAt,
+      duration: `${duration}ms`
     });
 
     return NextResponse.json(
@@ -119,29 +82,27 @@ export async function POST(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    logger.error(
-      '[POST /api/qr/generate] Error generating QR:',
-      error instanceof Error ? error : new Error(String(error))
-    );
+    const duration = Date.now() - startTime
+    
+    if (error instanceof ValidationError) {
+      logResponse('POST', '/api/qr/generate', 400, duration)
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+    }
 
     // Handle specific errors
     if (error instanceof Error) {
       if (error.message.includes('not found')) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: error.message,
-          },
-          { status: 404 }
-        );
+        logResponse('POST', '/api/qr/generate', 404, duration)
+        logger.warn('Mesa no encontrada al generar QR', { error: error.message })
+        return NextResponse.json({ success: false, error: error.message }, { status: 404 })
       }
     }
 
+    logResponse('POST', '/api/qr/generate', 500, duration)
+    logger.error('Error al generar código QR', error instanceof Error ? error : new Error(String(error)));
+
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to generate QR code',
-      },
+      { success: false, error: MENSAJES.ERRORES.GENERICO },
       { status: 500 }
     );
   }
@@ -152,83 +113,55 @@ export async function POST(request: NextRequest) {
 // ============================================================================
 
 /**
- * POST /api/qr/generate/batch
+ * PUT /api/qr/generate/batch
  * 
  * Generate QR codes for multiple tables
- * 
- * Request Body:
- * {
- *   tableIds: string[]
- *   options?: QRGenerationOptions
- * }
- * 
- * Response:
- * {
- *   success: true
- *   data: BatchQRGenerationResult
- * }
- * 
- * @example
- * ```bash
- * curl -X POST http://localhost:3000/api/qr/generate/batch \
- *   -H "Content-Type: application/json" \
- *   -d '{"tableIds": ["table-1", "table-2", "table-3"]}'
- * ```
  */
 export async function PUT(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    const body = await request.json();
-    const { tableIds, options } = body as {
+    logRequest('PUT', '/api/qr/generate/batch')
+    
+    const body = await validarBody<{
       tableIds: string[];
       options?: QRGenerationOptions;
-    };
+    }>(request);
+    
+    const { tableIds, options } = body;
 
     // Validation
     if (!Array.isArray(tableIds) || tableIds.length === 0) {
-      logger.warn('[PUT /api/qr/generate/batch] Missing or invalid tableIds', { body });
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'tableIds is required and must be a non-empty array',
-        },
-        { status: 400 }
-      );
+      logger.warn('tableIds faltante o inválido en generación batch', { body });
+      throw new ValidationError('tableIds is required and must be a non-empty array')
     }
 
     // Validate all tableIds are strings
     if (!tableIds.every((id) => typeof id === 'string')) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'all tableIds must be strings',
-        },
-        { status: 400 }
-      );
+      throw new ValidationError('all tableIds must be strings')
     }
 
     // Limit batch size
     if (tableIds.length > 100) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'batch size limited to 100 tables',
-        },
-        { status: 400 }
-      );
+      throw new ValidationError('batch size limited to 100 tables')
     }
 
     // Generate batch
-    logger.info(`[PUT /api/qr/generate/batch] Generating QRs for ${tableIds.length} tables`);
+    logger.info('Generando QRs en lote', { count: tableIds.length });
     const request_data: BatchQRGenerationRequest = {
       tableIds,
       options,
     };
     const result = await generateBatch(request_data);
 
-    logger.info(`[PUT /api/qr/generate/batch] Batch complete`, {
+    const duration = Date.now() - startTime
+    logResponse('PUT', '/api/qr/generate/batch', 200, duration)
+    
+    logger.info('Lote de QRs completado', {
       total: result.summary.total,
       successful: result.summary.successful,
       failed: result.summary.failed,
+      duration: `${duration}ms`
     });
 
     return NextResponse.json(
@@ -239,16 +172,18 @@ export async function PUT(request: NextRequest) {
       { status: 200 }
     );
   } catch (error) {
-    logger.error(
-      '[PUT /api/qr/generate/batch] Error generating batch:',
-      error instanceof Error ? error : new Error(String(error))
-    );
+    const duration = Date.now() - startTime
+    
+    if (error instanceof ValidationError) {
+      logResponse('PUT', '/api/qr/generate/batch', 400, duration)
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+    }
+    
+    logResponse('PUT', '/api/qr/generate/batch', 500, duration)
+    logger.error('Error al generar lote de QRs', error instanceof Error ? error : new Error(String(error)));
 
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Failed to generate QR codes',
-      },
+      { success: false, error: MENSAJES.ERRORES.GENERICO },
       { status: 500 }
     );
   }

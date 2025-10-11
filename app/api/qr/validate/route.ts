@@ -2,17 +2,6 @@
  * QR Validate API v2.0.0
  * POST /api/qr/validate
  * Valida un token JWT de QR y crea/retorna una sesión QR para el cliente
- * 
- * @endpoint POST /api/qr/validate
- * @body { token: string }
- * @returns { success: boolean, data?: { session, table }, error?: string }
- * 
- * @changes v2.0.0
- * - Migrado a session-manager v2.0.0 (createSession)
- * - Integrado con QRSession types (SessionStatus, SessionValidationResult)
- * - Mejor estructura de respuesta (success/data/error)
- * - Validación mejorada con SessionValidationErrorCode
- * - Captura de userAgent e ipAddress en sesión
  */
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -20,6 +9,9 @@ import { createSession, validateSessionByToken } from '@/lib/server/session-mana
 import { getTableById } from '@/lib/server/table-store';
 import { logger } from '@/lib/logger';
 import { SessionValidationErrorCode } from '@/lib/server/session-types';
+import { logRequest, logResponse, validarBody } from '@/lib/api-helpers';
+import { MENSAJES } from '@/lib/i18n/mensajes';
+import { ValidationError } from '@/lib/errors';
 
 // Rate limiting simple (en producción usar una librería como rate-limiter-flexible)
 const requestCounts = new Map<string, { count: number; resetAt: number }>();
@@ -56,29 +48,34 @@ function getClientUserAgent(request: NextRequest): string {
 }
 
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  const ip = getClientIP(request);
+  
   try {
-    // Rate limiting
-    const ip = getClientIP(request);
+    logRequest('POST', '/api/qr/validate', { ip })
     
+    // Rate limiting
     if (!checkRateLimit(ip)) {
-      logger.warn('[validate] Rate limit exceeded', { ip });
+      logger.warn('Límite de rate excedido en validación QR', { ip });
+      
+      const duration = Date.now() - startTime
+      logResponse('POST', '/api/qr/validate', 429, duration)
+      
       return NextResponse.json(
         { success: false, error: 'Too many requests' },
         { status: 429 }
       );
     }
 
-    const body = await request.json();
+    const body = await validarBody<{ token: string }>(request);
     const { token } = body;
 
     if (!token || typeof token !== 'string') {
-      return NextResponse.json(
-        { success: false, error: 'token is required and must be a string' },
-        { status: 400 }
-      );
+      throw new ValidationError('token is required and must be a string')
     }
 
     // Opción 1: Validar sesión existente (si el cliente ya escaneó antes)
+    logger.debug('Verificando si existe sesión para token', { ip })
     const existingValidation = await validateSessionByToken(token);
 
     if (existingValidation.valid && existingValidation.session) {
@@ -86,21 +83,29 @@ export async function POST(request: NextRequest) {
       const table = await getTableById(session.tableId);
 
       if (!table) {
-        logger.warn('[validate] Session found but table missing', { 
+        logger.warn('Sesión encontrada pero mesa faltante', { 
           sessionId: session.id, 
           tableId: session.tableId 
         });
+        
+        const duration = Date.now() - startTime
+        logResponse('POST', '/api/qr/validate', 404, duration)
+        
         return NextResponse.json(
           { success: false, error: 'Table not found' },
           { status: 404 }
         );
       }
 
-      logger.info('[validate] Existing session validated', {
+      const duration = Date.now() - startTime
+      logResponse('POST', '/api/qr/validate', 200, duration)
+      
+      logger.info('Sesión existente validada', {
         sessionId: session.id,
         tableId: session.tableId,
         status: session.status,
         ip,
+        duration: `${duration}ms`
       });
 
       return NextResponse.json({
@@ -132,6 +137,8 @@ export async function POST(request: NextRequest) {
     try {
       const userAgent = getClientUserAgent(request);
 
+      logger.info('Creando nueva sesión desde QR', { ip })
+      
       const session = await createSession({
         token,
         ipAddress: ip,
@@ -145,25 +152,31 @@ export async function POST(request: NextRequest) {
       const table = await getTableById(session.tableId);
 
       if (!table) {
-        logger.error('[validate] Session created but table not found', undefined, {
+        logger.error('Sesión creada pero mesa no encontrada', undefined, {
           sessionId: session.id,
           tableId: session.tableId,
         });
+        
+        const duration = Date.now() - startTime
+        logResponse('POST', '/api/qr/validate', 404, duration)
+        
         return NextResponse.json(
           { success: false, error: 'Table not found' },
           { status: 404 }
         );
       }
 
-      logger.info('[validate] New session created successfully', {
-        session: {
-          sessionId: session.id,
-          tableId: session.tableId,
-          tableNumber: session.tableNumber,
-          zone: session.zone,
-        },
+      const duration = Date.now() - startTime
+      logResponse('POST', '/api/qr/validate', 200, duration)
+      
+      // Log de auditoría SIN user agent completo (solo primeros 50 chars)
+      logger.info('Nueva sesión QR creada exitosamente', {
+        sessionId: session.id,
+        tableId: session.tableId,
+        tableNumber: session.tableNumber,
+        zone: session.zone,
         ip,
-        userAgent: userAgent.substring(0, 50), // Log solo primeros 50 chars
+        duration: `${duration}ms`
       });
 
       return NextResponse.json({
@@ -194,7 +207,11 @@ export async function POST(request: NextRequest) {
       const message = error instanceof Error ? error.message : String(error);
       
       if (message.includes('Invalid or expired token')) {
-        logger.warn('[validate] Invalid QR token attempt', { ip, error: message });
+        logger.warn('Intento de usar token QR inválido', { ip, error: message });
+        
+        const duration = Date.now() - startTime
+        logResponse('POST', '/api/qr/validate', 400, duration)
+        
         return NextResponse.json(
           { 
             success: false,
@@ -206,7 +223,11 @@ export async function POST(request: NextRequest) {
       }
 
       if (message.includes('Table not found')) {
-        logger.warn('[validate] QR token for non-existent table', { ip, error: message });
+        logger.warn('Token QR para mesa inexistente', { ip, error: message });
+        
+        const duration = Date.now() - startTime
+        logResponse('POST', '/api/qr/validate', 404, duration)
+        
         return NextResponse.json(
           { 
             success: false,
@@ -221,11 +242,20 @@ export async function POST(request: NextRequest) {
       throw error;
     }
   } catch (error) {
-    logger.error('[validate] Failed to validate QR token', error instanceof Error ? error : new Error(String(error)));
+    const duration = Date.now() - startTime
+    
+    if (error instanceof ValidationError) {
+      logResponse('POST', '/api/qr/validate', 400, duration)
+      return NextResponse.json({ success: false, error: error.message }, { status: 400 })
+    }
+    
+    logResponse('POST', '/api/qr/validate', 500, duration)
+    logger.error('Error al validar token QR', error instanceof Error ? error : new Error(String(error)));
+    
     return NextResponse.json(
       { 
         success: false,
-        error: 'Internal server error',
+        error: MENSAJES.ERRORES.GENERICO,
         code: SessionValidationErrorCode.SERVER_ERROR,
       },
       { status: 500 }

@@ -7,13 +7,23 @@
 import { NextResponse } from 'next/server';
 import { getAllSessions } from '@/lib/server/session-manager';
 import { logger } from '@/lib/logger';
+import { logRequest, logResponse } from '@/lib/api-helpers';
+import { MENSAJES } from '@/lib/i18n/mensajes';
 
 export async function GET() {
+  const startTime = Date.now()
+  
   try {
+    logRequest('GET', '/api/sessions')
+    
     const sessions = getAllSessions();
 
-    logger.info('[sessions] Retrieved all sessions', {
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/sessions', 200, duration)
+    
+    logger.info('Sesiones obtenidas', {
       count: sessions.length,
+      duration: `${duration}ms`
     });
 
     return NextResponse.json({
@@ -22,12 +32,15 @@ export async function GET() {
       count: sessions.length,
     });
   } catch (error) {
-    logger.error('[sessions] Failed to retrieve sessions', error instanceof Error ? error : new Error(String(error)));
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/sessions', 500, duration)
+    
+    logger.error('Error al obtener sesiones', error instanceof Error ? error : new Error(String(error)));
     
     return NextResponse.json(
       {
         success: false,
-        error: 'Internal server error',
+        error: MENSAJES.ERRORES.GENERICO,
         sessions: [],
         count: 0,
       },
