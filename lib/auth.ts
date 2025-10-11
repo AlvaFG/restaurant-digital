@@ -66,19 +66,22 @@ export class AuthService {
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await response.json();
+      const responseData = await response.json();
 
       if (!response.ok) {
         logger.error('Error en login', undefined, { 
           email, 
           status: response.status,
-          error: data.error 
+          error: responseData.error 
         });
-        throw new AuthenticationError(
-          data.error || MENSAJES.ERRORES.CREDENCIALES_INVALIDAS
-        );
+        
+        // Extraer mensaje de error del objeto error
+        const errorMessage = responseData.error?.message || responseData.error || MENSAJES.ERRORES.CREDENCIALES_INVALIDAS;
+        throw new AuthenticationError(errorMessage);
       }
 
+      // La respuesta exitosa viene en el formato { data: { user, tenant }, message }
+      const data = responseData.data || responseData;
       const { user, tenant } = data;
 
       // Store in localStorage
