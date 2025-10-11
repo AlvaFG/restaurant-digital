@@ -1,17 +1,29 @@
 "use client"
 
+import { useState } from "react"
+import dynamic from "next/dynamic"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { MenuAllergen, MenuItem } from "@/lib/mock-data"
+import type { CartItemModifier } from "../_types/modifiers"
 import { cn } from "@/lib/utils"
-import { AlertTriangle, Minus, Plus } from "lucide-react"
+import { AlertTriangle, Edit3, Minus, Plus } from "lucide-react"
+
+// Dynamic import for modal - only loads when needed
+const ItemCustomizationModal = dynamic(
+  () => import("./item-customization-modal").then((mod) => mod.ItemCustomizationModal),
+  {
+    loading: () => <div className="animate-pulse">Cargando...</div>,
+    ssr: false,
+  }
+)
 
 interface QrMenuItemCardProps {
   item: MenuItem
   quantity?: number
   currencyFormatter: Intl.NumberFormat
   allergenMap: Map<string, MenuAllergen>
-  onAdd: () => void
+  onAdd: (modifiers?: CartItemModifier[], notes?: string) => void
   onIncrement: () => void
   onDecrement: () => void
 }
@@ -25,8 +37,23 @@ export function QrMenuItemCard({
   onIncrement,
   onDecrement,
 }: QrMenuItemCardProps) {
+  const [showCustomization, setShowCustomization] = useState(false)
   const price = currencyFormatter.format(item.priceCents / 100)
   const isUnavailable = item.available === false
+  const hasModifiers = item.modifierGroups && item.modifierGroups.length > 0
+
+  const handleAddClick = () => {
+    if (hasModifiers) {
+      setShowCustomization(true)
+    } else {
+      onAdd()
+    }
+  }
+
+  const handleCustomizationComplete = (modifiers: CartItemModifier[], notes?: string) => {
+    onAdd(modifiers, notes)
+    setShowCustomization(false)
+  }
 
   return (
     <article
@@ -129,13 +156,29 @@ export function QrMenuItemCard({
           <Button
             type="button"
             className="min-h-[3rem] min-w-[8rem] rounded-full font-semibold"
-            onClick={onAdd}
+            onClick={handleAddClick}
             disabled={isUnavailable}
           >
-            Agregar
+            {hasModifiers ? (
+              <>
+                <Edit3 className="mr-2 size-4" aria-hidden="true" />
+                Personalizar
+              </>
+            ) : (
+              "Agregar"
+            )}
           </Button>
         </div>
       </div>
+
+      {/* Customization Modal */}
+      <ItemCustomizationModal
+        item={item}
+        isOpen={showCustomization}
+        onClose={() => setShowCustomization(false)}
+        onAddToCart={handleCustomizationComplete}
+        currencyFormatter={currencyFormatter}
+      />
     </article>
   )
 }

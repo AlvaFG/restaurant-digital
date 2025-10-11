@@ -82,6 +82,91 @@ describe("menu API", () => {
     const body = await response.json()
     expect(body.error).toBeDefined()
   })
+
+  it("POST /api/menu/orders accepts items with modifiers and notes", async () => {
+    const { POST } = await import("@/app/api/menu/orders/route")
+
+    const response = await POST(
+      new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          tableId: "1",
+          items: [
+            {
+              menuItemId: "1",
+              quantity: 2,
+              modifiers: [
+                {
+                  groupId: "size",
+                  groupName: "Tamaño",
+                  optionId: "large",
+                  optionName: "Grande",
+                  priceCents: 300,
+                },
+              ],
+              notes: "Sin cebolla",
+            },
+          ],
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    expect(body.data.items[0].modifiers).toBeDefined()
+    expect(body.data.items[0].modifiers).toHaveLength(1)
+    expect(body.data.items[0].modifiers[0].optionName).toBe("Grande")
+    expect(body.data.items[0].notes).toBe("Sin cebolla")
+    expect(body.data.items[0].price).toBe(2100) // 1800 base + 300 modifier
+  })
+
+  it("POST /api/menu/orders accepts items without modifiers (backward compatibility)", async () => {
+    const { POST } = await import("@/app/api/menu/orders/route")
+
+    const response = await POST(
+      new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          tableId: "1",
+          items: [
+            {
+              menuItemId: "1",
+              quantity: 1,
+            },
+          ],
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(201)
+    const body = await response.json()
+    expect(body.data.items[0].price).toBe(1800) // Solo precio base
+  })
+
+  it("POST /api/menu/orders rejects notes exceeding 200 characters", async () => {
+    const { POST } = await import("@/app/api/menu/orders/route")
+
+    const longNotes = "a".repeat(201)
+    const response = await POST(
+      new Request("http://localhost", {
+        method: "POST",
+        body: JSON.stringify({
+          tableId: "1",
+          items: [
+            {
+              menuItemId: "1",
+              quantity: 1,
+              notes: longNotes,
+            },
+          ],
+        }),
+      }),
+    )
+
+    expect(response.status).toBe(400)
+    const body = await response.json()
+    expect(body.error).toContain("200 caracteres")
+  })
 })
 
 

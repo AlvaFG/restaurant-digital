@@ -6,10 +6,20 @@ import { getMenuMetadata } from "@/lib/server/menu-store"
 
 import { buildMenuHeaders } from "../utils"
 
+const modifierSchema = z.object({
+  groupId: z.string(),
+  groupName: z.string(),
+  optionId: z.string(),
+  optionName: z.string(),
+  priceCents: z.number().int(),
+})
+
 const orderItemSchema = z
   .object({
     menuItemId: z.string().trim().min(1, "El identificador del plato es obligatorio"),
     quantity: z.coerce.number().int("La cantidad debe ser un entero").min(1, "La cantidad debe ser al menos 1"),
+    modifiers: z.array(modifierSchema).optional(),
+    notes: z.string().max(200, "Las notas no pueden exceder 200 caracteres").optional(),
   })
   .strict()
 

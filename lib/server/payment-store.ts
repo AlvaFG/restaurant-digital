@@ -10,6 +10,7 @@
  */
 
 import fs from 'fs/promises'
+import { mkdirSync, existsSync } from 'fs'
 import path from 'path'
 import { randomBytes } from 'crypto'
 import { getSocketBus } from '@/lib/server/socket-bus'
@@ -111,9 +112,11 @@ class PaymentStore {
           })),
         }
 
-        // Ensure directory exists before writing
+        // Ensure directory exists before writing (synchronous to avoid race conditions)
         const dir = path.dirname(STORE_PATH)
-        await fs.mkdir(dir, { recursive: true })
+        if (!existsSync(dir)) {
+          mkdirSync(dir, { recursive: true })
+        }
         
         await fs.writeFile(STORE_PATH, JSON.stringify(serialized, null, 2), 'utf-8')
         this.cache = data

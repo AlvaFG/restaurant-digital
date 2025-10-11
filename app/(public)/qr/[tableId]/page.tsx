@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
+import { useRouter } from "next/navigation"
 
 import { useMenuCatalog } from "@/app/menu/_hooks/use-menu-catalog"
 import { Button } from "@/components/ui/button"
@@ -16,7 +17,9 @@ import { QrCategoryTabs } from "../_components/qr-category-tabs"
 import { QrMenuHeader } from "../_components/qr-menu-header"
 import { QrMenuItemCard } from "../_components/qr-menu-item-card"
 import { useQrCart } from "../_hooks/use-qr-cart"
+import { useQrSession } from "../_hooks/use-qr-session"
 import { useQrTable } from "../_hooks/use-qr-table"
+import type { CartItemModifier } from "../_types/modifiers"
 
 interface PageParams {
   params: {
@@ -26,7 +29,17 @@ interface PageParams {
 
 export default function QrTablePage({ params }: PageParams) {
   const tableId = params.tableId
+  const router = useRouter()
   const { toast } = useToast()
+
+  // Validate QR session first
+  const { 
+    session, 
+    isValidating: isSessionValidating, 
+    isExpired, 
+    isTableMismatch,
+    error: sessionError 
+  } = useQrSession(tableId)
 
   const {
     categories,
@@ -84,9 +97,45 @@ export default function QrTablePage({ params }: PageParams) {
     increment,
     decrement,
     clear,
-  } = useQrCart(tableId, items)
+  } = useQrCart(tableId, session?.sessionId, items)
 
   const isInitialLoading = isMenuLoading || isTableLoading
+
+  // Handle session validation errors
+  useEffect(() => {
+    if (isExpired) {
+      toast({
+        title: "Sesión expirada",
+        description: "Por favor, escanea el código QR de tu mesa nuevamente.",
+        variant: "destructive",
+      })
+      setTimeout(() => {
+        router.push("/qr/validate")
+      }, 2000)
+    }
+
+    if (isTableMismatch && session) {
+      toast({
+        title: "Mesa incorrecta",
+        description: `Esta sesión es para la mesa ${session.table?.number || session.tableId}`,
+        variant: "destructive",
+      })
+      setTimeout(() => {
+        router.push(`/qr/${session.tableId}`)
+      }, 2000)
+    }
+
+    if (sessionError && !session) {
+      toast({
+        title: "Sesión no válida",
+        description: "Por favor, escanea el código QR de tu mesa.",
+        variant: "destructive",
+      })
+      setTimeout(() => {
+        router.push("/qr/validate")
+      }, 2000)
+    }
+  }, [isExpired, isTableMismatch, session, sessionError, router, toast])
 
   useEffect(() => {
     if (selectedCategoryId && !categories.some((category) => category.id === selectedCategoryId)) {
@@ -104,7 +153,7 @@ export default function QrTablePage({ params }: PageParams) {
       .sort((a, b) => a.name.localeCompare(b.name, "es"))
   }, [items, selectedCategoryId])
 
-  const handleAddItem = (menuItem: MenuItem) => {
+  const handleAddItem = (menuItem: MenuItem, modifiers?: CartItemModifier[], notes?: string) => {
     if (menuItem.available === false) {
       toast({
         title: "Plato no disponible",
@@ -113,7 +162,7 @@ export default function QrTablePage({ params }: PageParams) {
       })
       return
     }
-    addOrIncrement(menuItem.id)
+    addOrIncrement(menuItem.id, modifiers, notes)
   }
 
   const handleSubmitOrder = async () => {
@@ -132,6 +181,7 @@ export default function QrTablePage({ params }: PageParams) {
         },
         body: JSON.stringify({
           tableId,
+          sessionId: session?.sessionId, // Include session ID
           items: detailedItems.map((entry) => ({
             menuItemId: entry.item.id,
             quantity: entry.quantity,
@@ -189,6 +239,30 @@ export default function QrTablePage({ params }: PageParams) {
 
   const refetchAll = () => {
     void Promise.all([refetchMenu(), refetchTable()]).catch(() => undefined)
+  }
+
+  // Show loading while validating session
+  if (isSessionValidating) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <div className="mx-auto w-full max-w-screen-sm px-4 pt-20 text-center">
+          <Loader2 className="mx-auto size-12 animate-spin text-primary" aria-hidden="true" />
+          <p className="mt-4 text-sm text-muted-foreground">Validando sesión...</p>
+        </div>
+      </div>
+    )
+  }
+
+  // Don't render anything if redirecting due to session errors
+  if (isExpired || isTableMismatch || (sessionError && !session)) {
+    return (
+      <div className="flex min-h-screen flex-col bg-background">
+        <div className="mx-auto w-full max-w-screen-sm px-4 pt-20 text-center">
+          <AlertCircle className="mx-auto size-12 text-destructive" aria-hidden="true" />
+          <p className="mt-4 text-sm text-muted-foreground">Redirigiendo...</p>
+        </div>
+      </div>
+    )
   }
 
   if (isTableNotFound) {
@@ -269,18 +343,33 @@ export default function QrTablePage({ params }: PageParams) {
                 </div>
               ) : (
                 <div className="grid gap-4">
-                  {filteredItems.map((item) => (
-                    <QrMenuItemCard
-                      key={item.id}
-                      item={item}
-                      quantity={detailedItems.find((entry) => entry.item.id === item.id)?.quantity ?? 0}
-                      currencyFormatter={currencyFormatter}
-                      allergenMap={allergenMap}
-                      onAdd={() => handleAddItem(item)}
-                      onIncrement={() => increment(item.id)}
-                      onDecrement={() => decrement(item.id)}
-                    />
-                  ))}
+                  {filteredItems.map((item) => {
+                    // For items with modifiers, show total quantity across all customizations
+                    const totalQuantity = detailedItems
+                      .filter((entry) => entry.item.id === item.id)
+                      .reduce((sum, entry) => sum + entry.quantity, 0)
+
+                    return (
+                      <QrMenuItemCard
+                        key={item.id}
+                        item={item}
+                        quantity={totalQuantity}
+                        currencyFormatter={currencyFormatter}
+                        allergenMap={allergenMap}
+                        onAdd={(modifiers, notes) => handleAddItem(item, modifiers, notes)}
+                        onIncrement={() => addOrIncrement(item.id)}
+                        onDecrement={() => {
+                          // For items with modifiers, decrement the most recent customization
+                          const lastEntry = detailedItems
+                            .filter((entry) => entry.item.id === item.id)
+                            .pop()
+                          if (lastEntry) {
+                            decrement(lastEntry.customizationId)
+                          }
+                        }}
+                      />
+                    )
+                  })}
                 </div>
               )}
             </section>
@@ -295,8 +384,8 @@ export default function QrTablePage({ params }: PageParams) {
         itemCount={itemCount}
         hasUnavailableItems={hasUnavailableItems}
         isSubmitting={isSubmittingOrder}
-        onIncrement={(menuItemId) => increment(menuItemId)}
-        onDecrement={(menuItemId) => decrement(menuItemId)}
+        onIncrement={(customizationId) => increment(customizationId)}
+        onDecrement={(customizationId) => decrement(customizationId)}
         onClear={clear}
         onSubmit={handleSubmitOrder}
         successOrderId={lastOrderId}

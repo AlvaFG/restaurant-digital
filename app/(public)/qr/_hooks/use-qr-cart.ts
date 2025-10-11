@@ -3,21 +3,36 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import type { MenuItem } from "@/lib/mock-data"
+import type { CartItemModifier } from "../_types/modifiers"
 
 interface CartEntry {
   menuItemId: string
   quantity: number
+  modifiers: CartItemModifier[]
+  notes?: string
+  customizationId: string
 }
 
 export interface DetailedCartEntry {
   item: MenuItem
   quantity: number
+  modifiers: CartItemModifier[]
+  notes: string | undefined
+  customizationId: string
 }
 
 const STORAGE_PREFIX = "restaurant-qr-cart:v1:"
 
-function getStorageKey(tableId: string) {
-  return STORAGE_PREFIX + tableId
+/**
+ * Generate storage key for cart data
+ * If sessionId is provided, use it for session-based cart (future: multi-device sync)
+ * Otherwise fall back to table-based cart for legacy support
+ */
+function getStorageKey(tableId: string, sessionId?: string) {
+  if (sessionId) {
+    return `${STORAGE_PREFIX}session:${sessionId}`
+  }
+  return `${STORAGE_PREFIX}table:${tableId}`
 }
 
 function sanitizeQuantity(value: number) {
@@ -27,13 +42,13 @@ function sanitizeQuantity(value: number) {
   return Math.max(0, Math.floor(value))
 }
 
-function readCart(tableId: string): CartEntry[] {
+function readCart(tableId: string, sessionId?: string): CartEntry[] {
   if (typeof window === "undefined") {
     return []
   }
 
   try {
-    const raw = window.localStorage.getItem(getStorageKey(tableId))
+    const raw = window.localStorage.getItem(getStorageKey(tableId, sessionId))
     if (!raw) {
       return []
     }
@@ -45,6 +60,9 @@ function readCart(tableId: string): CartEntry[] {
       .map((entry) => ({
         menuItemId: String(entry.menuItemId),
         quantity: sanitizeQuantity(Number(entry.quantity)),
+        modifiers: Array.isArray(entry.modifiers) ? entry.modifiers : [],
+        notes: entry.notes ? String(entry.notes) : undefined,
+        customizationId: String(entry.customizationId || entry.menuItemId),
       }))
       .filter((entry) => entry.menuItemId && entry.quantity > 0)
   } catch (error) {
@@ -53,33 +71,40 @@ function readCart(tableId: string): CartEntry[] {
   }
 }
 
-function writeCart(tableId: string, entries: CartEntry[]) {
+function writeCart(tableId: string, sessionId: string | undefined, entries: CartEntry[]) {
   if (typeof window === "undefined") {
     return
   }
 
   try {
     if (entries.length === 0) {
-      window.localStorage.removeItem(getStorageKey(tableId))
+      window.localStorage.removeItem(getStorageKey(tableId, sessionId))
       return
     }
 
-    window.localStorage.setItem(getStorageKey(tableId), JSON.stringify(entries))
+    window.localStorage.setItem(getStorageKey(tableId, sessionId), JSON.stringify(entries))
   } catch (error) {
     console.warn("[useQrCart] Failed to persist cart", error)
   }
 }
 
-export function useQrCart(tableId: string, menuItems: MenuItem[]) {
-  const [entries, setEntries] = useState<CartEntry[]>(() => readCart(tableId))
+/**
+ * Hook to manage QR cart state with localStorage persistence
+ * 
+ * @param tableId - The table identifier
+ * @param sessionId - Optional session ID for session-based cart (enables multi-device sync in future)
+ * @param menuItems - Available menu items to validate cart entries against
+ */
+export function useQrCart(tableId: string, sessionId: string | undefined, menuItems: MenuItem[]) {
+  const [entries, setEntries] = useState<CartEntry[]>(() => readCart(tableId, sessionId))
 
   useEffect(() => {
-    setEntries(readCart(tableId))
-  }, [tableId])
+    setEntries(readCart(tableId, sessionId))
+  }, [tableId, sessionId])
 
   useEffect(() => {
-    writeCart(tableId, entries)
-  }, [entries, tableId])
+    writeCart(tableId, sessionId, entries)
+  }, [entries, tableId, sessionId])
 
   const itemsMap = useMemo(() => {
     const map = new Map<string, MenuItem>()
@@ -106,6 +131,9 @@ export function useQrCart(tableId: string, menuItems: MenuItem[]) {
         return {
           item,
           quantity: entry.quantity,
+          modifiers: entry.modifiers,
+          notes: entry.notes,
+          customizationId: entry.customizationId,
         }
       })
       .filter((value): value is DetailedCartEntry => Boolean(value))
@@ -117,20 +145,35 @@ export function useQrCart(tableId: string, menuItems: MenuItem[]) {
   )
 
   const totalCents = useMemo(
-    () => detailedItems.reduce((acc, entry) => acc + entry.item.priceCents * entry.quantity, 0),
+    () =>
+      detailedItems.reduce((acc, entry) => {
+        const basePrice = entry.item.priceCents
+        const modifiersPrice = entry.modifiers.reduce((sum, mod) => sum + mod.priceCents, 0)
+        return acc + (basePrice + modifiersPrice) * entry.quantity
+      }, 0),
     [detailedItems],
   )
 
   const addOrIncrement = useCallback(
-    (menuItemId: string) => {
+    (menuItemId: string, modifiers: CartItemModifier[] = [], notes?: string) => {
       setEntries((current) => {
-        const existing = current.find((entry) => entry.menuItemId === menuItemId)
+        // Generate customization ID
+        const modifierIds = modifiers
+          .map((m) => `${m.groupId}:${m.optionId}`)
+          .sort()
+          .join("|")
+        const notesHash = notes?.trim() ? `:notes:${notes.trim()}` : ""
+        const customizationId = `${menuItemId}:${modifierIds}${notesHash}`
+
+        // Find existing entry with same customization
+        const existing = current.find((entry) => entry.customizationId === customizationId)
+        
         if (!existing) {
-          return [...current, { menuItemId, quantity: 1 }]
+          return [...current, { menuItemId, quantity: 1, modifiers, notes, customizationId }]
         }
 
         return current.map((entry) =>
-          entry.menuItemId === menuItemId
+          entry.customizationId === customizationId
             ? { ...entry, quantity: entry.quantity + 1 }
             : entry,
         )
@@ -139,21 +182,21 @@ export function useQrCart(tableId: string, menuItems: MenuItem[]) {
     [],
   )
 
-  const increment = useCallback((menuItemId: string) => {
+  const increment = useCallback((customizationId: string) => {
     setEntries((current) =>
       current.map((entry) =>
-        entry.menuItemId === menuItemId
+        entry.customizationId === customizationId
           ? { ...entry, quantity: entry.quantity + 1 }
           : entry,
       ),
     )
   }, [])
 
-  const decrement = useCallback((menuItemId: string) => {
+  const decrement = useCallback((customizationId: string) => {
     setEntries((current) =>
       current
         .map((entry) =>
-          entry.menuItemId === menuItemId
+          entry.customizationId === customizationId
             ? { ...entry, quantity: entry.quantity - 1 }
             : entry,
         )
@@ -161,24 +204,24 @@ export function useQrCart(tableId: string, menuItems: MenuItem[]) {
     )
   }, [])
 
-  const remove = useCallback((menuItemId: string) => {
-    setEntries((current) => current.filter((entry) => entry.menuItemId !== menuItemId))
+  const remove = useCallback((customizationId: string) => {
+    setEntries((current) => current.filter((entry) => entry.customizationId !== customizationId))
   }, [])
 
   const clear = useCallback(() => {
     setEntries([])
   }, [])
 
-  const setQuantity = useCallback((menuItemId: string, quantity: number) => {
+  const setQuantity = useCallback((customizationId: string, quantity: number) => {
     const nextQuantity = sanitizeQuantity(quantity)
     if (nextQuantity <= 0) {
-      remove(menuItemId)
+      remove(customizationId)
       return
     }
 
     setEntries((current) =>
       current.map((entry) =>
-        entry.menuItemId === menuItemId
+        entry.customizationId === customizationId
           ? { ...entry, quantity: nextQuantity }
           : entry,
       ),

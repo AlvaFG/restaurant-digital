@@ -1,4 +1,5 @@
 ﻿import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
+import type { ModifierGroup, CartItemModifier } from "@/app/(public)/qr/_types/modifiers"
 
 export interface TableCovers {
   current: number
@@ -37,6 +38,8 @@ export interface Order {
     name: string
     quantity: number
     price: number
+    modifiers?: CartItemModifier[]
+    notes?: string
   }>
   subtotal: number
   total: number
@@ -104,6 +107,7 @@ export interface MenuItem {
   allergens: MenuItemAllergen[]
   tags?: string[]
   imageUrl?: string
+  modifierGroups?: ModifierGroup[]
 }
 
 export interface MenuMetadata {
@@ -267,6 +271,33 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
       { code: "huevo", contains: true },
       { code: "lacteos", contains: true },
     ],
+    modifierGroups: [
+      {
+        id: "milanesa-type",
+        name: "Tipo de milanesa",
+        required: true,
+        minSelection: 1,
+        maxSelection: 1,
+        options: [
+          { id: "napolitana", name: "Napolitana", priceCents: 0, available: true, description: "Con jamón, queso y salsa" },
+          { id: "simple", name: "Simple", priceCents: -300, available: true, description: "Sin cobertura" },
+          { id: "caballo", name: "A caballo", priceCents: 200, available: true, description: "Con huevo frito" },
+        ],
+      },
+      {
+        id: "side-options",
+        name: "Acompañamiento",
+        required: false,
+        minSelection: 0,
+        maxSelection: 2,
+        description: "Elige hasta 2 acompañamientos adicionales",
+        options: [
+          { id: "ensalada", name: "Ensalada mixta", priceCents: 400, available: true },
+          { id: "pure", name: "Puré de papas", priceCents: 300, available: true },
+          { id: "arroz", name: "Arroz", priceCents: 300, available: true },
+        ],
+      },
+    ],
   },
   {
     id: "4",
@@ -276,6 +307,35 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     priceCents: 3500,
     available: true,
     allergens: [],
+    modifierGroups: [
+      {
+        id: "meat-cooking",
+        name: "Punto de cocción",
+        required: true,
+        minSelection: 1,
+        maxSelection: 1,
+        description: "Elige cómo prefieres tu carne",
+        options: [
+          { id: "rare", name: "Jugoso", priceCents: 0, available: true, description: "Rojo en el centro" },
+          { id: "medium", name: "A punto", priceCents: 0, available: true, description: "Rosado en el centro" },
+          { id: "well", name: "Bien cocido", priceCents: 0, available: true, description: "Sin rosado" },
+        ],
+      },
+      {
+        id: "meat-extras",
+        name: "Extras",
+        required: false,
+        minSelection: 0,
+        maxSelection: 3,
+        description: "Agrega tus favoritos",
+        options: [
+          { id: "chimichurri", name: "Chimichurri", priceCents: 100, available: true },
+          { id: "morrones", name: "Morrones asados", priceCents: 200, available: true },
+          { id: "champignones", name: "Champiñones", priceCents: 300, available: true },
+          { id: "queso-azul", name: "Salsa de queso azul", priceCents: 400, available: true },
+        ],
+      },
+    ],
   },
   {
     id: "5",
@@ -322,6 +382,31 @@ export const MOCK_MENU_ITEMS: MenuItem[] = [
     priceCents: 600,
     available: true,
     allergens: [],
+    modifierGroups: [
+      {
+        id: "drink-size",
+        name: "Tamaño",
+        required: true,
+        minSelection: 1,
+        maxSelection: 1,
+        options: [
+          { id: "small", name: "Chica (250ml)", priceCents: -200, available: true },
+          { id: "medium", name: "Mediana (500ml)", priceCents: 0, available: true },
+          { id: "large", name: "Grande (1L)", priceCents: 300, available: true },
+        ],
+      },
+      {
+        id: "drink-temperature",
+        name: "Temperatura",
+        required: false,
+        minSelection: 0,
+        maxSelection: 1,
+        options: [
+          { id: "cold", name: "Bien fría", priceCents: 0, available: true },
+          { id: "no-ice", name: "Sin hielo", priceCents: 0, available: true },
+        ],
+      },
+    ],
   },
   {
     id: "9",
@@ -439,7 +524,10 @@ export class OrderService {
     return fallbackMap
   }
 
-  static async createOrder(tableId: string, items: Array<{ menuItemId: string; quantity: number }>): Promise<Order> {
+  static async createOrder(
+    tableId: string,
+    items: Array<{ menuItemId: string; quantity: number; modifiers?: CartItemModifier[]; notes?: string }>,
+  ): Promise<Order> {
     console.log("[MOCK] Creating order for table " + tableId, items)
 
     const ids = items.map((item) => String(item.menuItemId))
@@ -452,11 +540,19 @@ export class OrderService {
 
     const orderItems = items.map((item) => {
       const menuItem = menuItemsMap.get(String(item.menuItemId))!
+      
+      // Calculate total price including modifiers
+      const basePrice = menuItem.priceCents
+      const modifiersPrice = (item.modifiers ?? []).reduce((sum, mod) => sum + mod.priceCents, 0)
+      const totalPrice = basePrice + modifiersPrice
+
       return {
         id: menuItem.id,
         name: menuItem.name,
         quantity: item.quantity,
-        price: menuItem.priceCents,
+        price: totalPrice,
+        modifiers: item.modifiers,
+        notes: item.notes,
       }
     })
 

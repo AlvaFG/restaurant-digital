@@ -11,8 +11,10 @@ import {
   DrawerHeader,
   DrawerTitle,
 } from "@/components/ui/drawer"
+import { Badge } from "@/components/ui/badge"
 import type { DetailedCartEntry } from "../_hooks/use-qr-cart"
-import { AlertTriangle, CheckCircle2, Loader2, Minus, Plus, ShoppingCart, Trash2 } from "lucide-react"
+import type { CartItemModifier } from "../_types/modifiers"
+import { AlertTriangle, CheckCircle2, Loader2, Minus, Plus, ShoppingCart, StickyNote, Trash2 } from "lucide-react"
 
 interface QrCartSheetProps {
   items: DetailedCartEntry[]
@@ -21,8 +23,8 @@ interface QrCartSheetProps {
   isSubmitting: boolean
   itemCount: number
   hasUnavailableItems?: boolean
-  onIncrement: (menuItemId: string) => void
-  onDecrement: (menuItemId: string) => void
+  onIncrement: (customizationId: string) => void
+  onDecrement: (customizationId: string) => void
   onClear: () => void
   onSubmit: () => void
   successOrderId?: string | null
@@ -119,46 +121,97 @@ export function QrCartSheet({
             </div>
           ) : hasItems ? (
             <ul className="flex flex-col gap-4">
-              {items.map(({ item, quantity }) => (
-                <li key={`cart-item-${item.id}`} className="flex items-start justify-between gap-3">
-                  <div className="max-w-[65%] space-y-1">
-                    <p className="text-base font-semibold leading-tight">{item.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      {currencyFormatter.format(item.priceCents / 100)}
-                    </p>
-                    {item.available === false ? (
-                      <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
-                        <AlertTriangle className="size-3" aria-hidden="true" />
-                        No disponible temporalmente
-                      </span>
-                    ) : null}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-9 rounded-full"
-                      onClick={() => onDecrement(item.id)}
-                      aria-label={`Quitar una unidad de ${item.name}`}
-                    >
-                      <Minus className="size-4" aria-hidden="true" />
-                    </Button>
-                    <span className="min-w-[2rem] text-center text-base font-semibold">{quantity}</span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="size-9 rounded-full"
-                      onClick={() => onIncrement(item.id)}
-                      aria-label={`Agregar una unidad de ${item.name}`}
-                      disabled={item.available === false}
-                    >
-                      <Plus className="size-4" aria-hidden="true" />
-                    </Button>
-                  </div>
-                </li>
-              ))}
+              {items.map(({ item, quantity, modifiers, notes, customizationId }) => {
+                // Calculate item subtotal including modifiers
+                const basePrice = item.priceCents
+                const modifiersPrice = modifiers.reduce((sum, mod) => sum + mod.priceCents, 0)
+                const itemSubtotal = (basePrice + modifiersPrice) * quantity
+
+                return (
+                  <li key={`cart-item-${customizationId}`} className="flex items-start justify-between gap-3">
+                    <div className="flex-1 space-y-2">
+                      {/* Item name and base price */}
+                      <div className="space-y-1">
+                        <p className="text-base font-semibold leading-tight">{item.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Base: {currencyFormatter.format(item.priceCents / 100)}
+                        </p>
+                      </div>
+
+                      {/* Modifiers */}
+                      {modifiers.length > 0 ? (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground">Personalización:</p>
+                          <div className="flex flex-wrap gap-1.5">
+                            {modifiers.map((modifier, idx) => (
+                              <Badge
+                                key={`${customizationId}-mod-${idx}`}
+                                variant="secondary"
+                                className="text-xs font-normal"
+                              >
+                                {modifier.optionName}
+                                {modifier.priceCents !== 0 && (
+                                  <span className="ml-1 font-medium">
+                                    {modifier.priceCents > 0 ? "+" : ""}
+                                    {currencyFormatter.format(modifier.priceCents / 100)}
+                                  </span>
+                                )}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {/* Special notes */}
+                      {notes ? (
+                        <div className="flex items-start gap-1.5 rounded-md bg-muted/50 px-2 py-1.5">
+                          <StickyNote className="mt-0.5 size-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+                          <p className="text-xs italic text-muted-foreground line-clamp-2">{notes}</p>
+                        </div>
+                      ) : null}
+
+                      {/* Subtotal */}
+                      <div className="flex items-center justify-between pt-1">
+                        <p className="text-sm font-semibold">
+                          Subtotal: {currencyFormatter.format(itemSubtotal / 100)}
+                        </p>
+                        {item.available === false ? (
+                          <span className="inline-flex items-center gap-1 text-xs font-medium text-amber-600">
+                            <AlertTriangle className="size-3" aria-hidden="true" />
+                            No disponible
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+
+                    {/* Quantity controls */}
+                    <div className="flex shrink-0 items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 rounded-full"
+                        onClick={() => onDecrement(customizationId)}
+                        aria-label={`Quitar una unidad de ${item.name}`}
+                      >
+                        <Minus className="size-4" aria-hidden="true" />
+                      </Button>
+                      <span className="min-w-[2rem] text-center text-base font-semibold">{quantity}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="size-9 rounded-full"
+                        onClick={() => onIncrement(customizationId)}
+                        aria-label={`Agregar una unidad de ${item.name}`}
+                        disabled={item.available === false}
+                      >
+                        <Plus className="size-4" aria-hidden="true" />
+                      </Button>
+                    </div>
+                  </li>
+                )
+              })}
             </ul>
           ) : (
             <div className="rounded-2xl border border-dashed border-border/60 bg-muted/40 px-6 py-12 text-center text-sm text-muted-foreground">

@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach, afterEach, beforeAll, afterAll, vi } 
 import { paymentStore } from '../payment-store';
 import type { Payment } from '../payment-types';
 import fs from 'fs/promises';
+import { mkdirSync, existsSync, unlinkSync } from 'fs';
 import path from 'path';
 
 // Mock socket-bus to prevent client-side import errors
@@ -16,18 +17,23 @@ const TEST_STORE_DIR = path.join(process.cwd(), 'data', '__test__');
 const TEST_STORE_PATH = path.join(TEST_STORE_DIR, 'payment-store.json');
 
 describe('PaymentStore', () => {
-  beforeAll(async () => {
-    // Ensure test directory exists
-    await fs.mkdir(TEST_STORE_DIR, { recursive: true });
+  beforeAll(() => {
+    // Ensure test directory exists (synchronous to avoid race conditions)
+    if (!existsSync(TEST_STORE_DIR)) {
+      mkdirSync(TEST_STORE_DIR, { recursive: true });
+    }
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     // Clean and invalidate cache before each test
     paymentStore.invalidateCache();
-    try {
-      await fs.unlink(TEST_STORE_PATH);
-    } catch {
-      // File might not exist
+    // Ensure directory still exists
+    if (!existsSync(TEST_STORE_DIR)) {
+      mkdirSync(TEST_STORE_DIR, { recursive: true });
+    }
+    // Remove test file if exists
+    if (existsSync(TEST_STORE_PATH)) {
+      unlinkSync(TEST_STORE_PATH);
     }
   });
 
