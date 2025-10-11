@@ -1,14 +1,20 @@
-﻿export interface User {
+﻿import { createBrowserClient } from "./supabase/client"
+import bcrypt from "bcryptjs"
+
+export interface User {
   id: string
   name: string
   email: string
-  role: "admin" | "staff"
+  role: "admin" | "staff" | "manager"
   active: boolean
+  tenant_id: string
+  last_login_at?: string
 }
 
 export interface Tenant {
   id: string
   name: string
+  slug: string
   logoUrl?: string
   theme: {
     accentColor: string
@@ -18,39 +24,6 @@ export interface Tenant {
     kds: boolean
     payments: boolean
   }
-}
-
-// Mock users for demo
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    name: "Administrador",
-    email: "admin@admin.com",
-    role: "admin",
-    active: true,
-  },
-  {
-    id: "2",
-    name: "Personal",
-    email: "staff@staff.com",
-    role: "staff",
-    active: true,
-  },
-]
-
-// Mock tenant data
-const MOCK_TENANT: Tenant = {
-  id: "tenant-1",
-  name: "Restaurante Demo",
-  logoUrl: undefined,
-  theme: {
-    accentColor: "#3b82f6", // Blue default
-  },
-  features: {
-    tablets: true,
-    kds: true,
-    payments: true,
-  },
 }
 
 export class AuthService {
@@ -73,22 +46,75 @@ export class AuthService {
   }
 
   static async login(email: string, password: string): Promise<User | null> {
-    // Mock authentication - in real app this would be an API call
-    if (password !== "123456") {
-      throw new Error("Credenciales invÃ¡lidas")
-    }
+    const supabase = createBrowserClient()
 
-    const user = MOCK_USERS.find((u) => u.email === email && u.active)
-    if (!user) {
+    // 1. Buscar usuario en Supabase
+    const { data: users, error } = await supabase
+      .from("users")
+      .select(`
+        *,
+        tenants (
+          id,
+          name,
+          slug,
+          settings
+        )
+      `)
+      .eq("email", email)
+      .eq("active", true)
+      .limit(1)
+
+    if (error || !users || users.length === 0) {
       throw new Error("Usuario no encontrado")
     }
 
-    // Store in localStorage for demo
+    const userData = users[0]
+
+    // 2. Verificar password con bcrypt
+    // Nota: En producción, la validación de password debería hacerse en el servidor
+    // por razones de seguridad. Aquí lo hacemos en el cliente solo para demo.
+    const isValid = await bcrypt.compare(password, userData.password_hash)
+    if (!isValid) {
+      throw new Error("Credenciales inválidas")
+    }
+
+    // 3. Actualizar last_login_at
+    await supabase.from("users").update({ last_login_at: new Date().toISOString() }).eq("id", userData.id)
+
+    // 4. Preparar datos de usuario
+    const user: User = {
+      id: userData.id,
+      name: userData.name,
+      email: userData.email,
+      role: userData.role,
+      active: userData.active,
+      tenant_id: userData.tenant_id,
+      last_login_at: new Date().toISOString(),
+    }
+
+    // 5. Preparar datos de tenant
+    const tenantData = userData.tenants as any
+    const tenant: Tenant = {
+      id: tenantData.id,
+      name: tenantData.name,
+      slug: tenantData.slug,
+      logoUrl: tenantData.settings?.logoUrl,
+      theme: {
+        accentColor: tenantData.settings?.theme?.accentColor || "#3b82f6",
+      },
+      features: {
+        tablets: tenantData.settings?.features?.tablets ?? true,
+        kds: tenantData.settings?.features?.kds ?? true,
+        payments: tenantData.settings?.features?.payments ?? true,
+      },
+    }
+
+    // 6. Store in localStorage for demo
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user))
-    localStorage.setItem(this.TENANT_KEY, JSON.stringify(MOCK_TENANT))
+    localStorage.setItem(this.TENANT_KEY, JSON.stringify(tenant))
 
     this.setCookie(this.STORAGE_KEY, JSON.stringify(user))
-    this.setCookie(this.TENANT_KEY, JSON.stringify(MOCK_TENANT))
+    this.setCookie(this.TENANT_KEY, JSON.stringify(tenant))
 
     return user
   }

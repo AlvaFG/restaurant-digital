@@ -39,11 +39,11 @@ export function LoginForm() {
 
   const fillDemoCredentials = (role: "admin" | "staff") => {
     if (role === "admin") {
-      setEmail("admin@admin.com")
-      setPassword("123456")
+      setEmail("admin@demo.restaurant")
+      setPassword("demo123")
     } else {
-      setEmail("staff@staff.com")
-      setPassword("123456")
+      setEmail("mesero@demo.restaurant")
+      setPassword("staff123")
     }
   }
 
@@ -102,7 +102,7 @@ export function LoginForm() {
                 onClick={() => fillDemoCredentials("admin")}
                 type="button"
               >
-                Admin (admin@admin.com)
+                Admin (admin@demo.restaurant)
               </Button>
               <Button
                 variant="outline"
@@ -111,7 +111,7 @@ export function LoginForm() {
                 onClick={() => fillDemoCredentials("staff")}
                 type="button"
               >
-                Staff (staff@staff.com)
+                Staff (mesero@demo.restaurant)
               </Button>
             </div>
           </div>
