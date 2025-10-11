@@ -43,7 +43,7 @@ export function useQrTable(tableId: string) {
     setStatus((previous) => (previous === "success" ? previous : "loading"))
 
     try {
-      const response = await fetch(`/api/tables/${encodeURIComponent(tableId)}`, {
+      const response = await fetch(`/api/tables/by-token/${encodeURIComponent(tableId)}`, {
         cache: "no-store",
         signal: controller.signal,
       })

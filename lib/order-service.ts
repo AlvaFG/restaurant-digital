@@ -2,6 +2,9 @@ import { MOCK_ORDERS } from "@/lib/mock-data"
 import type { OrdersSummary } from "@/lib/server/order-store"
 import type { CreateOrderPayload, PaymentStatus, StoredOrder } from "@/lib/server/order-types"
 import type { OrderStatus } from "@/lib/server/order-types"
+import { logger } from './logger'
+import { AppError, NotFoundError, ValidationError } from './errors'
+import { MENSAJES } from './i18n/mensajes'
 
 export type OrdersSortOption = "newest" | "oldest"
 
@@ -245,7 +248,23 @@ function fallbackOrdersResult(): OrdersQueryResult {
 }
 
 export async function createOrder(payload: CreateOrderPayload): Promise<CreateOrderResult> {
+  const startTime = Date.now();
+  
   try {
+    logger.info('Creando pedido', { 
+      tableId: payload.tableId, 
+      itemsCount: payload.items.length 
+    });
+
+    // Validar payload
+    if (!payload.tableId) {
+      throw new ValidationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO, { field: 'tableId' });
+    }
+
+    if (!payload.items || payload.items.length === 0) {
+      throw new ValidationError(MENSAJES.ERRORES.PEDIDO_ITEMS_VACIOS);
+    }
+
     const response = await fetch("/api/order", {
       method: "POST",
       cache: "no-store",
@@ -253,53 +272,71 @@ export async function createOrder(payload: CreateOrderPayload): Promise<CreateOr
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
-    })
+    });
 
     if (response.status === 201) {
-      const payloadBody = (await response.json()) as CreateOrderApiResponse
+      const payloadBody = (await response.json()) as CreateOrderApiResponse;
+      const duration = Date.now() - startTime;
+
+      logger.info('Pedido creado exitosamente', { 
+        orderId: payloadBody.data.id,
+        duration: `${duration}ms`
+      });
 
       return {
         order: toOrdersPanelOrder(payloadBody.data),
         metadata: payloadBody.metadata,
-      }
+      };
     }
 
     if (response.status >= 400 && response.status < 500) {
-      let errorCode: string | undefined
-      let errorMessage = CREATE_ORDER_GENERIC_ERROR_MESSAGE
+      let errorCode: string | undefined;
+      let errorMessage = MENSAJES.ERRORES.GENERICO;
 
       try {
-        const errorBody = (await response.json()) as { error?: { code?: string; message?: string } }
-        errorCode = errorBody.error?.code
-        errorMessage = errorBody.error?.message ?? errorMessage
+        const errorBody = (await response.json()) as { error?: { code?: string; message?: string } };
+        errorCode = errorBody.error?.code;
+        errorMessage = errorBody.error?.message ?? errorMessage;
       } catch {
         // ignore parse errors for non-JSON responses
       }
 
-      throw new OrderServiceError(errorMessage, { code: errorCode, status: response.status })
+      logger.error('Error al crear pedido (4xx)', undefined, { 
+        status: response.status, 
+        errorCode,
+        errorMessage 
+      });
+
+      throw new OrderServiceError(errorMessage, { code: errorCode, status: response.status });
     }
 
     if (response.status >= 500) {
-      throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE, { status: response.status })
+      logger.error('Error del servidor al crear pedido', undefined, { status: response.status });
+      throw new OrderServiceError(MENSAJES.ERRORES.GENERICO, { status: response.status });
     }
 
-    throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE, { status: response.status })
+    throw new OrderServiceError(MENSAJES.ERRORES.GENERICO, { status: response.status });
   } catch (error) {
-    if (error instanceof OrderServiceError) {
-      throw error
+    const duration = Date.now() - startTime;
+    
+    if (error instanceof OrderServiceError || error instanceof ValidationError) {
+      throw error;
     }
 
-    console.error("[order-service]", CREATE_ORDER_GENERIC_ERROR_MESSAGE, error)
-    throw new OrderServiceError(CREATE_ORDER_GENERIC_ERROR_MESSAGE)
+    logger.error('Error inesperado al crear pedido', error as Error, { duration: `${duration}ms` });
+    throw new OrderServiceError(MENSAJES.ERRORES.GENERICO);
   }
 }
 
 export async function fetchOrders(params: FetchOrdersParams = {}): Promise<OrdersQueryResult> {
-  const searchParams = buildSearchParams(params)
-  const queryString = searchParams.toString()
-  const endpoint = queryString ? `/api/order?${queryString}` : "/api/order"
+  const startTime = Date.now();
+  const searchParams = buildSearchParams(params);
+  const queryString = searchParams.toString();
+  const endpoint = queryString ? `/api/order?${queryString}` : "/api/order";
 
   try {
+    logger.debug('Obteniendo pedidos', { params, endpoint });
+
     const response = await fetch(endpoint, {
       method: "GET",
       cache: "no-store",
@@ -307,23 +344,38 @@ export async function fetchOrders(params: FetchOrdersParams = {}): Promise<Order
       headers: {
         "Content-Type": "application/json",
       },
-    })
+    });
 
     if (!response.ok) {
-      throw new Error(`Request failed with status ${response.status}`)
+      throw new AppError(
+        `Error al obtener pedidos: ${response.status}`,
+        response.status
+      );
     }
 
-    const payload = (await response.json()) as OrdersApiResponse
+    const payload = (await response.json()) as OrdersApiResponse;
+    const duration = Date.now() - startTime;
+
+    logger.info('Pedidos obtenidos exitosamente', { 
+      count: payload.data.length,
+      duration: `${duration}ms`
+    });
 
     return {
       orders: payload.data.map(toOrdersPanelOrder),
       summary: toSummaryClient(payload.metadata.summary),
       storeMetadata: payload.metadata.store,
       receivedAt: new Date(),
-    }
+    };
   } catch (error) {
-    console.warn("[order-service]", API_TIMEOUT_MESSAGE, error)
-    return fallbackOrdersResult()
+    const duration = Date.now() - startTime;
+    
+    logger.warn('Error al obtener pedidos, usando datos de respaldo', { 
+      duration: `${duration}ms`,
+      error: (error as Error).message
+    });
+    
+    return fallbackOrdersResult();
   }
 }
 

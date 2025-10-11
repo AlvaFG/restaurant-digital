@@ -40,9 +40,31 @@ export function createBrowserClient() {
 
   client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
-      get(name: string) {
-        // Browser cookies are handled automatically
-        return undefined
+      getAll() {
+        // Get all cookies from document.cookie
+        return document.cookie.split('; ').map(cookie => {
+          const [name, value] = cookie.split('=')
+          return { name, value: decodeURIComponent(value) }
+        })
+      },
+      setAll(cookies) {
+        // Set all cookies to document.cookie
+        cookies.forEach(({ name, value, options }) => {
+          const cookieValue = encodeURIComponent(value)
+          let cookie = `${name}=${cookieValue}`
+          
+          if (options?.maxAge) {
+            cookie += `; max-age=${options.maxAge}`
+          }
+          if (options?.path) {
+            cookie += `; path=${options.path}`
+          }
+          if (options?.sameSite) {
+            cookie += `; samesite=${options.sameSite}`
+          }
+          
+          document.cookie = cookie
+        })
       },
     },
   })

@@ -1,5 +1,6 @@
-﻿import { createBrowserClient } from "./supabase/client"
-import bcrypt from "bcryptjs"
+﻿import { logger } from './logger';
+import { AuthenticationError, AppError } from './errors';
+import { MENSAJES } from './i18n/mensajes';
 
 export interface User {
   id: string
@@ -46,108 +47,156 @@ export class AuthService {
   }
 
   static async login(email: string, password: string): Promise<User | null> {
-    const supabase = createBrowserClient()
+    const startTime = Date.now();
+    
+    try {
+      logger.info('Iniciando login', { email });
 
-    // 1. Buscar usuario en Supabase
-    const { data: users, error } = await supabase
-      .from("users")
-      .select(`
-        *,
-        tenants (
-          id,
-          name,
-          slug,
-          settings
-        )
-      `)
-      .eq("email", email)
-      .eq("active", true)
-      .limit(1)
+      // Validar inputs
+      if (!email || !password) {
+        throw new AuthenticationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO);
+      }
 
-    if (error || !users || users.length === 0) {
-      throw new Error("Usuario no encontrado")
+      // Llamar a la API route en el servidor
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        logger.error('Error en login', undefined, { 
+          email, 
+          status: response.status,
+          error: data.error 
+        });
+        throw new AuthenticationError(
+          data.error || MENSAJES.ERRORES.CREDENCIALES_INVALIDAS
+        );
+      }
+
+      const { user, tenant } = data;
+
+      // Store in localStorage
+      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      localStorage.setItem(this.TENANT_KEY, JSON.stringify(tenant));
+
+      this.setCookie(this.STORAGE_KEY, JSON.stringify(user));
+      this.setCookie(this.TENANT_KEY, JSON.stringify(tenant));
+
+      const duration = Date.now() - startTime;
+      logger.info('Login completado exitosamente', { 
+        userId: user.id, 
+        tenantId: tenant.id,
+        duration: `${duration}ms`
+      });
+
+      return user;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      logger.error('Login falló', error as Error, { email, duration: `${duration}ms` });
+      
+      if (error instanceof AuthenticationError) {
+        throw error;
+      }
+      
+      throw new AppError(
+        MENSAJES.ERRORES.GENERICO,
+        500,
+        false,
+        { originalError: (error as Error).message }
+      );
     }
-
-    const userData = users[0]
-
-    // 2. Verificar password con bcrypt
-    // Nota: En producción, la validación de password debería hacerse en el servidor
-    // por razones de seguridad. Aquí lo hacemos en el cliente solo para demo.
-    const isValid = await bcrypt.compare(password, userData.password_hash)
-    if (!isValid) {
-      throw new Error("Credenciales inválidas")
-    }
-
-    // 3. Actualizar last_login_at
-    await supabase.from("users").update({ last_login_at: new Date().toISOString() }).eq("id", userData.id)
-
-    // 4. Preparar datos de usuario
-    const user: User = {
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      active: userData.active,
-      tenant_id: userData.tenant_id,
-      last_login_at: new Date().toISOString(),
-    }
-
-    // 5. Preparar datos de tenant
-    const tenantData = userData.tenants as any
-    const tenant: Tenant = {
-      id: tenantData.id,
-      name: tenantData.name,
-      slug: tenantData.slug,
-      logoUrl: tenantData.settings?.logoUrl,
-      theme: {
-        accentColor: tenantData.settings?.theme?.accentColor || "#3b82f6",
-      },
-      features: {
-        tablets: tenantData.settings?.features?.tablets ?? true,
-        kds: tenantData.settings?.features?.kds ?? true,
-        payments: tenantData.settings?.features?.payments ?? true,
-      },
-    }
-
-    // 6. Store in localStorage for demo
-    localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user))
-    localStorage.setItem(this.TENANT_KEY, JSON.stringify(tenant))
-
-    this.setCookie(this.STORAGE_KEY, JSON.stringify(user))
-    this.setCookie(this.TENANT_KEY, JSON.stringify(tenant))
-
-    return user
   }
 
   static logout(): void {
-    localStorage.removeItem(this.STORAGE_KEY)
-    localStorage.removeItem(this.TENANT_KEY)
+    try {
+      const user = this.getCurrentUser();
+      logger.info('Cerrando sesión', { userId: user?.id });
 
-    this.deleteCookie(this.STORAGE_KEY)
-    this.deleteCookie(this.TENANT_KEY)
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem(this.TENANT_KEY);
+
+      this.deleteCookie(this.STORAGE_KEY);
+      this.deleteCookie(this.TENANT_KEY);
+
+      logger.info('Sesión cerrada exitosamente');
+    } catch (error) {
+      logger.error('Error al cerrar sesión', error as Error);
+      // Aún así intentamos limpiar el storage
+      localStorage.removeItem(this.STORAGE_KEY);
+      localStorage.removeItem(this.TENANT_KEY);
+    }
   }
 
   static getCurrentUser(): User | null {
-    if (typeof window === "undefined") return null
+    if (typeof window === "undefined") return null;
 
-    const stored = localStorage.getItem(this.STORAGE_KEY)
-    return stored ? JSON.parse(stored) : null
+    try {
+      const stored = localStorage.getItem(this.STORAGE_KEY);
+      if (!stored) return null;
+      
+      const user = JSON.parse(stored) as User;
+      
+      // Validar que el usuario tiene los campos requeridos
+      if (!user.id || !user.email) {
+        logger.warn('Usuario en storage inválido, limpiando sesión');
+        this.logout();
+        return null;
+      }
+      
+      return user;
+    } catch (error) {
+      logger.error('Error al leer usuario del storage', error as Error);
+      this.logout();
+      return null;
+    }
   }
 
   static getTenant(): Tenant | null {
-    if (typeof window === "undefined") return null
+    if (typeof window === "undefined") return null;
 
-    const stored = localStorage.getItem(this.TENANT_KEY)
-    return stored ? JSON.parse(stored) : null
+    try {
+      const stored = localStorage.getItem(this.TENANT_KEY);
+      if (!stored) return null;
+      
+      const tenant = JSON.parse(stored) as Tenant;
+      
+      // Validar que el tenant tiene los campos requeridos
+      if (!tenant.id || !tenant.slug) {
+        logger.warn('Tenant en storage inválido, limpiando');
+        localStorage.removeItem(this.TENANT_KEY);
+        return null;
+      }
+      
+      return tenant;
+    } catch (error) {
+      logger.error('Error al leer tenant del storage', error as Error);
+      localStorage.removeItem(this.TENANT_KEY);
+      return null;
+    }
   }
 
   static updateTenant(updates: Partial<Tenant>): void {
-    const current = this.getTenant()
-    if (current) {
-      const updated = { ...current, ...updates }
-      localStorage.setItem(this.TENANT_KEY, JSON.stringify(updated))
+    try {
+      const current = this.getTenant();
+      if (!current) {
+        logger.warn('No se puede actualizar tenant: no hay sesión activa');
+        return;
+      }
 
-      this.setCookie(this.TENANT_KEY, JSON.stringify(updated))
+      const updated = { ...current, ...updates };
+      localStorage.setItem(this.TENANT_KEY, JSON.stringify(updated));
+      this.setCookie(this.TENANT_KEY, JSON.stringify(updated));
+
+      logger.info('Tenant actualizado', { tenantId: updated.id, updates: Object.keys(updates) });
+    } catch (error) {
+      logger.error('Error al actualizar tenant', error as Error);
+      throw new AppError(MENSAJES.ERRORES.GENERICO);
     }
   }
 }
