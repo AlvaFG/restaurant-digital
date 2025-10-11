@@ -321,14 +321,17 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const startTime = Date.now()
   let rawBody: unknown
 
   try {
+    logRequest('POST', '/api/order')
+    
     rawBody = await request.json()
   } catch {
-    console.warn("[api/order] Payload JSON invA?lido")
+    logger.warn('Payload JSON inválido en POST /api/order')
     return NextResponse.json(
-      { error: { code: "INVALID_JSON", message: "Cuerpo JSON invA?lido" } },
+      { error: { code: "INVALID_JSON", message: MENSAJES.ERRORES.VALIDACION_FALLIDA } },
       { status: 400 },
     )
   }
@@ -337,8 +340,12 @@ export async function POST(request: Request) {
 
   if (!parsed.success) {
     const issue = parsed.error.issues[0]
-    const message = issue?.message ?? "Datos invA?lidos"
-    console.warn("[api/order] Payload invA?lido", { message, path: issue?.path })
+    const message = issue?.message ?? MENSAJES.ERRORES.VALIDACION_FALLIDA
+    
+    logger.warn('Payload de pedido inválido', { 
+      message, 
+      path: issue?.path 
+    })
 
     return NextResponse.json(
       {
@@ -353,10 +360,23 @@ export async function POST(request: Request) {
   }
 
   try {
+    logger.info('Creando pedido', { 
+      tableId: parsed.data.tableId,
+      itemsCount: parsed.data.items.length 
+    })
+
     const order = await createOrder(parsed.data)
     const metadata = await getOrderStoreMetadata()
 
-    console.info("[api/order] Pedido creado", { orderId: order.id, tableId: order.tableId, total: order.total })
+    const duration = Date.now() - startTime
+    logResponse('POST', '/api/order', 201, duration)
+    
+    logger.info('Pedido creado exitosamente', { 
+      orderId: order.id, 
+      tableId: order.tableId, 
+      total: order.total,
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json<CreateOrderResponse>(
       {
@@ -366,11 +386,16 @@ export async function POST(request: Request) {
       { status: 201 },
     )
   } catch (error) {
+    const duration = Date.now() - startTime
+    
     if (error instanceof OrderStoreError) {
-      console.warn("[api/order] Orden rechazada", {
+      logResponse('POST', '/api/order', error.status, duration)
+      
+      logger.warn('Pedido rechazado', {
         code: error.code,
         status: error.status,
         meta: error.meta,
+        duration: `${duration}ms`
       })
 
       return NextResponse.json(
@@ -385,9 +410,11 @@ export async function POST(request: Request) {
       )
     }
 
-    console.error("[api/order] Error inesperado", error)
+    logResponse('POST', '/api/order', 500, duration)
+    logger.error('Error inesperado al crear pedido', error as Error)
+    
     return NextResponse.json(
-      { error: { code: "INTERNAL_ERROR", message: "No se pudo crear la orden" } },
+      { error: { code: "INTERNAL_ERROR", message: MENSAJES.ERRORES.GENERICO } },
       { status: 500 },
     )
   }

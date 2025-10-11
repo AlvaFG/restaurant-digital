@@ -6,25 +6,44 @@ import {
   listTableHistory,
   updateTableMetadata,
 } from "@/lib/server/table-store"
+import { logRequest, logResponse, obtenerIdDeParams, validarBody } from '@/lib/api-helpers'
+import { logger } from '@/lib/logger'
+import { MENSAJES } from '@/lib/i18n/mensajes'
+import { NotFoundError } from '@/lib/errors'
 
 function notFound() {
-  return NextResponse.json({ error: "Mesa no encontrada" }, { status: 404 })
+  return NextResponse.json({ error: MENSAJES.ERRORES.MESA_NO_ENCONTRADA }, { status: 404 })
 }
 
 export async function GET(
   _request: Request,
   context: { params: { id: string } },
 ) {
+  const startTime = Date.now()
+  
   try {
-    const table = await getTableById(context.params.id)
+    const tableId = obtenerIdDeParams(context.params)
+    logRequest('GET', `/api/tables/${tableId}`)
+    
+    const table = await getTableById(tableId)
+    
     if (!table) {
+      logger.warn('Mesa no encontrada', { tableId })
       return notFound()
     }
 
     const [metadata, history] = await Promise.all([
       getStoreMetadata(),
-      listTableHistory(context.params.id),
+      listTableHistory(tableId),
     ])
+
+    const duration = Date.now() - startTime
+    logResponse('GET', `/api/tables/${tableId}`, 200, duration)
+    
+    logger.info('Mesa obtenida', { 
+      tableId,
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json({
       data: table,
@@ -32,9 +51,15 @@ export async function GET(
       metadata,
     })
   } catch (error) {
-    console.error("[api/tables/:id] Failed to load table", error)
+    const duration = Date.now() - startTime
+    logResponse('GET', `/api/tables/${context.params.id}`, 500, duration)
+    
+    logger.error('Error al obtener mesa', error as Error, { 
+      tableId: context.params.id 
+    })
+    
     return NextResponse.json(
-      { error: "No se pudo obtener la mesa" },
+      { error: MENSAJES.ERRORES.GENERICO },
       { status: 500 },
     )
   }
@@ -44,24 +69,50 @@ export async function PATCH(
   request: Request,
   context: { params: { id: string } },
 ) {
+  const startTime = Date.now()
+  
   try {
-    const payload = (await request.json()) as {
+    const tableId = obtenerIdDeParams(context.params)
+    logRequest('PATCH', `/api/tables/${tableId}`)
+    
+    const payload = await validarBody<{
       number?: number
       seats?: number
       zone?: string
-    }
+    }>(request)
 
-    const updated = await updateTableMetadata(context.params.id, payload)
+    logger.info('Actualizando metadata de mesa', { 
+      tableId, 
+      updates: Object.keys(payload) 
+    })
+
+    const updated = await updateTableMetadata(tableId, payload)
+
+    const duration = Date.now() - startTime
+    logResponse('PATCH', `/api/tables/${tableId}`, 200, duration)
+    
+    logger.info('Mesa actualizada', { 
+      tableId,
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json({ data: updated })
   } catch (error) {
+    const duration = Date.now() - startTime
+    
     if (error instanceof Error && error.message === "Table not found") {
+      logResponse('PATCH', `/api/tables/${context.params.id}`, 404, duration)
+      logger.warn('Mesa no encontrada al actualizar', { tableId: context.params.id })
       return notFound()
     }
 
-    console.error("[api/tables/:id] Failed to update table", error)
+    logResponse('PATCH', `/api/tables/${context.params.id}`, 500, duration)
+    logger.error('Error al actualizar mesa', error as Error, { 
+      tableId: context.params.id 
+    })
+    
     return NextResponse.json(
-      { error: "No se pudo actualizar la mesa" },
+      { error: MENSAJES.ERRORES.GENERICO },
       { status: 500 },
     )
   }

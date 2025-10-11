@@ -9,17 +9,25 @@ import {
   type CreatePaymentPayload,
   serializePayment,
 } from '@/lib/server/payment-types'
+import { logRequest, logResponse, validarBody } from '@/lib/api-helpers'
+import { logger } from '@/lib/logger'
+import { MENSAJES } from '@/lib/i18n/mensajes'
 
 /**
  * POST /api/payment
  * Crear nuevo payment para una orden
  */
 export async function POST(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
-    const payload: CreatePaymentPayload = await request.json()
+    logRequest('POST', '/api/payment')
+    
+    const payload = await validarBody<CreatePaymentPayload>(request)
 
     // Validar payload
     if (!payload.orderId) {
+      logger.warn('orderId faltante en creación de pago')
       throw new PaymentError(
         'orderId is required',
         PAYMENT_ERROR_CODES.INVALID_PAYLOAD,
@@ -28,10 +36,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que orden existe - buscar por search que incluye el ID
+    logger.debug('Verificando existencia de orden', { orderId: payload.orderId })
     const orders = await listOrders({ search: payload.orderId, limit: 1 })
     const order = orders.find(o => o.id === payload.orderId)
     
     if (!order) {
+      logger.warn('Orden no encontrada para pago', { orderId: payload.orderId })
       throw new PaymentError(
         `Order not found: ${payload.orderId}`,
         PAYMENT_ERROR_CODES.ORDER_NOT_FOUND,
@@ -42,6 +52,7 @@ export async function POST(request: NextRequest) {
     // Verificar que orden no tenga payment activo
     const hasActive = await paymentStore.hasActivePayment(payload.orderId)
     if (hasActive) {
+      logger.warn('La orden ya tiene un pago activo', { orderId: payload.orderId })
       throw new PaymentError(
         'Order already has an active payment',
         PAYMENT_ERROR_CODES.PAYMENT_IN_PROGRESS,
@@ -50,6 +61,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Crear payment en Mercado Pago
+    logger.info('Creando pago en Mercado Pago', { 
+      orderId: order.id,
+      amount: order.total,
+      tableId: order.tableId
+    })
+    
     const config = getMercadoPagoConfig()
     const paymentConfig = getPaymentConfig()
     const provider = new MercadoPagoProvider(config, paymentConfig.webhookUrl)
@@ -88,7 +105,17 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    console.log(`[API] Payment created: ${payment.id} for order ${order.id}`)
+    const duration = Date.now() - startTime
+    logResponse('POST', '/api/payment', 201, duration)
+    
+    // Log de auditoría SIN datos sensibles
+    logger.info('Pago creado exitosamente', { 
+      paymentId: payment.id,
+      orderId: order.id,
+      amount: order.total,
+      provider: 'mercadopago',
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json(
       {
@@ -106,9 +133,12 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error('[API] Payment creation error:', error)
-
+    const duration = Date.now() - startTime
+    
     if (error instanceof PaymentError) {
+      logResponse('POST', '/api/payment', error.status, duration)
+      logger.error('Error de pago', error, { code: error.code })
+      
       return NextResponse.json(
         {
           error: {
@@ -120,10 +150,13 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    logResponse('POST', '/api/payment', 500, duration)
+    logger.error('Error interno al crear pago', error as Error)
+
     return NextResponse.json(
       {
         error: {
-          message: 'Internal server error',
+          message: MENSAJES.ERRORES.GENERICO,
           code: PAYMENT_ERROR_CODES.INTERNAL_ERROR,
         },
       },
@@ -137,8 +170,11 @@ export async function POST(request: NextRequest) {
  * Listar payments con filtros
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now()
+  
   try {
     const { searchParams } = new URL(request.url)
+    logRequest('GET', '/api/payment', Object.fromEntries(searchParams))
 
     const filters = {
       orderId: searchParams.get('orderId') || undefined,
@@ -150,8 +186,18 @@ export async function GET(request: NextRequest) {
       sort: (searchParams.get('sort') || 'newest') as 'newest' | 'oldest',
     }
 
+    logger.debug('Obteniendo lista de pagos', { filters })
+    
     const payments = await paymentStore.list(filters)
     const summary = await paymentStore.getSummary()
+
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/payment', 200, duration)
+    
+    logger.info('Pagos obtenidos', { 
+      count: payments.length,
+      duration: `${duration}ms`
+    })
 
     return NextResponse.json({
       data: payments.map(serializePayment),
@@ -161,12 +207,15 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('[API] Payment list error:', error)
+    const duration = Date.now() - startTime
+    logResponse('GET', '/api/payment', 500, duration)
+    
+    logger.error('Error al obtener pagos', error as Error)
 
     return NextResponse.json(
       {
         error: {
-          message: 'Failed to fetch payments',
+          message: MENSAJES.ERRORES.GENERICO,
           code: PAYMENT_ERROR_CODES.INTERNAL_ERROR,
         },
       },
