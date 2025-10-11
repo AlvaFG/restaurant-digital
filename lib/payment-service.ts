@@ -1,0 +1,153 @@
+/**
+ * Payment Service
+ * Business logic for payment processing
+ */
+
+import { createPaymentPreference, getPayment } from './mercadopago'
+import type { 
+  Payment, 
+  PaymentPreferenceResponse, 
+  OrderWithPayment 
+} from './payment-types'
+
+export class PaymentService {
+  private baseUrl: string
+
+  constructor() {
+    this.baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'
+  }
+
+  /**
+   * Creates a payment preference for an order
+   * Returns the MercadoPago checkout URL
+   */
+  async createOrderPayment(order: OrderWithPayment): Promise<PaymentPreferenceResponse> {
+    // Convert order items to MercadoPago format
+    const items = order.items.map((item: any, index: number) => {
+      const itemTotal = item.basePriceCents * item.quantity
+      const modifiersTotal = item.selectedModifiers?.reduce(
+        (sum: number, mod: any) => sum + mod.priceCents,
+        0
+      ) || 0
+      const totalPrice = (itemTotal + modifiersTotal) / 100 // Convert cents to ARS
+
+      return {
+        id: `item-${index + 1}`,
+        title: `${item.name} x${item.quantity}`,
+        quantity: 1,
+        unit_price: totalPrice,
+        currency_id: 'ARS' as const,
+      }
+    })
+
+    // Determine payer info
+    const isEmail = order.customerContact.includes('@')
+    const payer = {
+      name: order.customerName,
+      email: isEmail ? order.customerContact : undefined,
+      phone: !isEmail ? order.customerContact : undefined,
+    }
+
+    // Create preference
+    const preference = await createPaymentPreference({
+      orderId: order.id,
+      items,
+      payer,
+      back_urls: {
+        success: `${this.baseUrl}/qr/${order.tableId}/payment/success?order_id=${order.id}`,
+        failure: `${this.baseUrl}/qr/${order.tableId}/payment/failure?order_id=${order.id}`,
+        pending: `${this.baseUrl}/qr/${order.tableId}/payment/pending?order_id=${order.id}`,
+      },
+      notification_url: `${this.baseUrl}/api/payment/webhook`,
+      external_reference: order.id,
+      metadata: {
+        orderId: order.id,
+        tableId: order.tableId,
+        tableName: order.tableId.replace('TABLE-', 'Mesa '),
+        sessionId: order.sessionId,
+        totalCents: order.totalCents,
+      },
+    })
+
+    return {
+      preferenceId: preference.id || '',
+      initPoint: preference.init_point || '',
+      sandboxInitPoint: preference.sandbox_init_point,
+    }
+  }
+
+  /**
+   * Verifies a payment status with MercadoPago
+   * Converts MP payment data to our Payment type
+   */
+  async verifyPayment(paymentId: string | number): Promise<Payment> {
+    const payment = await getPayment(paymentId)
+
+    return {
+      id: payment.id?.toString() || paymentId.toString(),
+      orderId: payment.external_reference || '',
+      amount: payment.transaction_amount || 0,
+      currency: (payment.currency_id as 'ARS' | 'USD') || 'ARS',
+      status: this.mapPaymentStatus(payment.status || 'pending'),
+      paymentMethod: payment.payment_type_id || 'unknown',
+      merchantOrderId: '',
+      preferenceId: '',
+      externalReference: payment.external_reference || '',
+      metadata: payment.metadata || {},
+      createdAt: payment.date_created || new Date().toISOString(),
+      updatedAt: payment.date_last_updated || new Date().toISOString(),
+    }
+  }
+
+  /**
+   * Maps MercadoPago payment status to our internal status
+   */
+  private mapPaymentStatus(mpStatus: string): Payment['status'] {
+    const statusMap: Record<string, Payment['status']> = {
+      'pending': 'pending',
+      'approved': 'approved',
+      'authorized': 'approved',
+      'in_process': 'pending',
+      'in_mediation': 'pending',
+      'rejected': 'rejected',
+      'cancelled': 'cancelled',
+      'refunded': 'refunded',
+      'charged_back': 'refunded',
+    }
+
+    return statusMap[mpStatus] || 'pending'
+  }
+
+  /**
+   * Formats amount in cents to ARS currency string
+   */
+  formatAmount(cents: number): string {
+    return `$${(cents / 100).toFixed(2)}`
+  }
+
+  /**
+   * Validates if payment can be processed
+   */
+  canProcessPayment(order: OrderWithPayment): { valid: boolean; error?: string } {
+    if (!order.customerName || order.customerName.trim().length === 0) {
+      return { valid: false, error: 'Customer name is required' }
+    }
+
+    if (!order.customerContact || order.customerContact.trim().length === 0) {
+      return { valid: false, error: 'Customer contact is required' }
+    }
+
+    if (order.totalCents <= 0) {
+      return { valid: false, error: 'Order total must be greater than 0' }
+    }
+
+    if (!order.items || order.items.length === 0) {
+      return { valid: false, error: 'Order must have at least one item' }
+    }
+
+    return { valid: true }
+  }
+}
+
+// Export singleton instance
+export const paymentService = new PaymentService()
