@@ -180,15 +180,6 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================
--- UPDATE RLS POLICIES
--- ============================================
-
--- Users can only see users from their tenant
-CREATE POLICY users_isolation_policy ON users
-  FOR ALL
-  USING (tenant_id = current_tenant_id());
-
--- ============================================
 -- VIEWS FOR CONVENIENCE
 -- ============================================
 
@@ -247,7 +238,6 @@ INSERT INTO users (
   password_hash,
   name,
   role,
-  is_super_admin,
   active
 ) VALUES (
   (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1),
@@ -255,7 +245,6 @@ INSERT INTO users (
   '$2a$10$demo123hashdemo123hashdemo123hashdemo123hashdemo123hash', -- Replace with real hash
   'Admin Demo',
   'admin',
-  false,
   true
 );
 
@@ -266,7 +255,6 @@ INSERT INTO users (
   password_hash,
   name,
   role,
-  is_super_admin,
   active
 ) VALUES (
   (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1),
@@ -274,7 +262,6 @@ INSERT INTO users (
   '$2a$10$staff123hashstaff123hashstaff123hashstaff123hashstaff', -- Replace with real hash
   'Juan Mesero',
   'staff',
-  false,
   true
 );
 
