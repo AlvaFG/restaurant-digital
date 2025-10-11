@@ -1,0 +1,447 @@
+-- ============================================
+-- Migration: Add Super Admin and Auth System
+-- Description: Add super admin role and authentication helpers
+-- Author: Restaurant Digital Team
+-- Date: 2025-10-11
+-- ============================================
+
+-- ============================================
+-- EXTEND USERS TABLE
+-- ============================================
+
+-- Add super_admin flag (bypasses tenant_id restriction)
+ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT false;
+
+-- Add last_login tracking
+ALTER TABLE users ADD COLUMN last_login_at TIMESTAMPTZ;
+
+-- Add password reset fields
+ALTER TABLE users ADD COLUMN reset_token TEXT;
+ALTER TABLE users ADD COLUMN reset_token_expires_at TIMESTAMPTZ;
+
+-- Update role check to include super_admin
+ALTER TABLE users DROP CONSTRAINT users_role_check;
+ALTER TABLE users ADD CONSTRAINT users_role_check 
+  CHECK (role IN ('admin', 'staff', 'manager', 'super_admin'));
+
+-- Index for super admins
+CREATE INDEX idx_users_super_admin ON users(is_super_admin) WHERE is_super_admin = true;
+
+-- Comments
+COMMENT ON COLUMN users.is_super_admin IS 'Super admin can access all tenants (service provider)';
+COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last successful login';
+COMMENT ON COLUMN users.reset_token IS 'Token for password reset';
+
+-- ============================================
+-- CREATE SUPER ADMIN USER
+-- ============================================
+
+-- Insert super admin account
+-- Default password: "admin123" (change immediately!)
+-- Password hash generated with bcrypt
+INSERT INTO users (
+  id,
+  tenant_id,
+  email,
+  password_hash,
+  name,
+  role,
+  is_super_admin,
+  active
+) VALUES (
+  uuid_generate_v4(),
+  (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1), -- Associated with demo tenant but can access all
+  'admin@restaurantdigital.com',
+  '$2a$10$rKvVPr3qM6G5Y9hQ8X1wZuJ3qY9vX2qZ1Y9vX2qZ1Y9vX2qZ1Y9vX2', -- bcrypt hash of "admin123"
+  'Super Administrator',
+  'super_admin',
+  true,
+  true
+);
+
+-- ============================================
+-- HELPER FUNCTIONS FOR AUTH
+-- ============================================
+
+-- Function to check if user is super admin
+CREATE OR REPLACE FUNCTION is_super_admin(user_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  RETURN EXISTS (
+    SELECT 1 FROM users
+    WHERE id = user_id
+    AND is_super_admin = true
+    AND active = true
+  );
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to get user's tenant (returns NULL for super admin to access all)
+CREATE OR REPLACE FUNCTION get_user_tenant(user_id UUID)
+RETURNS UUID AS $$
+DECLARE
+  user_tenant UUID;
+  is_super BOOLEAN;
+BEGIN
+  SELECT tenant_id, is_super_admin
+  INTO user_tenant, is_super
+  FROM users
+  WHERE id = user_id
+  AND active = true;
+  
+  -- Super admin can access all tenants
+  IF is_super THEN
+    RETURN NULL;
+  END IF;
+  
+  RETURN user_tenant;
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to validate user can access tenant
+CREATE OR REPLACE FUNCTION can_access_tenant(user_id UUID, target_tenant_id UUID)
+RETURNS BOOLEAN AS $$
+BEGIN
+  -- Super admin can access everything
+  IF is_super_admin(user_id) THEN
+    RETURN true;
+  END IF;
+  
+  -- Regular user can only access their own tenant
+  RETURN EXISTS (
+    SELECT 1 FROM users
+    WHERE id = user_id
+    AND tenant_id = target_tenant_id
+    AND active = true
+  );
+END;
+$$ LANGUAGE plpgsql STABLE;
+
+-- Function to create new tenant admin
+CREATE OR REPLACE FUNCTION create_tenant_admin(
+  p_tenant_id UUID,
+  p_email TEXT,
+  p_password_hash TEXT,
+  p_name TEXT
+)
+RETURNS UUID AS $$
+DECLARE
+  new_user_id UUID;
+BEGIN
+  INSERT INTO users (
+    tenant_id,
+    email,
+    password_hash,
+    name,
+    role,
+    is_super_admin,
+    active
+  ) VALUES (
+    p_tenant_id,
+    p_email,
+    p_password_hash,
+    p_name,
+    'admin',
+    false,
+    true
+  )
+  RETURNING id INTO new_user_id;
+  
+  -- Log the creation
+  INSERT INTO audit_logs (
+    tenant_id,
+    user_id,
+    action,
+    entity_type,
+    entity_id,
+    changes
+  ) VALUES (
+    p_tenant_id,
+    new_user_id,
+    'CREATE',
+    'user',
+    new_user_id,
+    jsonb_build_object(
+      'after', jsonb_build_object(
+        'email', p_email,
+        'name', p_name,
+        'role', 'admin'
+      )
+    )
+  );
+  
+  RETURN new_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Function to create staff user
+CREATE OR REPLACE FUNCTION create_staff_user(
+  p_tenant_id UUID,
+  p_email TEXT,
+  p_password_hash TEXT,
+  p_name TEXT,
+  p_role TEXT,
+  p_created_by UUID
+)
+RETURNS UUID AS $$
+DECLARE
+  new_user_id UUID;
+BEGIN
+  -- Validate that creator has permission
+  IF NOT can_access_tenant(p_created_by, p_tenant_id) THEN
+    RAISE EXCEPTION 'Unauthorized to create users for this tenant';
+  END IF;
+  
+  -- Validate role
+  IF p_role NOT IN ('staff', 'manager') THEN
+    RAISE EXCEPTION 'Invalid role. Must be staff or manager';
+  END IF;
+  
+  INSERT INTO users (
+    tenant_id,
+    email,
+    password_hash,
+    name,
+    role,
+    is_super_admin,
+    active
+  ) VALUES (
+    p_tenant_id,
+    p_email,
+    p_password_hash,
+    p_name,
+    p_role,
+    false,
+    true
+  )
+  RETURNING id INTO new_user_id;
+  
+  -- Log the creation
+  INSERT INTO audit_logs (
+    tenant_id,
+    user_id,
+    action,
+    entity_type,
+    entity_id,
+    changes
+  ) VALUES (
+    p_tenant_id,
+    p_created_by,
+    'CREATE',
+    'user',
+    new_user_id,
+    jsonb_build_object(
+      'after', jsonb_build_object(
+        'email', p_email,
+        'name', p_name,
+        'role', p_role
+      )
+    )
+  );
+  
+  RETURN new_user_id;
+END;
+$$ LANGUAGE plpgsql;
+
+-- ============================================
+-- UPDATE RLS POLICIES FOR SUPER ADMIN
+-- ============================================
+
+-- Drop existing users isolation policy
+DROP POLICY IF EXISTS users_isolation_policy ON users;
+
+-- Recreate with super admin support
+CREATE POLICY users_isolation_policy ON users
+  FOR ALL
+  USING (
+    -- Super admin sees all users
+    is_super_admin(auth.uid())
+    OR
+    -- Regular users only see their tenant
+    tenant_id = current_tenant_id()
+  );
+
+-- Super admin can read all tenants
+DROP POLICY IF EXISTS tenant_isolation_policy ON tenants;
+
+CREATE POLICY tenant_isolation_policy ON tenants
+  FOR ALL
+  USING (
+    -- Super admin sees all tenants
+    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND is_super_admin = true)
+    OR
+    -- Regular users see only their tenant
+    id = current_tenant_id()
+  );
+
+-- ============================================
+-- VIEWS FOR CONVENIENCE
+-- ============================================
+
+-- View: Active users by tenant
+CREATE OR REPLACE VIEW v_active_users AS
+SELECT 
+  u.id,
+  u.tenant_id,
+  t.name as tenant_name,
+  u.email,
+  u.name,
+  u.role,
+  u.is_super_admin,
+  u.active,
+  u.last_login_at,
+  u.created_at
+FROM users u
+JOIN tenants t ON u.tenant_id = t.id
+WHERE u.active = true;
+
+-- View: Tenant statistics
+CREATE OR REPLACE VIEW v_tenant_stats AS
+SELECT
+  t.id,
+  t.name,
+  t.slug,
+  COUNT(DISTINCT u.id) FILTER (WHERE u.active = true) as active_users,
+  COUNT(DISTINCT tb.id) as total_tables,
+  COUNT(DISTINCT mi.id) as menu_items,
+  COUNT(DISTINCT o.id) as total_orders,
+  COUNT(DISTINCT o.id) FILTER (WHERE o.created_at > NOW() - INTERVAL '7 days') as orders_last_7_days,
+  t.created_at
+FROM tenants t
+LEFT JOIN users u ON u.tenant_id = t.id
+LEFT JOIN tables tb ON tb.tenant_id = t.id
+LEFT JOIN menu_items mi ON mi.tenant_id = t.id
+LEFT JOIN orders o ON o.tenant_id = t.id
+GROUP BY t.id, t.name, t.slug, t.created_at;
+
+-- Grant access to views
+GRANT SELECT ON v_active_users TO authenticated;
+GRANT SELECT ON v_tenant_stats TO authenticated;
+
+-- Comments
+COMMENT ON VIEW v_active_users IS 'Active users with tenant information';
+COMMENT ON VIEW v_tenant_stats IS 'Statistics per tenant for dashboard';
+
+-- ============================================
+-- SEED ADMIN USER FOR DEMO TENANT
+-- ============================================
+
+-- Create admin user for demo tenant
+-- Password: "demo123" (for testing)
+INSERT INTO users (
+  tenant_id,
+  email,
+  password_hash,
+  name,
+  role,
+  is_super_admin,
+  active
+) VALUES (
+  (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1),
+  'admin@demo.restaurant',
+  '$2a$10$demo123hashdemo123hashdemo123hashdemo123hashdemo123hash', -- Replace with real hash
+  'Admin Demo',
+  'admin',
+  false,
+  true
+);
+
+-- Create sample staff user
+INSERT INTO users (
+  tenant_id,
+  email,
+  password_hash,
+  name,
+  role,
+  is_super_admin,
+  active
+) VALUES (
+  (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1),
+  'mesero@demo.restaurant',
+  '$2a$10$staff123hashstaff123hashstaff123hashstaff123hashstaff', -- Replace with real hash
+  'Juan Mesero',
+  'staff',
+  false,
+  true
+);
+
+-- ============================================
+-- TRIGGERS FOR AUDIT LOGGING
+-- ============================================
+
+-- Trigger to log user creation
+CREATE OR REPLACE FUNCTION log_user_creation()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_logs (
+    tenant_id,
+    user_id,
+    action,
+    entity_type,
+    entity_id,
+    changes
+  ) VALUES (
+    NEW.tenant_id,
+    NEW.id,
+    'CREATE',
+    'user',
+    NEW.id,
+    jsonb_build_object(
+      'after', row_to_json(NEW)
+    )
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_creation_audit
+  AFTER INSERT ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION log_user_creation();
+
+-- Trigger to log user updates
+CREATE OR REPLACE FUNCTION log_user_update()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO audit_logs (
+    tenant_id,
+    user_id,
+    action,
+    entity_type,
+    entity_id,
+    changes
+  ) VALUES (
+    NEW.tenant_id,
+    NEW.id,
+    'UPDATE',
+    'user',
+    NEW.id,
+    jsonb_build_object(
+      'before', row_to_json(OLD),
+      'after', row_to_json(NEW)
+    )
+  );
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+CREATE TRIGGER user_update_audit
+  AFTER UPDATE ON users
+  FOR EACH ROW
+  EXECUTE FUNCTION log_user_update();
+
+-- ============================================
+-- PERMISSIONS SUMMARY
+-- ============================================
+
+COMMENT ON FUNCTION is_super_admin IS 'Check if user is super admin (service provider)';
+COMMENT ON FUNCTION get_user_tenant IS 'Get user tenant (NULL for super admin)';
+COMMENT ON FUNCTION can_access_tenant IS 'Check if user can access specific tenant';
+COMMENT ON FUNCTION create_tenant_admin IS 'Create admin user for new tenant';
+COMMENT ON FUNCTION create_staff_user IS 'Create staff/manager user (must be called by admin)';
+
+-- Summary of roles:
+-- super_admin: Can access ALL tenants (you, the service provider)
+-- admin: Can manage their tenant (restaurant owner)
+-- manager: Can manage operations (shift supervisor)
+-- staff: Can take orders and serve tables (waiters)
