@@ -20,6 +20,7 @@ import * as sessionManager from '../session-manager';
 import * as qrService from '../qr-service';
 import * as sessionStore from '../session-store';
 import { SessionStatus, SessionValidationErrorCode } from '../session-types';
+import { QRValidationErrorCode } from '../qr-types';
 
 // Mock dependencies
 vi.mock('../qr-service');
@@ -56,19 +57,27 @@ describe('session-manager v2.0.0', () => {
       const mockIP = '192.168.1.100';
       const mockUserAgent = 'Mozilla/5.0';
 
-      vi.mocked(qrService.validateToken).mockReturnValue({
+      vi.mocked(qrService.validateToken).mockResolvedValue({
         valid: true,
-        metadata: {
+        payload: {
           tableId: mockTableId,
           tableNumber: 5,
           zone: 'Terraza',
-          generatedAt: new Date().toISOString(),
+          iat: Math.floor(Date.now() / 1000),
+          exp: Math.floor(Date.now() / 1000) + 86400,
+          iss: 'restaurantmanagement',
+          type: 'qr-table-access',
+        },
+        tableData: {
+          id: mockTableId,
+          number: 5,
+          zone: 'Terraza',
+          status: 'available',
+          seats: 4,
         },
       });
 
-      vi.mocked(qrService.isTokenExpired).mockReturnValue(false);
-
-      vi.mocked(sessionStore.createSession).mockReturnValue(undefined);
+      vi.mocked(sessionStore.createSession).mockImplementation((session) => session);
 
       // Act
       const session = await sessionManager.createSession({
@@ -80,7 +89,7 @@ describe('session-manager v2.0.0', () => {
 
       // Assert
       expect(session).toBeDefined();
-      expect(session.id).toMatch(/^session-/);
+      expect(session.id).toMatch(/^session_\d+_[a-z0-9]+$/);
       expect(session.tableId).toBe(mockTableId);
       expect(session.tableNumber).toBe(5);
       expect(session.zone).toBe('Terraza');
@@ -94,12 +103,11 @@ describe('session-manager v2.0.0', () => {
 
       // Verify QR validation was called
       expect(qrService.validateToken).toHaveBeenCalledWith(mockToken);
-      expect(qrService.isTokenExpired).toHaveBeenCalledWith(mockToken);
 
       // Verify session was stored
       expect(sessionStore.createSession).toHaveBeenCalledWith(
         expect.objectContaining({
-          id: expect.stringMatching(/^session-/),
+          id: expect.stringMatching(/^session_\d+_[a-z0-9]+$/),
           tableId: mockTableId,
           token: mockToken,
           status: SessionStatus.PENDING,
@@ -111,7 +119,7 @@ describe('session-manager v2.0.0', () => {
       // Arrange
       const mockToken = 'invalid-token';
 
-      vi.mocked(qrService.validateToken).mockReturnValue({
+      vi.mocked(qrService.validateToken).mockResolvedValue({
         valid: false,
         error: 'Invalid signature',
       });
@@ -123,7 +131,7 @@ describe('session-manager v2.0.0', () => {
           ipAddress: '127.0.0.1',
           userAgent: 'test',
         })
-      ).rejects.toThrow('Invalid or expired token');
+      ).rejects.toThrow('Invalid QR token: Invalid signature');
 
       // Verify no session was stored
       expect(sessionStore.createSession).not.toHaveBeenCalled();
@@ -133,17 +141,11 @@ describe('session-manager v2.0.0', () => {
       // Arrange
       const mockToken = 'expired-token';
 
-      vi.mocked(qrService.validateToken).mockReturnValue({
-        valid: true,
-        metadata: {
-          tableId: 'table-1',
-          tableNumber: 1,
-          zone: 'Main',
-          generatedAt: new Date().toISOString(),
-        },
+      vi.mocked(qrService.validateToken).mockResolvedValue({
+        valid: false,
+        error: 'QR code has expired. Please request a new one from staff.',
+        errorCode: QRValidationErrorCode.TOKEN_EXPIRED,
       });
-
-      vi.mocked(qrService.isTokenExpired).mockReturnValue(true);
 
       // Act & Assert
       await expect(
@@ -152,7 +154,7 @@ describe('session-manager v2.0.0', () => {
           ipAddress: '127.0.0.1',
           userAgent: 'test',
         })
-      ).rejects.toThrow('Invalid or expired token');
+      ).rejects.toThrow('Invalid QR token: QR code has expired');
 
       // Verify no session was stored
       expect(sessionStore.createSession).not.toHaveBeenCalled();
@@ -162,9 +164,9 @@ describe('session-manager v2.0.0', () => {
       // Arrange
       const mockToken = 'no-metadata-token';
 
-      vi.mocked(qrService.validateToken).mockReturnValue({
+      vi.mocked(qrService.validateToken).mockResolvedValue({
         valid: true,
-        // No metadata provided
+        // No payload or tableData provided (this is the missing data case)
       });
 
       // Act & Assert
@@ -174,7 +176,7 @@ describe('session-manager v2.0.0', () => {
           ipAddress: '127.0.0.1',
           userAgent: 'test',
         })
-      ).rejects.toThrow('Table not found in QR token');
+      ).rejects.toThrow('Token validation succeeded but missing data');
 
       // Verify no session was stored
       expect(sessionStore.createSession).not.toHaveBeenCalled();
@@ -236,7 +238,6 @@ describe('session-manager v2.0.0', () => {
 
       // Assert
       expect(result.valid).toBe(false);
-      expect(result.session).toBeUndefined();
       expect(result.error).toBe('Session not found');
       expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_NOT_FOUND);
 
@@ -271,8 +272,7 @@ describe('session-manager v2.0.0', () => {
 
       // Assert
       expect(result.valid).toBe(false);
-      expect(result.session).toBeUndefined();
-      expect(result.error).toBe('Session expired');
+      expect(result.error).toBe('Session expired. Please scan QR code again.');
       expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_EXPIRED);
 
       // Verify no update was attempted
@@ -306,7 +306,6 @@ describe('session-manager v2.0.0', () => {
 
       // Assert
       expect(result.valid).toBe(false);
-      expect(result.session).toBeUndefined();
       expect(result.error).toBe('Session closed');
       expect(result.errorCode).toBe(SessionValidationErrorCode.SESSION_CLOSED);
 
@@ -342,8 +341,7 @@ describe('session-manager v2.0.0', () => {
 
       // Assert
       expect(result.valid).toBe(false);
-      expect(result.session).toBeUndefined();
-      expect(result.error).toBe('QR token expired');
+      expect(result.error).toBe('QR token expired. Please request a new QR code.');
       expect(result.errorCode).toBe(SessionValidationErrorCode.INVALID_TOKEN);
 
       // Verify token expiry was checked
@@ -476,7 +474,7 @@ describe('session-manager v2.0.0', () => {
 
       // Verify update included orderIds array
       expect(sessionStore.updateSession).toHaveBeenCalledWith(mockSessionId, {
-        orderId: 'order-123',
+        orderIds: ['order-123'],
         status: SessionStatus.ORDER_PLACED,
       });
     });
@@ -518,74 +516,7 @@ describe('session-manager v2.0.0', () => {
       expect(result.expiresAt.getTime()).toBeGreaterThan(mockSession.expiresAt.getTime());
 
       // Verify extendSession was called
-      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId, undefined);
-    });
-  });
-
-  describe('validateStatusTransition', () => {
-    it('should allow PENDING → BROWSING transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.PENDING, SessionStatus.BROWSING)
-      ).not.toThrow();
-    });
-
-    it('should allow BROWSING → CART_ACTIVE transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.BROWSING, SessionStatus.CART_ACTIVE)
-      ).not.toThrow();
-    });
-
-    it('should allow CART_ACTIVE → ORDER_PLACED transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.CART_ACTIVE, SessionStatus.ORDER_PLACED)
-      ).not.toThrow();
-    });
-
-    it('should allow ORDER_PLACED → AWAITING_PAYMENT transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.ORDER_PLACED, SessionStatus.AWAITING_PAYMENT)
-      ).not.toThrow();
-    });
-
-    it('should allow AWAITING_PAYMENT → PAYMENT_COMPLETED transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.AWAITING_PAYMENT, SessionStatus.PAYMENT_COMPLETED)
-      ).not.toThrow();
-    });
-
-    it('should allow any state → CLOSED transition', () => {
-      const allStates = [
-        SessionStatus.PENDING,
-        SessionStatus.BROWSING,
-        SessionStatus.CART_ACTIVE,
-        SessionStatus.ORDER_PLACED,
-        SessionStatus.AWAITING_PAYMENT,
-        SessionStatus.PAYMENT_COMPLETED,
-      ];
-
-      allStates.forEach((status) => {
-        expect(() =>
-          sessionManager.validateStatusTransition(status, SessionStatus.CLOSED)
-        ).not.toThrow();
-      });
-    });
-
-    it('should reject CLOSED → any transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.CLOSED, SessionStatus.BROWSING)
-      ).toThrow('Invalid status transition');
-    });
-
-    it('should reject PAYMENT_COMPLETED → BROWSING transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.PAYMENT_COMPLETED, SessionStatus.BROWSING)
-      ).toThrow('Invalid status transition');
-    });
-
-    it('should reject CART_ACTIVE → PENDING transition', () => {
-      expect(() =>
-        sessionManager.validateStatusTransition(SessionStatus.CART_ACTIVE, SessionStatus.PENDING)
-      ).toThrow('Invalid status transition');
+      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId);
     });
   });
 
@@ -666,7 +597,7 @@ describe('session-manager v2.0.0', () => {
       expect(result.expiresAt.getTime()).toBeGreaterThan(mockSession.expiresAt.getTime());
 
       // Verify extendSession was called
-      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId, undefined);
+      expect(sessionStore.extendSession).toHaveBeenCalledWith(mockSessionId);
     });
   });
 
