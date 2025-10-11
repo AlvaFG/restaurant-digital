@@ -28,6 +28,8 @@ import {
 } from "@/components/ui/alert-dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Gift, RotateCcw, Eye, Users, MapPin, RefreshCw } from "lucide-react"
+import { logger } from "@/lib/logger"
+import { MENSAJES } from "@/lib/i18n/mensajes"
 
 export function TableList() {
   const { user } = useAuth()
@@ -48,10 +50,12 @@ export function TableList() {
     setIsLoading(true)
     setError(null)
     try {
+      logger.debug('Cargando lista de mesas')
       const response = await fetchTables()
       setTables(response.data)
+      logger.info('Lista de mesas cargada', { count: response.data.length })
     } catch (loadError) {
-      console.error("[TableList] Failed to load tables", loadError)
+      logger.error('Error al cargar lista de mesas', loadError as Error)
       setError("No se pudieron cargar las mesas. Intenta nuevamente.")
     } finally {
       setIsLoading(false)
@@ -67,12 +71,27 @@ export function TableList() {
 
     setIsProcessingAction(true)
     try {
+      logger.info('Invitando la casa', { 
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number,
+        userId: user?.id
+      })
+      
       await inviteHouse(selectedTable.id)
+      
+      logger.info('Casa invitada exitosamente', {
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number
+      })
+      
       setShowInviteDialog(false)
       setSelectedTableId(null)
       await loadTables()
     } catch (actionError) {
-      console.error("[TableList] Failed to invite house", actionError)
+      logger.error('Error al invitar la casa', actionError as Error, {
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number
+      })
     } finally {
       setIsProcessingAction(false)
     }
@@ -83,12 +102,28 @@ export function TableList() {
 
     setIsProcessingAction(true)
     try {
+      logger.info('Reseteando mesa', { 
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number,
+        previousState: selectedTable.status,
+        userId: user?.id
+      })
+      
       await resetTable(selectedTable.id)
+      
+      logger.info('Mesa reseteada exitosamente', {
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number
+      })
+      
       setShowResetDialog(false)
       setSelectedTableId(null)
       await loadTables()
     } catch (actionError) {
-      console.error("[TableList] Failed to reset table", actionError)
+      logger.error('Error al resetear mesa', actionError as Error, {
+        tableId: selectedTable.id,
+        tableNumber: selectedTable.number
+      })
     } finally {
       setIsProcessingAction(false)
     }

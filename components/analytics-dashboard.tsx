@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Skeleton } from '@/components/ui/skeleton'
 import { RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/logger'
 
 export function AnalyticsDashboard() {
   const [datePreset, setDatePreset] = useState<DateRangePreset>('last30days')
@@ -27,10 +28,13 @@ export function AnalyticsDashboard() {
   
   // Fetch analytics data
   const fetchAnalytics = async () => {
+    const startTime = Date.now();
     setLoading(true)
     setError(null)
     
     try {
+      logger.debug('Obteniendo datos de analítica', { preset: datePreset });
+      
       // Fetch all analytics endpoints in parallel
       const [salesRes, revenueRes, popularItemsRes, qrUsageRes] = await Promise.all([
         fetch(`/api/analytics/sales?preset=${datePreset}`),
@@ -64,8 +68,16 @@ export function AnalyticsDashboard() {
       }
       
       setAnalytics(combinedAnalytics)
+      
+      const duration = Date.now() - startTime;
+      logger.info('Datos de analítica obtenidos exitosamente', { 
+        preset: datePreset,
+        duration: `${duration}ms`
+      });
     } catch (err) {
-      console.error('Error fetching analytics:', err)
+      logger.error('Error al obtener datos de analítica', err as Error, { 
+        preset: datePreset 
+      });
       setError('Error al cargar los datos de analítica. Por favor, intenta nuevamente.')
     } finally {
       setLoading(false)

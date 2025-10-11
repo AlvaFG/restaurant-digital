@@ -25,6 +25,7 @@ import { formatCurrency, getPaymentStatusLabel, getPaymentStatusColor, type Paym
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { usePayment } from '@/hooks/use-payment';
+import { logger } from '@/lib/logger';
 
 interface PaymentModalProps {
   open: boolean;
@@ -48,13 +49,25 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
   // Polling del estado de pago cada 3 segundos
   useEffect(() => {
     if (payment && payment.status === 'pending' && open) {
+      logger.debug('Iniciando polling de estado de pago', { 
+        paymentId: payment.id,
+        orderId: order.id 
+      });
+      
       const interval = setInterval(async () => {
-        await getPaymentStatus(payment.id);
+        try {
+          await getPaymentStatus(payment.id);
+        } catch (error) {
+          logger.error('Error en polling de estado de pago', error as Error, { 
+            paymentId: payment.id 
+          });
+        }
       }, 3000);
 
       setPollInterval(interval);
 
       return () => {
+        logger.debug('Deteniendo polling de estado de pago', { paymentId: payment.id });
         clearInterval(interval);
       };
     }
@@ -67,14 +80,24 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
   // Cerrar modal automáticamente cuando el pago es aprobado
   useEffect(() => {
     if (payment?.status === 'approved') {
+      logger.info('Pago aprobado, cerrando modal automáticamente', { 
+        paymentId: payment.id,
+        orderId: order.id 
+      });
+      
       if (pollInterval) clearInterval(pollInterval);
+      
       setTimeout(() => {
         onOpenChange(false);
       }, 2000);
     }
-  }, [payment?.status, pollInterval, onOpenChange]);
+  }, [payment?.status, pollInterval, onOpenChange, order.id, payment?.id]);
 
   const handleSuccess = () => {
+    logger.info('Pago iniciado exitosamente', { 
+      orderId: order.id,
+      amount: order.total 
+    });
     // El polling se encargará de actualizar el estado
   };
 

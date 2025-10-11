@@ -22,6 +22,8 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
 import { ChevronDown, Minus, Plus, ShoppingCart, X } from "lucide-react"
+import { logger } from "@/lib/logger"
+import { MENSAJES } from "@/lib/i18n/mensajes"
 
 interface OrderItem {
   menuItem: MenuItem
@@ -44,10 +46,12 @@ export function OrderForm() {
     setTablesLoading(true)
     setTablesError(null)
     try {
+      logger.debug('Cargando mesas para formulario de pedido')
       const response = await fetchTables()
       setTables(response.data)
+      logger.info('Mesas cargadas en formulario', { count: response.data.length })
     } catch (error) {
-      console.error("[OrderForm] Failed to load tables", error)
+      logger.error('Error al cargar mesas en formulario', error as Error)
       setTablesError("No se pudieron cargar las mesas")
     } finally {
       setTablesLoading(false)
@@ -112,6 +116,11 @@ export function OrderForm() {
 
   const handleSubmit = async () => {
     if (!selectedTableId || orderItems.length === 0) {
+      logger.warn('Intento de enviar pedido sin mesa o items', {
+        hasTable: !!selectedTableId,
+        itemsCount: orderItems.length
+      })
+      
       toast({
         title: "Error",
         description: "Selecciona una mesa y agrega al menos un item",
@@ -131,12 +140,23 @@ export function OrderForm() {
         source: "staff",
       } satisfies CreateOrderPayload
 
+      logger.info('Creando pedido desde formulario', { 
+        tableId: selectedTableId,
+        itemsCount: orderItems.length,
+        total: calculateTotal()
+      })
+
       await createOrder(payload)
 
       const tableNumber = tables.find((table) => table.id === selectedTableId)?.number
       const description = tableNumber
         ? `Pedido creado para la mesa ${tableNumber}`
         : "Pedido creado correctamente"
+
+      logger.info('Pedido creado exitosamente', {
+        tableId: selectedTableId,
+        tableNumber
+      })
 
       toast({
         title: "Pedido creado",
@@ -150,8 +170,12 @@ export function OrderForm() {
         await refetch({ silent: false })
       }
     } catch (error) {
-      console.error("[OrderForm] Error creating order", error)
-      const message = error instanceof OrderServiceError ? error.message : "No se pudo crear el pedido"
+      logger.error('Error al crear pedido desde formulario', error as Error, {
+        tableId: selectedTableId,
+        itemsCount: orderItems.length
+      })
+      
+      const message = error instanceof OrderServiceError ? error.message : MENSAJES.ERRORES.GENERICO
       toast({
         title: "No se pudo crear el pedido",
         description: message,

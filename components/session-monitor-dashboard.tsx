@@ -34,6 +34,7 @@ import {
   EyeOff,
   TrendingUp
 } from 'lucide-react';
+import { logger } from '@/lib/logger';
 
 type SessionStatus = 
   | 'pending' 
@@ -99,20 +100,30 @@ export function SessionMonitorDashboard() {
   const [statusFilter, setStatusFilter] = useState<SessionStatus | 'all'>('all');
 
   const fetchSessions = useCallback(async () => {
+    const startTime = Date.now();
+    
     try {
       setLoading(true);
       
-      // Fetch sessions (you'll need to create this API endpoint)
+      logger.debug('Obteniendo sesiones activas');
+      
+      // Fetch sessions
       const sessionsResponse = await fetch('/api/sessions');
       const sessionsData = await sessionsResponse.json();
       setSessions(sessionsData.sessions || []);
 
-      // Fetch statistics (you'll need to create this API endpoint)
+      // Fetch statistics
       const statsResponse = await fetch('/api/sessions/statistics');
       const statsData = await statsResponse.json();
       setStatistics(statsData.statistics || null);
+      
+      const duration = Date.now() - startTime;
+      logger.info('Sesiones obtenidas exitosamente', { 
+        count: sessionsData.sessions?.length || 0,
+        duration: `${duration}ms`
+      });
     } catch (error) {
-      console.error('Failed to fetch sessions:', error);
+      logger.error('Error al obtener sesiones', error as Error);
     } finally {
       setLoading(false);
     }
@@ -131,23 +142,31 @@ export function SessionMonitorDashboard() {
 
   const closeSession = async (sessionId: string) => {
     try {
+      logger.info('Cerrando sesión manualmente', { sessionId });
+      
       await fetch(`/api/sessions/${sessionId}`, {
         method: 'DELETE',
       });
+      
+      logger.info('Sesión cerrada exitosamente', { sessionId });
       fetchSessions();
     } catch (error) {
-      console.error('Failed to close session:', error);
+      logger.error('Error al cerrar sesión', error as Error, { sessionId });
     }
   };
 
   const extendSession = async (sessionId: string) => {
     try {
+      logger.info('Extendiendo sesión', { sessionId });
+      
       await fetch(`/api/sessions/${sessionId}/extend`, {
         method: 'POST',
       });
+      
+      logger.info('Sesión extendida exitosamente', { sessionId });
       fetchSessions();
     } catch (error) {
-      console.error('Failed to extend session:', error);
+      logger.error('Error al extender sesión', error as Error, { sessionId });
     }
   };
 
