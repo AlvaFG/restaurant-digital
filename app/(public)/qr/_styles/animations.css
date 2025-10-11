@@ -1,0 +1,444 @@
+/**
+ * CSS Animations & Transitions
+ * Native CSS animations for smooth UI interactions
+ * No external dependencies needed
+ */
+
+/* ============================================
+   CART ANIMATIONS
+   ============================================ */
+
+/* Cart badge pulse when items added */
+@keyframes badge-pulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.2);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.animate-badge-pulse {
+  animation: badge-pulse 0.3s ease-out;
+}
+
+/* Cart button bounce */
+@keyframes cart-bounce {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  25% {
+    transform: translateY(-8px);
+  }
+  75% {
+    transform: translateY(-4px);
+  }
+}
+
+.animate-cart-bounce {
+  animation: cart-bounce 0.5s ease-out;
+}
+
+/* ============================================
+   ITEM EXPAND/COLLAPSE
+   ============================================ */
+
+@keyframes expand-in {
+  0% {
+    opacity: 0;
+    transform: scaleY(0.95);
+    max-height: 0;
+  }
+  100% {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 500px;
+  }
+}
+
+@keyframes collapse-out {
+  0% {
+    opacity: 1;
+    transform: scaleY(1);
+    max-height: 500px;
+  }
+  100% {
+    opacity: 0;
+    transform: scaleY(0.95);
+    max-height: 0;
+  }
+}
+
+.animate-expand-in {
+  animation: expand-in 0.3s ease-out forwards;
+  transform-origin: top;
+}
+
+.animate-collapse-out {
+  animation: collapse-out 0.3s ease-in forwards;
+  transform-origin: top;
+}
+
+/* ============================================
+   TAB SLIDE TRANSITIONS
+   ============================================ */
+
+@keyframes slide-in-left {
+  0% {
+    opacity: 0;
+    transform: translateX(-20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slide-in-right {
+  0% {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.animate-slide-in-left {
+  animation: slide-in-left 0.3s ease-out;
+}
+
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out;
+}
+
+/* Tab underline slide */
+@keyframes tab-underline-slide {
+  0% {
+    transform: scaleX(0);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+.animate-tab-underline {
+  animation: tab-underline-slide 0.3s ease-out;
+  transform-origin: left;
+}
+
+/* ============================================
+   SHEET/DRAWER TRANSITIONS
+   ============================================ */
+
+@keyframes sheet-slide-in {
+  0% {
+    transform: translateX(100%);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+@keyframes sheet-slide-out {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.animate-sheet-in {
+  animation: sheet-slide-in 0.3s ease-out;
+}
+
+.animate-sheet-out {
+  animation: sheet-slide-out 0.3s ease-in;
+}
+
+/* ============================================
+   BUTTON INTERACTIONS
+   ============================================ */
+
+/* Button press effect */
+.btn-press:active {
+  transform: scale(0.95);
+  transition: transform 0.1s ease-in-out;
+}
+
+/* Ripple effect on tap */
+@keyframes ripple {
+  0% {
+    transform: scale(0);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(4);
+    opacity: 0;
+  }
+}
+
+.btn-ripple {
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-ripple::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+  transform: translate(-50%, -50%) scale(0);
+  pointer-events: none;
+}
+
+.btn-ripple:active::after {
+  animation: ripple 0.6s ease-out;
+}
+
+/* ============================================
+   LOADING & SKELETON
+   ============================================ */
+
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-skeleton {
+  animation: skeleton-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Spinner rotation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin 2s linear infinite;
+}
+
+/* ============================================
+   NOTIFICATION ANIMATIONS
+   ============================================ */
+
+@keyframes toast-slide-in {
+  0% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  100% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes toast-slide-out {
+  0% {
+    transform: translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+}
+
+.animate-toast-in {
+  animation: toast-slide-in 0.3s ease-out;
+}
+
+.animate-toast-out {
+  animation: toast-slide-out 0.3s ease-in;
+}
+
+/* ============================================
+   SUCCESS/ERROR STATES
+   ============================================ */
+
+@keyframes checkmark-draw {
+  0% {
+    stroke-dashoffset: 100;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+.animate-checkmark {
+  stroke-dasharray: 100;
+  animation: checkmark-draw 0.5s ease-out forwards;
+}
+
+@keyframes success-scale {
+  0% {
+    transform: scale(0.8);
+    opacity: 0;
+  }
+  50% {
+    transform: scale(1.1);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.animate-success {
+  animation: success-scale 0.5s ease-out;
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(-10px);
+  }
+  75% {
+    transform: translateX(10px);
+  }
+}
+
+.animate-shake {
+  animation: shake 0.4s ease-out;
+}
+
+/* ============================================
+   HOVER EFFECTS
+   ============================================ */
+
+.hover-lift {
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+.hover-lift:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.hover-scale {
+  transition: transform 0.2s ease-out;
+}
+
+.hover-scale:hover {
+  transform: scale(1.05);
+}
+
+.hover-glow {
+  transition: box-shadow 0.2s ease-out;
+}
+
+.hover-glow:hover {
+  box-shadow: 0 0 16px rgba(var(--primary), 0.4);
+}
+
+/* ============================================
+   FOCUS STATES (Accessibility)
+   ============================================ */
+
+.focus-ring-custom {
+  outline: none;
+  transition: box-shadow 0.2s ease-out;
+}
+
+.focus-ring-custom:focus-visible {
+  box-shadow: 0 0 0 3px rgba(var(--primary), 0.4);
+  border-color: rgb(var(--primary));
+}
+
+/* Skip to content link */
+.skip-to-content {
+  position: absolute;
+  top: -40px;
+  left: 0;
+  background: var(--background);
+  color: var(--foreground);
+  padding: 8px 16px;
+  text-decoration: none;
+  border-radius: 4px;
+  z-index: 100;
+  transition: top 0.3s ease-out;
+}
+
+.skip-to-content:focus {
+  top: 8px;
+}
+
+/* ============================================
+   UTILITY TRANSITIONS
+   ============================================ */
+
+.transition-all-smooth {
+  transition: all 0.3s ease-out;
+}
+
+.transition-colors-smooth {
+  transition: color 0.2s ease-out, background-color 0.2s ease-out, border-color 0.2s ease-out;
+}
+
+.transition-transform-smooth {
+  transition: transform 0.2s ease-out;
+}
+
+/* ============================================
+   REDUCED MOTION SUPPORT
+   ============================================ */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* ============================================
+   RESPONSIVE TWEAKS
+   ============================================ */
+
+@media (max-width: 640px) {
+  /* Reduce animation intensity on mobile */
+  .animate-cart-bounce {
+    animation-duration: 0.3s;
+  }
+  
+  .hover-lift:hover {
+    transform: translateY(-1px);
+  }
+}
+
+/* ============================================
+   DARK MODE ADJUSTMENTS
+   ============================================ */
+
+@media (prefers-color-scheme: dark) {
+  .hover-glow:hover {
+    box-shadow: 0 0 20px rgba(var(--primary), 0.6);
+  }
+  
+  .btn-ripple::after {
+    background: rgba(255, 255, 255, 0.3);
+  }
+}

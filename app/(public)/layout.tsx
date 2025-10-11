@@ -3,6 +3,7 @@ import type { ReactNode } from "react"
 
 import { Toaster } from "@/components/ui/toaster"
 import { cn } from "@/lib/utils"
+import "./qr/_styles/animations.css"
 
 export const metadata: Metadata = {
   title: "Carta digital QR | Restaurante 360",
