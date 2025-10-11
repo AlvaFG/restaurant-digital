@@ -16,6 +16,7 @@ import { QrCartSheet } from "../_components/qr-cart-sheet"
 import { QrCategoryTabs } from "../_components/qr-category-tabs"
 import { QrMenuHeader } from "../_components/qr-menu-header"
 import { QrMenuItemCard } from "../_components/qr-menu-item-card"
+import { QrSearchBar } from "../_components/qr-search-bar"
 import { useQrCart } from "../_hooks/use-qr-cart"
 import { useQrSession } from "../_hooks/use-qr-session"
 import { useQrTable } from "../_hooks/use-qr-table"
@@ -68,6 +69,7 @@ export default function QrTablePage({ params }: PageParams) {
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
   const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
   const [lastOrderId, setLastOrderId] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState("")
 
   const allergenMap = useMemo(() => {
     const map = new Map<MenuAllergen["code"], MenuAllergen>()
@@ -148,10 +150,24 @@ export default function QrTablePage({ params }: PageParams) {
   }, [tableId])
 
   const filteredItems = useMemo(() => {
-    return items
-      .filter((item) => (selectedCategoryId ? item.categoryId === selectedCategoryId : true))
-      .sort((a, b) => a.name.localeCompare(b.name, "es"))
-  }, [items, selectedCategoryId])
+    let result = items.filter((item) => 
+      selectedCategoryId ? item.categoryId === selectedCategoryId : true
+    )
+
+    // Apply search filter
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim()
+      result = result.filter((item) => {
+        // Search in name
+        if (item.name.toLowerCase().includes(query)) return true
+        // Search in description
+        if (item.description?.toLowerCase().includes(query)) return true
+        return false
+      })
+    }
+
+    return result.sort((a, b) => a.name.localeCompare(b.name, "es"))
+  }, [items, selectedCategoryId, searchQuery])
 
   const handleAddItem = (menuItem: MenuItem, modifiers?: CartItemModifier[], notes?: string) => {
     if (menuItem.available === false) {
@@ -336,10 +352,18 @@ export default function QrTablePage({ params }: PageParams) {
               onSelect={handleCategoryChange}
             />
 
+            <QrSearchBar 
+              onSearchChange={setSearchQuery}
+              className="mb-2"
+            />
+
             <section className="space-y-4" aria-live="polite">
               {filteredItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
-                  No encontramos platos para esta categoria.
+                  {searchQuery.trim() 
+                    ? `No encontramos platos que coincidan con "${searchQuery}"`
+                    : "No encontramos platos para esta categoria."
+                  }
                 </div>
               ) : (
                 <div className="grid gap-4">
