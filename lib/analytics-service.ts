@@ -1,7 +1,7 @@
 /**
  * Analytics Service
  * 
- * Service for calculating analytics from order data
+ * Servicio para calcular análisis y métricas de datos de pedidos
  */
 
 import { Order } from '@/lib/mock-data'
@@ -19,20 +19,21 @@ import {
   DashboardAnalytics,
   DateRange,
 } from '@/lib/analytics-types'
+import { logger } from './logger'
 
 // ============================================================================
-// Utility Functions
+// Funciones Utilitarias
 // ============================================================================
 
 /**
- * Calculate order total (Order already has total field)
+ * Calcular el total del pedido (Order ya tiene el campo total)
  */
 function calculateOrderTotal(order: Order): number {
-  return order.total * 100 // Convert to cents for consistency
+  return order.total * 100 // Convertir a centavos para consistencia
 }
 
 /**
- * Filter orders by date range
+ * Filtrar pedidos por rango de fechas
  */
 function filterOrdersByDateRange(orders: Order[], dateRange: DateRange): Order[] {
   return orders.filter(order => {
@@ -42,7 +43,7 @@ function filterOrdersByDateRange(orders: Order[], dateRange: DateRange): Order[]
 }
 
 /**
- * Group orders by date
+ * Agrupar pedidos por fecha
  */
 function groupOrdersByDate(orders: Order[]): Map<string, Order[]> {
   const grouped = new Map<string, Order[]>()
@@ -59,65 +60,86 @@ function groupOrdersByDate(orders: Order[]): Map<string, Order[]> {
 }
 
 // ============================================================================
-// Sales Metrics
+// Métricas de Ventas
 // ============================================================================
 
 export function calculateSalesMetrics(
   orders: Order[],
   dateRange: DateRange
 ): SalesMetrics {
-  const filteredOrders = filterOrdersByDateRange(orders, dateRange)
+  const startTime = Date.now();
   
-  const completedOrders = filteredOrders.filter(
-    o => o.status === 'entregado' || o.paymentStatus === 'pagado'
-  )
+  try {
+    logger.debug('Calculando métricas de ventas', { 
+      totalOrders: orders.length,
+      dateRange: { from: dateRange.from.toISOString(), to: dateRange.to.toISOString() }
+    });
+
+    const filteredOrders = filterOrdersByDateRange(orders, dateRange)
   
-  const totalRevenue = completedOrders.reduce(
-    (sum, order) => sum + calculateOrderTotal(order),
-    0
-  )
+    const completedOrders = filteredOrders.filter(
+      o => o.status === 'entregado' || o.paymentStatus === 'pagado'
+    )
   
-  const orderCount = completedOrders.length
-  const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0
-  const completionRate = filteredOrders.length > 0
-    ? (completedOrders.length / filteredOrders.length) * 100
-    : 0
+    const totalRevenue = completedOrders.reduce(
+      (sum, order) => sum + calculateOrderTotal(order),
+      0
+    )
   
-  // Orders by status (Spanish keys from Order type)
-  const ordersByStatus = {
-    pending: filteredOrders.filter(o => o.status === 'abierto').length,
-    confirmed: filteredOrders.filter(o => o.status === 'abierto').length, // abierto = pending/confirmed
-    preparing: filteredOrders.filter(o => o.status === 'preparando').length,
-    ready: filteredOrders.filter(o => o.status === 'listo').length,
-    delivered: filteredOrders.filter(o => o.status === 'entregado').length,
-    cancelled: filteredOrders.filter(o => o.status === 'cerrado').length,
-  }
+    const orderCount = completedOrders.length
+    const avgOrderValue = orderCount > 0 ? totalRevenue / orderCount : 0
+    const completionRate = filteredOrders.length > 0
+      ? (completedOrders.length / filteredOrders.length) * 100
+      : 0
   
-  // Orders by payment method
-  const ordersByPaymentMethod = {
-    mercadopago: filteredOrders.filter(o => o.paymentStatus === 'pagado').length, // Assume paid = MP for now
-    cash: 0, // TODO: Add payment method field to Order
-    card: 0,
-    other: filteredOrders.filter(o => o.paymentStatus === 'pendiente').length,
-  }
+    // Pedidos por estado (claves en español del tipo Order)
+    const ordersByStatus = {
+      pending: filteredOrders.filter(o => o.status === 'abierto').length,
+      confirmed: filteredOrders.filter(o => o.status === 'abierto').length,
+      preparing: filteredOrders.filter(o => o.status === 'preparando').length,
+      ready: filteredOrders.filter(o => o.status === 'listo').length,
+      delivered: filteredOrders.filter(o => o.status === 'entregado').length,
+      cancelled: filteredOrders.filter(o => o.status === 'cerrado').length,
+    }
   
-  // Orders by payment status (Spanish keys)
-  const ordersByPaymentStatus = {
-    pending: filteredOrders.filter(o => o.paymentStatus === 'pendiente').length,
-    processing: 0, // Not in current Order type
-    completed: filteredOrders.filter(o => o.paymentStatus === 'pagado').length,
-    failed: 0, // Not in current Order type
-    refunded: filteredOrders.filter(o => o.paymentStatus === 'cancelado').length,
-  }
+    // Pedidos por método de pago
+    const ordersByPaymentMethod = {
+      mercadopago: filteredOrders.filter(o => o.paymentStatus === 'pagado').length,
+      cash: 0, // TODO: Agregar campo método de pago a Order
+      card: 0,
+      other: filteredOrders.filter(o => o.paymentStatus === 'pendiente').length,
+    }
   
-  return {
-    totalRevenue,
-    orderCount,
-    avgOrderValue,
-    completionRate,
-    ordersByStatus,
-    ordersByPaymentMethod,
-    ordersByPaymentStatus,
+    // Pedidos por estado de pago
+    const ordersByPaymentStatus = {
+      pending: filteredOrders.filter(o => o.paymentStatus === 'pendiente').length,
+      processing: 0,
+      completed: filteredOrders.filter(o => o.paymentStatus === 'pagado').length,
+      failed: 0,
+      refunded: filteredOrders.filter(o => o.paymentStatus === 'cancelado').length,
+    }
+
+    const duration = Date.now() - startTime;
+    logger.info('Métricas de ventas calculadas', {
+      filteredOrders: filteredOrders.length,
+      completedOrders: completedOrders.length,
+      totalRevenue,
+      duration: `${duration}ms`
+    });
+  
+    return {
+      totalRevenue,
+      orderCount,
+      avgOrderValue,
+      completionRate,
+      ordersByStatus,
+      ordersByPaymentMethod,
+      ordersByPaymentStatus,
+    }
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error('Error al calcular métricas de ventas', error as Error, { duration: `${duration}ms` });
+    throw error;
   }
 }
 
@@ -438,25 +460,55 @@ export function calculateQrUsageMetrics(
 }
 
 // ============================================================================
-// Complete Dashboard Analytics
+// Análisis Completo del Dashboard
 // ============================================================================
 
 export function calculateDashboardAnalytics(
   orders: Order[],
   dateRange: DateRange
 ): DashboardAnalytics {
-  return {
-    salesMetrics: calculateSalesMetrics(orders, dateRange),
-    revenueAnalytics: calculateRevenueAnalytics(orders, dateRange),
-    popularItems: calculatePopularItemsAnalytics(orders, dateRange),
-    qrUsage: calculateQrUsageMetrics(orders, dateRange),
-    dateRange,
-    lastUpdated: new Date().toISOString(),
+  const startTime = Date.now();
+  
+  try {
+    logger.info('Calculando análisis completo del dashboard', {
+      totalOrders: orders.length,
+      dateRange: {
+        from: dateRange.from.toISOString(),
+        to: dateRange.to.toISOString()
+      }
+    });
+
+    const result = {
+      salesMetrics: calculateSalesMetrics(orders, dateRange),
+      revenueAnalytics: calculateRevenueAnalytics(orders, dateRange),
+      popularItems: calculatePopularItemsAnalytics(orders, dateRange),
+      qrUsage: calculateQrUsageMetrics(orders, dateRange),
+      dateRange,
+      lastUpdated: new Date().toISOString(),
+    };
+
+    const duration = Date.now() - startTime;
+    logger.info('Análisis del dashboard completado', {
+      duration: `${duration}ms`,
+      metrics: {
+        totalRevenue: result.salesMetrics.totalRevenue,
+        orderCount: result.salesMetrics.orderCount,
+        topItemsCount: result.popularItems.topItemsByRevenue.length
+      }
+    });
+
+    return result;
+  } catch (error) {
+    const duration = Date.now() - startTime;
+    logger.error('Error al calcular análisis del dashboard', error as Error, {
+      duration: `${duration}ms`
+    });
+    throw error;
   }
 }
 
 // ============================================================================
-// Date Range Helpers
+// Helpers de Rangos de Fecha
 // ============================================================================
 
 export function getDateRangePreset(preset: string): DateRange {
