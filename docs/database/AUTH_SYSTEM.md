@@ -2,33 +2,12 @@
 
 ## 🎭 **Roles del Sistema**
 
-### **1. Super Admin (Tú - Proveedor del Servicio)**
-```typescript
-{
-  email: 'admin@restaurantdigital.com',
-  role: 'super_admin',
-  is_super_admin: true,
-  tenant_id: null  // Puede acceder a TODOS los tenants
-}
-```
-
-**Permisos:**
-- ✅ Ver TODOS los restaurantes (tenants)
-- ✅ Crear nuevos restaurantes
-- ✅ Asignar admins a restaurantes
-- ✅ Ver estadísticas globales
-- ✅ Acceder a cualquier tenant
-- ✅ Dashboard con selector de restaurantes
-
----
-
-### **2. Admin (Dueño del Restaurante)**
+### **1. Admin (Dueño del Restaurante)**
 ```typescript
 {
   email: 'dueno@restaurante.com',
   role: 'admin',
-  is_super_admin: false,
-  tenant_id: 'aaa-111'  // Solo su restaurante
+  tenant_id: 'aaa-111'  // Su restaurante
 }
 ```
 
@@ -42,7 +21,7 @@
 
 ---
 
-### **3. Manager (Supervisor de Turno)**
+### **2. Manager (Supervisor de Turno)**
 ```typescript
 {
   email: 'supervisor@restaurante.com',
@@ -61,7 +40,7 @@
 
 ---
 
-### **4. Staff (Mesero/Camarero)**
+### **3. Staff (Mesero/Camarero)**
 ```typescript
 {
   email: 'mesero@restaurante.com',
@@ -77,6 +56,35 @@
 - ❌ No puede ver reportes
 - ❌ No puede agregar usuarios
 - ❌ No puede editar menú
+
+---
+
+## 🏗️ **Acceso del Proveedor del Servicio (Tú)**
+
+**NO necesitas cuenta en la plataforma**. Tienes acceso directo a:
+
+### **Supabase Dashboard**
+- ✅ Ver TODA la base de datos
+- ✅ Consultas SQL directas
+- ✅ Ver métricas y logs
+- ✅ Administrar infraestructura
+
+### **Diferencia Clave**
+```
+TÚ (Infraestructura)
+├─ Dashboard de Supabase
+├─ Acceso a PostgreSQL
+├─ Ver todos los tenants
+└─ NO necesitas login en la app
+
+VS
+
+Usuarios de la Plataforma
+├─ Login en la aplicación web
+├─ Solo ven su restaurante
+├─ Interfaz de usuario
+└─ Permisos limitados por rol
+```
 
 ---
 
@@ -105,8 +113,7 @@ export async function login(email: string, password: string) {
     sub: user.id,
     email: user.email,
     role: user.role,
-    tenant_id: user.is_super_admin ? null : user.tenant_id,
-    is_super_admin: user.is_super_admin
+    tenant_id: user.tenant_id
   }, JWT_SECRET, { expiresIn: '8h' });
   
   // 4. Actualizar last_login_at
@@ -123,23 +130,20 @@ export async function login(email: string, password: string) {
 ```typescript
 // lib/auth/permissions.ts
 export function canAccessTenant(user: User, tenantId: string): boolean {
-  // Super admin puede acceder a todo
-  if (user.is_super_admin) return true;
-  
   // Usuario regular solo su tenant
   return user.tenant_id === tenantId;
 }
 
 export function canManageUsers(user: User): boolean {
-  return user.role === 'admin' || user.is_super_admin;
+  return user.role === 'admin';
 }
 
 export function canEditMenu(user: User): boolean {
-  return ['admin', 'manager', 'super_admin'].includes(user.role);
+  return ['admin', 'manager'].includes(user.role);
 }
 
 export function canViewReports(user: User): boolean {
-  return ['admin', 'manager', 'super_admin'].includes(user.role);
+  return ['admin', 'manager'].includes(user.role);
 }
 ```
 
@@ -166,9 +170,7 @@ export default function LoginPage() {
     localStorage.setItem('auth_token', token);
     
     // Redirect según rol
-    if (user.is_super_admin) {
-      router.push('/super-admin/dashboard');
-    } else if (user.role === 'admin') {
+    if (user.role === 'admin') {
       router.push('/dashboard');
     } else {
       router.push('/salon');
@@ -185,49 +187,7 @@ export default function LoginPage() {
 }
 ```
 
-### **2. Super Admin Dashboard**
-```typescript
-// app/super-admin/dashboard/page.tsx
-'use client';
-
-export default function SuperAdminDashboard() {
-  const [tenants, setTenants] = useState([]);
-  const [selectedTenant, setSelectedTenant] = useState(null);
-  
-  useEffect(() => {
-    loadAllTenants();
-  }, []);
-  
-  async function loadAllTenants() {
-    // Super admin ve TODOS los tenants
-    const { data } = await supabase
-      .from('v_tenant_stats')  // View con estadísticas
-      .select('*');
-    
-    setTenants(data);
-  }
-  
-  return (
-    <div>
-      <h1>Panel de Super Admin</h1>
-      
-      {/* Selector de Restaurante */}
-      <Select value={selectedTenant} onValueChange={setSelectedTenant}>
-        {tenants.map(t => (
-          <SelectItem key={t.id} value={t.id}>
-            {t.name} - {t.orders_last_7_days} pedidos
-          </SelectItem>
-        ))}
-      </Select>
-      
-      {/* Dashboard del restaurante seleccionado */}
-      {selectedTenant && <TenantDashboard tenantId={selectedTenant} />}
-    </div>
-  );
-}
-```
-
-### **3. Admin - Gestión de Staff**
+### **2. Admin - Gestión de Staff**
 ```typescript
 // app/dashboard/usuarios/page.tsx
 'use client';
@@ -308,8 +268,7 @@ export async function middleware(request: NextRequest) {
     
     // Agregar info del usuario al request
     request.headers.set('X-User-Id', payload.sub);
-    request.headers.set('X-Tenant-Id', payload.tenant_id || 'all');
-    request.headers.set('X-Is-Super-Admin', String(payload.is_super_admin));
+    request.headers.set('X-Tenant-Id', payload.tenant_id);
     
     return NextResponse.next();
   } catch {
@@ -318,7 +277,7 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*', '/super-admin/:path*', '/api/:path*']
+  matcher: ['/dashboard/:path*', '/api/:path*']
 };
 ```
 
@@ -328,12 +287,11 @@ export const config = {
 export async function POST(request: Request) {
   const userId = request.headers.get('X-User-Id');
   const userTenantId = request.headers.get('X-Tenant-Id');
-  const isSuperAdmin = request.headers.get('X-Is-Super-Admin') === 'true';
   
   const body = await request.json();
   
-  // Validar que el tenant_id coincida (o sea super admin)
-  if (!isSuperAdmin && body.tenant_id !== userTenantId) {
+  // Validar que el tenant_id coincida
+  if (body.tenant_id !== userTenantId) {
     return Response.json({ error: 'Unauthorized' }, { status: 403 });
   }
   
@@ -395,11 +353,10 @@ async function onboardNewRestaurant(data: {
 
 ## 🎯 **Resumen**
 
-| Rol | Acceso | Puede Crear Usuarios | Ve Todos los Tenants |
-|-----|--------|---------------------|---------------------|
-| **Super Admin** | TODO | ✅ Sí | ✅ Sí |
-| **Admin** | Su tenant | ✅ Sí (staff/manager) | ❌ No |
-| **Manager** | Su tenant | ❌ No | ❌ No |
+| Rol | Acceso | Puede Crear Usuarios | Gestiona Todo |
+|-----|--------|---------------------|---------------|
+| **Admin** | Su tenant | ✅ Sí (staff/manager) | ✅ Sí |
+| **Manager** | Su tenant | ❌ No | ⏸️ Parcial |
 | **Staff** | Su tenant | ❌ No | ❌ No |
 
 ---
@@ -409,8 +366,7 @@ async function onboardNewRestaurant(data: {
 1. ✅ Aplicar migración `20251011000003_add_auth_system.sql`
 2. Crear componentes de login
 3. Implementar JWT authentication
-4. Crear dashboard de super admin
-5. Crear UI de gestión de staff
-6. Hash passwords con bcrypt
-7. Implementar forgot password
-8. Testing de roles y permisos
+4. Crear UI de gestión de staff
+5. Hash passwords con bcrypt
+6. Implementar forgot password
+7. Testing de roles y permisos

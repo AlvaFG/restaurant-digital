@@ -1,6 +1,6 @@
 -- ============================================
--- Migration: Add Super Admin and Auth System
--- Description: Add super admin role and authentication helpers
+-- Migration: Add Auth System
+-- Description: Add authentication helpers for restaurant users
 -- Author: Restaurant Digital Team
 -- Date: 2025-10-11
 -- ============================================
@@ -9,9 +9,6 @@
 -- EXTEND USERS TABLE
 -- ============================================
 
--- Add super_admin flag (bypasses tenant_id restriction)
-ALTER TABLE users ADD COLUMN is_super_admin BOOLEAN DEFAULT false;
-
 -- Add last_login tracking
 ALTER TABLE users ADD COLUMN last_login_at TIMESTAMPTZ;
 
@@ -19,80 +16,28 @@ ALTER TABLE users ADD COLUMN last_login_at TIMESTAMPTZ;
 ALTER TABLE users ADD COLUMN reset_token TEXT;
 ALTER TABLE users ADD COLUMN reset_token_expires_at TIMESTAMPTZ;
 
--- Update role check to include super_admin
-ALTER TABLE users DROP CONSTRAINT users_role_check;
-ALTER TABLE users ADD CONSTRAINT users_role_check 
-  CHECK (role IN ('admin', 'staff', 'manager', 'super_admin'));
-
--- Index for super admins
-CREATE INDEX idx_users_super_admin ON users(is_super_admin) WHERE is_super_admin = true;
+-- Index for password reset tokens
+CREATE INDEX idx_users_reset_token ON users(reset_token) WHERE reset_token IS NOT NULL;
 
 -- Comments
-COMMENT ON COLUMN users.is_super_admin IS 'Super admin can access all tenants (service provider)';
 COMMENT ON COLUMN users.last_login_at IS 'Timestamp of last successful login';
 COMMENT ON COLUMN users.reset_token IS 'Token for password reset';
-
--- ============================================
--- CREATE SUPER ADMIN USER
--- ============================================
-
--- Insert super admin account
--- Default password: "admin123" (change immediately!)
--- Password hash generated with bcrypt
-INSERT INTO users (
-  id,
-  tenant_id,
-  email,
-  password_hash,
-  name,
-  role,
-  is_super_admin,
-  active
-) VALUES (
-  uuid_generate_v4(),
-  (SELECT id FROM tenants WHERE slug = 'demo' LIMIT 1), -- Associated with demo tenant but can access all
-  'admin@restaurantdigital.com',
-  '$2a$10$rKvVPr3qM6G5Y9hQ8X1wZuJ3qY9vX2qZ1Y9vX2qZ1Y9vX2qZ1Y9vX2', -- bcrypt hash of "admin123"
-  'Super Administrator',
-  'super_admin',
-  true,
-  true
-);
 
 -- ============================================
 -- HELPER FUNCTIONS FOR AUTH
 -- ============================================
 
--- Function to check if user is super admin
-CREATE OR REPLACE FUNCTION is_super_admin(user_id UUID)
-RETURNS BOOLEAN AS $$
-BEGIN
-  RETURN EXISTS (
-    SELECT 1 FROM users
-    WHERE id = user_id
-    AND is_super_admin = true
-    AND active = true
-  );
-END;
-$$ LANGUAGE plpgsql STABLE;
-
--- Function to get user's tenant (returns NULL for super admin to access all)
+-- Function to get user's tenant
 CREATE OR REPLACE FUNCTION get_user_tenant(user_id UUID)
 RETURNS UUID AS $$
 DECLARE
   user_tenant UUID;
-  is_super BOOLEAN;
 BEGIN
-  SELECT tenant_id, is_super_admin
-  INTO user_tenant, is_super
+  SELECT tenant_id
+  INTO user_tenant
   FROM users
   WHERE id = user_id
   AND active = true;
-  
-  -- Super admin can access all tenants
-  IF is_super THEN
-    RETURN NULL;
-  END IF;
   
   RETURN user_tenant;
 END;
@@ -102,12 +47,7 @@ $$ LANGUAGE plpgsql STABLE;
 CREATE OR REPLACE FUNCTION can_access_tenant(user_id UUID, target_tenant_id UUID)
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- Super admin can access everything
-  IF is_super_admin(user_id) THEN
-    RETURN true;
-  END IF;
-  
-  -- Regular user can only access their own tenant
+  -- User can only access their own tenant
   RETURN EXISTS (
     SELECT 1 FROM users
     WHERE id = user_id
@@ -134,7 +74,6 @@ BEGIN
     password_hash,
     name,
     role,
-    is_super_admin,
     active
   ) VALUES (
     p_tenant_id,
@@ -142,7 +81,6 @@ BEGIN
     p_password_hash,
     p_name,
     'admin',
-    false,
     true
   )
   RETURNING id INTO new_user_id;
@@ -203,7 +141,6 @@ BEGIN
     password_hash,
     name,
     role,
-    is_super_admin,
     active
   ) VALUES (
     p_tenant_id,
@@ -211,7 +148,6 @@ BEGIN
     p_password_hash,
     p_name,
     p_role,
-    false,
     true
   )
   RETURNING id INTO new_user_id;
@@ -244,35 +180,13 @@ END;
 $$ LANGUAGE plpgsql;
 
 -- ============================================
--- UPDATE RLS POLICIES FOR SUPER ADMIN
+-- UPDATE RLS POLICIES
 -- ============================================
 
--- Drop existing users isolation policy
-DROP POLICY IF EXISTS users_isolation_policy ON users;
-
--- Recreate with super admin support
+-- Users can only see users from their tenant
 CREATE POLICY users_isolation_policy ON users
   FOR ALL
-  USING (
-    -- Super admin sees all users
-    is_super_admin(auth.uid())
-    OR
-    -- Regular users only see their tenant
-    tenant_id = current_tenant_id()
-  );
-
--- Super admin can read all tenants
-DROP POLICY IF EXISTS tenant_isolation_policy ON tenants;
-
-CREATE POLICY tenant_isolation_policy ON tenants
-  FOR ALL
-  USING (
-    -- Super admin sees all tenants
-    EXISTS (SELECT 1 FROM users WHERE id = auth.uid() AND is_super_admin = true)
-    OR
-    -- Regular users see only their tenant
-    id = current_tenant_id()
-  );
+  USING (tenant_id = current_tenant_id());
 
 -- ============================================
 -- VIEWS FOR CONVENIENCE
@@ -287,7 +201,6 @@ SELECT
   u.email,
   u.name,
   u.role,
-  u.is_super_admin,
   u.active,
   u.last_login_at,
   u.created_at
@@ -434,14 +347,12 @@ CREATE TRIGGER user_update_audit
 -- PERMISSIONS SUMMARY
 -- ============================================
 
-COMMENT ON FUNCTION is_super_admin IS 'Check if user is super admin (service provider)';
-COMMENT ON FUNCTION get_user_tenant IS 'Get user tenant (NULL for super admin)';
+COMMENT ON FUNCTION get_user_tenant IS 'Get user tenant ID';
 COMMENT ON FUNCTION can_access_tenant IS 'Check if user can access specific tenant';
 COMMENT ON FUNCTION create_tenant_admin IS 'Create admin user for new tenant';
 COMMENT ON FUNCTION create_staff_user IS 'Create staff/manager user (must be called by admin)';
 
 -- Summary of roles:
--- super_admin: Can access ALL tenants (you, the service provider)
 -- admin: Can manage their tenant (restaurant owner)
 -- manager: Can manage operations (shift supervisor)
 -- staff: Can take orders and serve tables (waiters)
