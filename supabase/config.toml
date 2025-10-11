@@ -1,5 +1,7 @@
 # Learn more about Supabase projects at https://supabase.com/docs/guides/cli/getting-started
 
+project_id = "vblbngnajogwypvkfjsr"
+
 [api]
 enabled = true
 port = 54321
@@ -50,7 +52,3 @@ pop3_port = 54326
 [storage]
 enabled = true
 file_size_limit = "50MiB"
-
-[edge-runtime]
-enabled = true
-port = 54330
