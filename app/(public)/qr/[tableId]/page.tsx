@@ -67,8 +67,6 @@ export default function QrTablePage({ params }: PageParams) {
   } = useQrTable(tableId)
 
   const [selectedCategoryId, setSelectedCategoryId] = useState<string | null>(null)
-  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false)
-  const [lastOrderId, setLastOrderId] = useState<string | null>(null)
   const [searchQuery, setSearchQuery] = useState("")
 
   const allergenMap = useMemo(() => {
@@ -98,6 +96,7 @@ export default function QrTablePage({ params }: PageParams) {
     addOrIncrement,
     increment,
     decrement,
+    remove,
     clear,
   } = useQrCart(tableId, session?.sessionId, items)
 
@@ -145,9 +144,7 @@ export default function QrTablePage({ params }: PageParams) {
     }
   }, [categories, selectedCategoryId])
 
-  useEffect(() => {
-    setLastOrderId(null)
-  }, [tableId])
+
 
   const filteredItems = useMemo(() => {
     let result = items.filter((item) => 
@@ -181,76 +178,8 @@ export default function QrTablePage({ params }: PageParams) {
     addOrIncrement(menuItem.id, modifiers, notes)
   }
 
-  const handleSubmitOrder = async () => {
-    if (detailedItems.length === 0 || hasUnavailableItems || isSubmittingOrder) {
-      return
-    }
-
-    setIsSubmittingOrder(true)
-    setLastOrderId(null)
-
-    try {
-      const response = await fetch("/api/menu/orders", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          tableId,
-          sessionId: session?.sessionId, // Include session ID
-          items: detailedItems.map((entry) => ({
-            menuItemId: entry.item.id,
-            quantity: entry.quantity,
-          })),
-        }),
-      })
-
-      if (!response.ok) {
-        let message = `No pudimos enviar el pedido (codigo ${response.status})`
-        try {
-          const payload = (await response.json()) as { error?: string }
-          if (payload?.error) {
-            message = payload.error
-          }
-        } catch {
-          // ignore JSON issues
-        }
-
-        toast({
-          title: "No se envio el pedido",
-          description: message,
-          variant: "destructive",
-        })
-        return
-      }
-
-      const payload = (await response.json()) as { data?: { id?: string } }
-      const orderId = payload?.data?.id ?? `orden-${Date.now()}`
-      setLastOrderId(orderId)
-      clear()
-
-      toast({
-        title: "Pedido enviado",
-        description: "Avisaremos al staff para continuar.",
-      })
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Error desconocido"
-      toast({
-        title: "Sin conexion",
-        description: message,
-        variant: "destructive",
-      })
-    } finally {
-      setIsSubmittingOrder(false)
-    }
-  }
-
   const handleCategoryChange = (categoryId: string | null) => {
     setSelectedCategoryId(categoryId)
-  }
-
-  const handleCloseSuccess = () => {
-    setLastOrderId(null)
   }
 
   const refetchAll = () => {
@@ -403,17 +332,16 @@ export default function QrTablePage({ params }: PageParams) {
 
       <QrCartSheet
         items={detailedItems}
+        itemCount={itemCount}
         totalCents={totalCents}
         currencyFormatter={currencyFormatter}
-        itemCount={itemCount}
-        hasUnavailableItems={hasUnavailableItems}
-        isSubmitting={isSubmittingOrder}
-        onIncrement={(customizationId) => increment(customizationId)}
-        onDecrement={(customizationId) => decrement(customizationId)}
+        tableNumber={table?.number ?? null}
+        tableId={tableId}
+        sessionId={session?.sessionId}
+        onIncrement={(customizationId: string) => increment(customizationId)}
+        onDecrement={(customizationId: string) => decrement(customizationId)}
+        onRemove={(customizationId: string) => remove(customizationId)}
         onClear={clear}
-        onSubmit={handleSubmitOrder}
-        successOrderId={lastOrderId}
-        onCloseSuccess={handleCloseSuccess}
       />
     </div>
   )
