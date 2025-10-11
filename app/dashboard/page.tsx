@@ -1,16 +1,30 @@
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
-import { MOCK_TABLES, MOCK_ALERTS, MOCK_ANALYTICS } from "@/lib/mock-data"
-import { TABLE_STATE } from "@/lib/table-states"
-import { Bell, DollarSign, Users, TrendingUp, AlertCircle } from "lucide-react"
+import { MOCK_ALERTS } from "@/lib/mock-data"
+import { Bell, DollarSign, Users, TrendingUp, AlertCircle, UtensilsCrossed } from "lucide-react"
 import { cn } from "@/lib/utils"
+import { getDashboardMetrics } from "@/lib/dashboard-service"
+import { getCurrentUser } from "@/lib/supabase/server"
+import { redirect } from "next/navigation"
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  // Obtener usuario actual
+  const user = await getCurrentUser()
+  if (!user) {
+    redirect("/login")
+  }
+
+  // Obtener tenant_id del usuario
+  const tenantId = user.user_metadata?.tenant_id || "default-tenant"
+
+  // Obtener métricas reales de Supabase
+  const metrics = await getDashboardMetrics(tenantId)
+
+  // Alertas (todavía desde mock, hasta implementar tabla de alerts)
   const activeAlerts = MOCK_ALERTS.filter((alert) => !alert.acknowledged)
-  const occupiedTables = MOCK_TABLES.filter((table) => table.status !== TABLE_STATE.FREE)
 
-  // Calcular métricas
+  // Calcular métricas de crecimiento (por ahora hardcoded, se puede mejorar con comparación histórica)
   const salesGrowth = "+12%"
   const ticketGrowth = "+5%"
 
@@ -36,7 +50,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">${MOCK_ANALYTICS.dailySales.toLocaleString()}</div>
+              <div className="text-3xl font-bold">${metrics.dailySales.toLocaleString()}</div>
               <p className="text-xs text-emerald-500 font-medium mt-1">
                 {salesGrowth} desde ayer
               </p>
@@ -54,7 +68,7 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">${MOCK_ANALYTICS.averageTicket}</div>
+              <div className="text-3xl font-bold">${metrics.averageTicket}</div>
               <p className="text-xs text-emerald-500 font-medium mt-1">
                 {ticketGrowth} desde ayer
               </p>
@@ -72,26 +86,26 @@ export default function DashboardPage() {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{MOCK_ANALYTICS.occupancyRate}%</div>
+              <div className="text-3xl font-bold">{metrics.occupancyRate}%</div>
               <p className="text-xs text-muted-foreground mt-1">
-                {occupiedTables.length} de {MOCK_TABLES.length} mesas
+                {metrics.occupiedTables} de {metrics.totalTables} mesas
               </p>
             </CardContent>
           </Card>
 
-          {/* Alertas Activas */}
+          {/* Cubiertos del Día - NUEVA MÉTRICA */}
           <Card className="border-border/40">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Alertas Activas
+                Cubiertos del Día
               </CardTitle>
-              <div className="rounded-full bg-destructive/10 p-2">
-                <Bell className="h-4 w-4 text-destructive" />
+              <div className="rounded-full bg-chart-4/10 p-2">
+                <UtensilsCrossed className="h-4 w-4 text-chart-4" />
               </div>
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold">{activeAlerts.length}</div>
-              <p className="text-xs text-muted-foreground mt-1">Requieren atención</p>
+              <div className="text-3xl font-bold">{metrics.totalCovers}</div>
+              <p className="text-xs text-muted-foreground mt-1">Personas atendidas hoy</p>
             </CardContent>
           </Card>
         </div>
@@ -113,7 +127,6 @@ export default function DashboardPage() {
             <CardContent>
               <div className="space-y-3">
                 {activeAlerts.map((alert) => {
-                  const table = MOCK_TABLES.find((t) => t.id === alert.tableId)
                   const alertConfig = {
                     quiere_pagar_efectivo: {
                       color: "bg-red-500",
@@ -147,7 +160,7 @@ export default function DashboardPage() {
                       <div className="flex items-center gap-4">
                         <div className={cn("w-2 h-2 rounded-full animate-pulse", config.color)} />
                         <div>
-                          <p className="font-semibold">Mesa {table?.number}</p>
+                          <p className="font-semibold">Mesa {alert.tableId}</p>
                           <p className="text-sm text-muted-foreground">{alert.message}</p>
                         </div>
                       </div>
@@ -172,18 +185,16 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {Object.entries(
-                  MOCK_TABLES.reduce(
-                    (acc, table) => {
-                      acc[table.status] = (acc[table.status] || 0) + 1
-                      return acc
-                    },
-                    {} as Record<string, number>,
-                  ),
-                ).map(([status, count]) => (
+                {Object.entries(metrics.tablesByStatus).map(([status, count]) => (
                   <div key={status} className="flex justify-between items-center">
                     <span className="capitalize text-sm font-medium">
-                      {status === "free" ? "Libre" : status === "occupied" ? "Ocupada" : status.replace("_", " ")}
+                      {status === "libre"
+                        ? "Libre"
+                        : status === "ocupada"
+                          ? "Ocupada"
+                          : status === "reservada"
+                            ? "Reservada"
+                            : status.replace("_", " ")}
                     </span>
                     <Badge variant="secondary" className="font-semibold">
                       {count}
@@ -198,11 +209,11 @@ export default function DashboardPage() {
           <Card className="border-border/40">
             <CardHeader>
               <CardTitle>Platos Más Pedidos</CardTitle>
-              <CardDescription>Top 3 del día</CardDescription>
+              <CardDescription>Top 5 del día</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {MOCK_ANALYTICS.topDishes.slice(0, 3).map((dish, index) => (
+                {metrics.topDishes.map((dish, index) => (
                   <div key={dish.name} className="flex justify-between items-center">
                     <div className="flex items-center gap-3">
                       <Badge
