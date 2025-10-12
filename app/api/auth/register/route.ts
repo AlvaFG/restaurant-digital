@@ -81,7 +81,7 @@ export async function POST(request: Request) {
         email,
         password_hash: passwordHash,
         name,
-        role: "staff", // Por defecto los usuarios registrados son staff
+        role: "admin", // Los usuarios que se registran son administradores
         tenant_id: tenantId,
         active: true,
       } as any)

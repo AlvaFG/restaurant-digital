@@ -51,12 +51,16 @@ export class AuthService {
     
     try {
       logger.info('Iniciando login', { email });
+      console.log('[AuthService] Iniciando login para:', email);
 
       // Validar inputs
       if (!email || !password) {
+        console.error('[AuthService] Faltan credenciales');
         throw new AuthenticationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO);
       }
 
+      console.log('[AuthService] Enviando petición a /api/auth/login');
+      
       // Llamar a la API route en el servidor
       const response = await fetch('/api/auth/login', {
         method: 'POST',
@@ -66,7 +70,16 @@ export class AuthService {
         body: JSON.stringify({ email, password }),
       });
 
-      const responseData = await response.json();
+      console.log('[AuthService] Respuesta recibida, status:', response.status);
+      
+      let responseData;
+      try {
+        responseData = await response.json();
+        console.log('[AuthService] Datos de respuesta:', JSON.stringify(responseData, null, 2));
+      } catch (jsonError) {
+        console.error('[AuthService] Error al parsear JSON:', jsonError);
+        throw new AppError('Error al procesar respuesta del servidor');
+      }
 
       if (!response.ok) {
         logger.error('Error en login', undefined, { 
@@ -75,6 +88,8 @@ export class AuthService {
           error: responseData.error 
         });
         
+        console.error('[AuthService] Error en login:', responseData.error);
+        
         // Extraer mensaje de error del objeto error
         const errorMessage = responseData.error?.message || responseData.error || MENSAJES.ERRORES.CREDENCIALES_INVALIDAS;
         throw new AuthenticationError(errorMessage);
@@ -82,7 +97,20 @@ export class AuthService {
 
       // La respuesta exitosa viene en el formato { data: { user, tenant }, message }
       const data = responseData.data || responseData;
+      
+      if (!data || !data.user || !data.tenant) {
+        console.error('[AuthService] Respuesta incompleta:', data);
+        throw new AppError('Respuesta del servidor incompleta');
+      }
+      
       const { user, tenant } = data;
+
+      if (!user.id || !user.email || !tenant.id) {
+        console.error('[AuthService] Datos inválidos:', { user, tenant });
+        throw new AppError('Datos de usuario o tenant inválidos');
+      }
+
+      console.log('[AuthService] Usuario autenticado:', user.email, 'Rol:', user.role);
 
       // Store in localStorage
       localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
@@ -97,11 +125,15 @@ export class AuthService {
         tenantId: tenant.id,
         duration: `${duration}ms`
       });
+      
+      console.log('[AuthService] Login completado exitosamente en', duration, 'ms');
 
       return user;
     } catch (error) {
       const duration = Date.now() - startTime;
       logger.error('Login falló', error as Error, { email, duration: `${duration}ms` });
+      
+      console.error('[AuthService] Login falló:', error);
       
       if (error instanceof AuthenticationError) {
         throw error;

@@ -184,8 +184,8 @@ export function UsersManagement() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Gestión de Usuarios</h1>
-          <p className="text-muted-foreground">Administra usuarios y roles del sistema</p>
+          <h1 className="text-3xl font-light tracking-tight">Gestión de Usuarios</h1>
+          <p className="text-muted-foreground font-light">Administra usuarios y roles del sistema</p>
         </div>
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
           <DialogTrigger asChild>
@@ -264,51 +264,59 @@ export function UsersManagement() {
 
       {/* Stats */}
       <div className="grid gap-4 md:grid-cols-4">
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Usuarios</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">Total Usuarios</CardTitle>
+            <div className="rounded-full bg-primary/10 p-2 border-2 border-primary/30 dark:bg-zinc-800 dark:border-zinc-600">
+              <Users className="h-4 w-4 text-primary dark:text-emerald-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Usuarios Activos</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">Usuarios Activos</CardTitle>
+            <div className="rounded-full bg-chart-2/10 p-2 border-2 border-chart-2/30 dark:bg-zinc-800 dark:border-zinc-600">
+              <Users className="h-4 w-4 text-chart-2 dark:text-cyan-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.filter((u) => u.active).length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.active).length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Administradores</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">Administradores</CardTitle>
+            <div className="rounded-full bg-chart-3/10 p-2 border-2 border-chart-3/30 dark:bg-zinc-800 dark:border-zinc-600">
+              <Users className="h-4 w-4 text-chart-3 dark:text-purple-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.filter((u) => u.role === "admin").length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.role === "admin").length}</div>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Staff</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">Staff</CardTitle>
+            <div className="rounded-full bg-chart-4/10 p-2 border-2 border-chart-4/30 dark:bg-zinc-800 dark:border-zinc-600">
+              <Users className="h-4 w-4 text-chart-4 dark:text-orange-400" />
+            </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{users.filter((u) => u.role === "staff").length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.role === "staff").length}</div>
           </CardContent>
         </Card>
       </div>
 
       {/* Users Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Lista de Usuarios</CardTitle>
+      <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+        <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+          <CardTitle className="font-light dark:text-zinc-100">Lista de Usuarios</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

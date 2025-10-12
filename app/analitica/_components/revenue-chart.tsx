@@ -48,10 +48,10 @@ export function RevenueChart({ data, title, description }: RevenueChartProps) {
   }))
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title || 'Ingresos en el tiempo'}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+      <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+        <CardTitle className="font-light dark:text-zinc-100">{title || 'Ingresos en el tiempo'}</CardTitle>
+        {description && <CardDescription className="font-light dark:text-zinc-400">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <ResponsiveContainer width="100%" height={350}>

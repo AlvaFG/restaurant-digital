@@ -189,9 +189,9 @@ export function OrderForm() {
   return (
     <div className="grid gap-6 lg:grid-cols-3">
       <div className="space-y-4 lg:col-span-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Seleccionar mesa</CardTitle>
+        <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+          <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+            <CardTitle className="font-light dark:text-zinc-100">Seleccionar mesa</CardTitle>
           </CardHeader>
           <CardContent>
             {tablesLoading ? (
@@ -225,10 +225,10 @@ export function OrderForm() {
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
+        <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+          <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
             <div className="flex items-center justify-between">
-              <CardTitle>Menu</CardTitle>
+              <CardTitle className="font-light dark:text-zinc-100">Menu</CardTitle>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
@@ -260,11 +260,11 @@ export function OrderForm() {
             <ScrollArea className="h-96">
               <div className="space-y-3">
                 {filteredMenuItems.map((item) => (
-                  <div key={item.id} className="flex items-center justify-between rounded-lg border p-3">
+                  <div key={item.id} className="flex items-center justify-between rounded-lg border-2 border-border p-3 shadow-md hover:shadow-lg transition-all dark:border-zinc-700 dark:bg-zinc-800/50">
                     <div className="flex-1">
-                      <h4 className="font-medium">{item.name}</h4>
-                      <p className="text-sm text-muted-foreground">{item.description}</p>
-                      <p className="text-sm font-medium">${(item.priceCents / 100).toFixed(2)}</p>
+                      <h4 className="font-light dark:text-zinc-100">{item.name}</h4>
+                      <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">{item.description}</p>
+                      <p className="text-sm font-light dark:text-zinc-200">${(item.priceCents / 100).toFixed(2)}</p>
                     </div>
                     <Button
                       onClick={() => addToOrder(item)}
@@ -283,23 +283,23 @@ export function OrderForm() {
       </div>
 
       <div className="space-y-4">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+          <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+            <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
               <ShoppingCart className="h-5 w-5" />
               Pedido ({orderItems.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
             {orderItems.length === 0 ? (
-              <p className="py-4 text-center text-muted-foreground">No hay items en el pedido</p>
+              <p className="py-4 text-center text-muted-foreground font-light dark:text-zinc-400">No hay items en el pedido</p>
             ) : (
               <div className="space-y-3">
                 {orderItems.map((item) => (
-                  <div key={item.menuItem.id} className="flex items-center justify-between">
+                  <div key={item.menuItem.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-accent/30 p-3 dark:border-transparent dark:bg-zinc-800/30">
                     <div className="flex-1">
-                      <p className="text-sm font-medium">{item.menuItem.name}</p>
-                      <p className="text-xs text-muted-foreground">${(item.menuItem.priceCents / 100).toFixed(2)} c/u</p>
+                      <p className="text-sm font-light dark:text-zinc-100">{item.menuItem.name}</p>
+                      <p className="text-xs text-muted-foreground font-light dark:text-zinc-400">${(item.menuItem.priceCents / 100).toFixed(2)} c/u</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button
@@ -336,12 +336,12 @@ export function OrderForm() {
 
                 <Separator />
 
-                <div className="space-y-2">
+                <div className="space-y-2 font-light dark:text-zinc-300">
                   <div className="flex justify-between text-sm">
                     <span>Subtotal:</span>
                     <span>${(calculateTotal() / 100).toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between font-medium">
+                  <div className="flex justify-between font-light text-base dark:text-zinc-100">
                     <span>Total:</span>
                     <span>${(calculateTotal() / 100).toFixed(2)}</span>
                   </div>

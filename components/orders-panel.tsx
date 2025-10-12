@@ -159,33 +159,21 @@ export function OrdersPanel() {
 
   return (
     <div className="space-y-6">
-      <header className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Panel de pedidos</h2>
-          <p className="text-sm text-muted-foreground">
-            Monitorea pedidos activos, coordina con cocina y controla cobros sin salir del tablero.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          {lastUpdated ? (
-            <span className="text-xs text-muted-foreground" aria-live="polite">
-              Actualizado {formatRelativeTime(lastUpdated)}
-            </span>
-          ) : null}
-          <Button
-            type="button"
-            onClick={() => void refetch({ silent: true })}
-            variant="outline"
-            size="sm"
-            aria-label="Actualizar pedidos"
-            data-testid="orders-manual-refresh"
-            disabled={refreshDisabled}
-          >
-            <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span className="sr-only">Actualizar pedidos</span>
-          </Button>
-        </div>
-      </header>
+      {/* Botón de actualizar alineado a la derecha */}
+      <div className="flex items-center justify-end">
+        <Button
+          type="button"
+          onClick={() => void refetch({ silent: true })}
+          variant="outline"
+          size="sm"
+          aria-label="Actualizar pedidos"
+          data-testid="orders-manual-refresh"
+          disabled={refreshDisabled}
+        >
+          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
+          <span className="sr-only">Actualizar pedidos</span>
+        </Button>
+      </div>
 
       {error ? (
         <Alert variant="destructive">
@@ -207,39 +195,39 @@ export function OrdersPanel() {
       ) : null}
 
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-live="polite">
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription>Pedidos supervisados</CardDescription>
-            <CardTitle className="text-3xl font-bold">{activeOrders}</CardTitle>
+            <CardDescription className="font-light dark:text-zinc-400">Pedidos supervisados</CardDescription>
+            <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{activeOrders}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">
+          <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
             Incluye abiertos, preparando, listos y entregados.
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription>Pendientes de cobro</CardDescription>
-            <CardTitle className="text-3xl font-bold">{summary?.pendingPayment ?? 0}</CardTitle>
+            <CardDescription className="font-light dark:text-zinc-400">Pendientes de cobro</CardDescription>
+            <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{summary?.pendingPayment ?? 0}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">
+          <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
             Pedidos marcados con pago pendiente.
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription>Pedido mas reciente</CardDescription>
-            <CardTitle className="text-lg font-semibold">{latestOrderDisplay}</CardTitle>
+            <CardDescription className="font-light dark:text-zinc-400">Pedido mas reciente</CardDescription>
+            <CardTitle className="text-lg font-light dark:text-zinc-100">{latestOrderDisplay}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">
+          <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
             Tiempo relativo desde la ultima creacion.
           </CardContent>
         </Card>
-        <Card>
+        <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription>Pedidos cerrados</CardDescription>
-            <CardTitle className="text-3xl font-bold">{summary?.byStatus.cerrado ?? 0}</CardTitle>
+            <CardDescription className="font-light dark:text-zinc-400">Pedidos cerrados</CardDescription>
+            <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{summary?.byStatus.cerrado ?? 0}</CardTitle>
           </CardHeader>
-          <CardContent className="text-xs text-muted-foreground">
+          <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
             Total de pedidos marcados como cerrados.
           </CardContent>
         </Card>
@@ -247,10 +235,10 @@ export function OrdersPanel() {
 
       <div className="grid gap-6 lg:grid-cols-[320px,1fr]">
         <aside className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Filtros</CardTitle>
-              <CardDescription>Busqueda, estado operativo y cobro.</CardDescription>
+          <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+            <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+              <CardTitle className="font-light dark:text-zinc-100">Filtros</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">Busqueda, estado operativo y cobro.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -271,7 +259,7 @@ export function OrdersPanel() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium">Estados</p>
+                <p className="text-sm font-light dark:text-zinc-300">Estados</p>
                 <ToggleGroup
                   type="multiple"
                   value={statusFilters}
@@ -279,7 +267,7 @@ export function OrdersPanel() {
                   className="flex flex-wrap gap-2"
                 >
                   {STATUS_SEQUENCE.map((status) => (
-                    <ToggleGroupItem key={status} value={status} className="px-3 py-1 text-xs capitalize">
+                    <ToggleGroupItem key={status} value={status} className="px-3 py-1 text-xs capitalize font-light">
                       {ORDER_STATUS_LABELS[status]}
                     </ToggleGroupItem>
                   ))}
@@ -287,7 +275,7 @@ export function OrdersPanel() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-medium">Pago</p>
+                <p className="text-sm font-light dark:text-zinc-300">Pago</p>
                 <Select
                   value={paymentFilter}
                   onValueChange={(value) => setPaymentFilter(value as PaymentStatus | "todos")}
@@ -308,18 +296,18 @@ export function OrdersPanel() {
             </CardContent>
           </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Resumen por grupo</CardTitle>
-              <CardDescription>Distribucion de pedidos por etapa.</CardDescription>
+          <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+            <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+              <CardTitle className="font-light dark:text-zinc-100">Resumen por grupo</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">Distribucion de pedidos por etapa.</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-3 text-sm">
+            <CardContent className="space-y-3 text-sm font-light dark:text-zinc-300">
               {(Object.entries(ORDER_STATUS_GROUPS) as Array<[string, OrderStatus[]]>).map(([groupKey, statuses]) => {
                 const total = statuses.reduce((acc, status) => acc + (summary?.byStatus[status] ?? 0), 0)
                 return (
-                  <div key={groupKey} className="flex items-center justify-between rounded border px-3 py-2">
-                    <span className="capitalize text-muted-foreground">{groupKey.split("_").join(" ")}</span>
-                    <span className="font-semibold">{total}</span>
+                  <div key={groupKey} className="flex items-center justify-between rounded border border-border/50 bg-accent/30 px-3 py-2 dark:border-transparent dark:bg-zinc-800/30">
+                    <span className="capitalize text-muted-foreground font-light dark:text-zinc-400">{groupKey.split("_").join(" ")}</span>
+                    <span className="font-light dark:text-zinc-200">{total}</span>
                   </div>
                 )
               })}
@@ -335,8 +323,8 @@ export function OrdersPanel() {
           ) : null}
 
           {emptyState ? (
-            <Card>
-              <CardContent className="py-12 text-center text-sm text-muted-foreground">
+            <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+              <CardContent className="py-12 text-center text-sm text-muted-foreground font-light dark:text-zinc-400">
                 No hay pedidos que coincidan con los filtros.
               </CardContent>
             </Card>
@@ -344,21 +332,21 @@ export function OrdersPanel() {
 
           {!emptyState &&
             groupedByStatus.map(({ status, orders }) => (
-              <Card key={status} aria-live="polite">
-                <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <Card key={status} aria-live="polite" className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+                <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b dark:border-zinc-800 dark:bg-zinc-900/50">
                   <div className="flex items-center gap-2">
-                    <CardTitle className="text-lg font-semibold capitalize">
+                    <CardTitle className="text-lg font-light capitalize dark:text-zinc-100">
                       {ORDER_STATUS_LABELS[status]}
                     </CardTitle>
-                    <Badge variant={orders.length > 0 ? "secondary" : "outline"}>{orders.length}</Badge>
+                    <Badge variant={orders.length > 0 ? "secondary" : "outline"} className="font-light">{orders.length}</Badge>
                   </div>
-                  <CardDescription>
+                  <CardDescription className="font-light dark:text-zinc-400">
                     Seguimiento de pedidos en estado {ORDER_STATUS_LABELS[status].toLowerCase()}.
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {orders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground">Sin pedidos en este estado.</p>
+                    <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">Sin pedidos en este estado.</p>
                   ) : (
                     <ScrollArea className="max-h-[480px] pr-3">
                       <div className="space-y-3">
@@ -371,18 +359,18 @@ export function OrdersPanel() {
                               key={order.id}
                               tabIndex={0}
                               aria-label={`Pedido ${order.id} ${tableLabel}`}
-                              className="rounded-lg border p-4 shadow-xs transition hover:border-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                              className="rounded-lg border-2 border-border p-4 shadow-md hover:shadow-lg transition-all dark:border-zinc-700 dark:bg-zinc-800/50 dark:hover:border-zinc-600"
                             >
                               <header className="flex flex-wrap items-center gap-3">
                                 <div className="flex flex-col">
-                                  <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                                  <span className="text-xs font-light uppercase tracking-wide text-muted-foreground dark:text-zinc-400">
                                     Pedido #{order.id}
                                   </span>
-                                  <div className="flex items-center gap-2 text-sm font-semibold">
+                                  <div className="flex items-center gap-2 text-sm font-light dark:text-zinc-100">
                                     <span>{tableLabel}</span>
                                     <Badge
                                       variant={ORDER_STATUS_BADGE_VARIANT[order.status]}
-                                      className="capitalize"
+                                      className="capitalize font-light"
                                     >
                                       {ORDER_STATUS_LABELS[order.status]}
                                     </Badge>

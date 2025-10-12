@@ -26,6 +26,7 @@ import {
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
+import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavItem {
   title: string
@@ -42,7 +43,7 @@ const navItems: NavItem[] = [
     roles: ["admin", "staff"],
   },
   {
-    title: "SalÃ³n",
+    title: "Salón",
     href: "/salon",
     icon: MapPin,
     roles: ["admin", "staff"],
@@ -67,7 +68,7 @@ const navItems: NavItem[] = [
   },
   // Admin only sections
   {
-    title: "MenÃº",
+    title: "Menú",
     href: "/menu",
     icon: ChefHat,
     roles: ["admin"],
@@ -85,7 +86,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "AnalÃ­tica",
+    title: "Analítica",
     href: "/analitica",
     icon: BarChart3,
     roles: ["admin"],
@@ -97,7 +98,7 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "ConfiguraciÃ³n",
+    title: "Configuración",
     href: "/configuracion",
     icon: Settings,
     roles: ["admin"],
@@ -119,9 +120,9 @@ export function SidebarNav() {
   const filteredNavItems = navItems.filter((item) => item.roles.includes(user.role))
 
   return (
-    <div className="flex h-full w-64 flex-col bg-card border-r">
+    <div className="flex h-full w-64 flex-col bg-card border-r border-border/80 dark:bg-zinc-900 dark:border-zinc-700">
       {/* Header */}
-      <div className="flex h-16 items-center justify-between border-b px-6">
+      <div className="flex h-16 items-center justify-between border-b border-border/80 px-6 bg-muted/50 dark:bg-zinc-800 dark:border-zinc-700">
         <div className="flex items-center gap-2">
           {tenant?.logoUrl ? (
             <Image
@@ -138,8 +139,8 @@ export function SidebarNav() {
             </div>
           )}
           <div className="flex flex-col">
-            <span className="text-sm font-semibold">{tenant?.name || "Restaurante"}</span>
-            <span className="text-xs text-muted-foreground capitalize">{user.role}</span>
+            <span className="text-sm font-light">{tenant?.name || "Restaurante"}</span>
+            <span className="text-xs text-muted-foreground capitalize font-light">{user.role}</span>
           </div>
         </div>
         <NotificationBell />
@@ -155,8 +156,9 @@ export function SidebarNav() {
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start gap-2 h-9",
-                    isActive && "bg-brand-accent/10 text-brand-accent hover:bg-brand-accent/20",
+                    "w-full justify-start gap-2 h-9 font-light border",
+                    isActive && "bg-accent text-accent-foreground border-border/70 shadow-sm dark:bg-zinc-800 dark:text-white dark:border-zinc-600 dark:shadow-lg",
+                    !isActive && "hover:bg-accent/50 border-transparent hover:border-border/50 dark:hover:bg-zinc-800/50 dark:border-transparent dark:hover:border-zinc-700 dark:text-zinc-300 dark:hover:text-white"
                   )}
                 >
                   <item.icon className="h-4 w-4" />
@@ -169,20 +171,21 @@ export function SidebarNav() {
       </ScrollArea>
 
       {/* User section */}
-      <div className="border-t p-3">
-        <div className="flex items-center gap-3 px-3 py-2 text-sm">
-          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-brand-accent text-white">
+      <div className="border-t border-border/80 p-3 bg-muted/50 dark:bg-zinc-800 dark:border-zinc-700">
+        <div className="flex items-center gap-3 px-3 py-2 text-sm rounded-lg border border-border/70 bg-card shadow-sm dark:border-zinc-700 dark:bg-zinc-900/50">
+          <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground dark:bg-zinc-700 dark:text-white">
             {user.name.charAt(0).toUpperCase()}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="truncate font-medium">{user.name}</p>
-            <p className="truncate text-xs text-muted-foreground">{user.email}</p>
+            <p className="truncate font-light dark:text-zinc-100">{user.name}</p>
+            <p className="truncate text-xs text-muted-foreground font-light dark:text-zinc-400">{user.email}</p>
           </div>
+          <ThemeToggle />
         </div>
-        <Separator className="my-2" />
-        <Button variant="ghost" className="w-full justify-start gap-2 h-9" onClick={logout}>
+        <Separator className="my-2 bg-border/60 dark:bg-zinc-700" />
+        <Button variant="ghost" className="w-full justify-start gap-2 h-9 font-light border border-transparent hover:bg-accent/50 hover:border-border/50 dark:hover:bg-zinc-800/50 dark:hover:border-zinc-700 dark:text-zinc-300 dark:hover:text-white" onClick={logout}>
           <LogOut className="h-4 w-4" />
-          Cerrar SesiÃ³n
+          Cerrar Sesión
         </Button>
       </div>
     </div>

@@ -51,10 +51,10 @@ export function PopularItemsList({
   }).slice(0, 10) // Top 10
   
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title || 'Productos Más Vendidos'}</CardTitle>
-        {description && <CardDescription>{description}</CardDescription>}
+    <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+      <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+        <CardTitle className="font-light dark:text-zinc-100">{title || 'Productos Más Vendidos'}</CardTitle>
+        {description && <CardDescription className="font-light dark:text-zinc-400">{description}</CardDescription>}
       </CardHeader>
       <CardContent>
         <Table>

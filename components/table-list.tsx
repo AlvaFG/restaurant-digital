@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useState, useImperativeHandle, forwardRef } from "react"
 import type { Table } from "@/lib/mock-data"
 import { TABLE_STATE, TABLE_STATE_BADGE_VARIANT, TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
 import { fetchTables, inviteHouse, resetTable } from "@/lib/table-service"
@@ -31,7 +31,11 @@ import { Gift, RotateCcw, Eye, Users, MapPin, RefreshCw } from "lucide-react"
 import { logger } from "@/lib/logger"
 import { MENSAJES } from "@/lib/i18n/mensajes"
 
-export function TableList() {
+export interface TableListRef {
+  reload: () => Promise<void>
+}
+
+export const TableList = forwardRef<TableListRef>((props, ref) => {
   const { user } = useAuth()
   const [tables, setTables] = useState<Table[]>([])
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
@@ -65,6 +69,11 @@ export function TableList() {
   useEffect(() => {
     void loadTables()
   }, [loadTables])
+
+  // Expose reload method to parent via ref
+  useImperativeHandle(ref, () => ({
+    reload: loadTables
+  }))
 
   const handleInviteHouse = async () => {
     if (!selectedTable) return
@@ -133,17 +142,6 @@ export function TableList() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-xl font-semibold">Mesas en el salon</h2>
-          <p className="text-sm text-muted-foreground">Controla estados y acciones rapidas</p>
-        </div>
-        <Button variant="outline" size="sm" onClick={() => void loadTables()} disabled={isLoading}>
-          <RefreshCw className="mr-2 h-4 w-4" />
-          Actualizar
-        </Button>
-      </div>
-
       {isLoading ? (
         <div className="flex h-48 items-center justify-center">
           <LoadingSpinner />
@@ -155,10 +153,10 @@ export function TableList() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {tables.map((table) => (
-            <Card key={table.id} className="cursor-pointer transition-shadow hover:shadow-md">
+            <Card key={table.id} className="cursor-pointer border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
               <CardHeader className="pb-3">
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-lg">Mesa {table.number}</CardTitle>
+                  <CardTitle className="text-lg font-light dark:text-zinc-100">Mesa {table.number}</CardTitle>
                   <Badge
                     variant={getStatusBadgeVariant(table.status)}
                     style={{ backgroundColor: TABLE_STATE_COLORS[table.status], color: "white" }}
@@ -168,7 +166,7 @@ export function TableList() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 text-sm text-muted-foreground">
+                <div className="space-y-3 text-sm text-muted-foreground font-light dark:text-zinc-400">
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4" />
                     {table.zone || "Sin zona"}
@@ -185,7 +183,7 @@ export function TableList() {
                       variant="outline"
                       size="sm"
                       onClick={() => setSelectedTableId(table.id)}
-                      className="flex-1"
+                      className="flex-1 dark:border-zinc-600 dark:hover:bg-zinc-800"
                     >
                       <Eye className="mr-2 h-4 w-4" />
                       Ver detalles
@@ -298,4 +296,6 @@ export function TableList() {
       </AlertDialog>
     </div>
   )
-}
+})
+
+TableList.displayName = 'TableList'

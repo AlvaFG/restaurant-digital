@@ -93,8 +93,8 @@ export function ConfigurationPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">ConfiguraciÃ³n</h1>
-          <p className="text-muted-foreground">Gestiona la configuraciÃ³n general del restaurante</p>
+          <h1 className="text-3xl font-light tracking-tight">Configuración</h1>
+          <p className="text-muted-foreground font-light">Gestiona la configuración general del restaurante</p>
         </div>
         <Button onClick={handleSave} disabled={isLoading}>
           <Save className="h-4 w-4 mr-2" />
@@ -111,13 +111,13 @@ export function ConfigurationPanel() {
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+          <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+            <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+              <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
                 <Settings className="h-5 w-5" />
-                InformaciÃ³n General
+                Información General
               </CardTitle>
-              <CardDescription>ConfiguraciÃ³n bÃ¡sica del restaurante</CardDescription>
+              <CardDescription className="font-light dark:text-zinc-400">Configuración básica del restaurante</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">

@@ -17,8 +17,8 @@ export default function SalonPage() {
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Salón</h1>
-          <p className="text-muted-foreground">Mapa visual de mesas del restaurante</p>
+          <h1 className="text-3xl font-light tracking-tight">Salón</h1>
+          <p className="text-muted-foreground font-light">Mapa visual de mesas del restaurante</p>
         </div>
 
         <TableMap onTableClick={handleTableClick} />

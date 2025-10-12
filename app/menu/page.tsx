@@ -5,8 +5,8 @@ export default function MenuPage() {
     <DashboardLayout requiredRole="admin">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Menú</h1>
-          <p className="text-muted-foreground">Gestión del menú del restaurante</p>
+          <h1 className="text-3xl font-light tracking-tight">Menú</h1>
+          <p className="text-muted-foreground font-light">Gestión del menú del restaurante</p>
         </div>
 
         <div className="flex items-center justify-center h-96 border-2 border-dashed border-muted-foreground/25 rounded-lg">

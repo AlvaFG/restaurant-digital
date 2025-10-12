@@ -6,7 +6,6 @@ import { ErrorBoundary } from "@/components/error-boundary"
 import { ProtectedRoute } from "@/components/protected-route"
 import { SidebarNav } from "@/components/sidebar-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
-import { Badge } from "@/components/ui/badge"
 import { useToast } from "@/hooks/use-toast"
 import { useSocket } from "@/hooks/use-socket"
 import { deserializeAlert, deserializeTable } from "@/lib/socket-client-utils"
@@ -19,7 +18,7 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
-  const { on, off, isConnected, isReconnecting } = useSocket()
+  const { on, off } = useSocket()
   const { toast } = useToast()
 
   useEffect(() => {
@@ -64,19 +63,10 @@ export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps
   return (
     <ProtectedRoute requiredRole={requiredRole}>
       <ErrorBoundary>
-        <div className="flex h-screen bg-background">
+        <div className="flex h-screen bg-background dark:bg-black">
           <SidebarNav />
-          <main className="flex-1 overflow-auto">
+          <main className="flex-1 overflow-auto dark:bg-zinc-950">
             <div className="container mx-auto max-w-7xl p-6 space-y-4">
-              <div className="flex justify-end gap-2 items-center">
-                <Badge
-                  variant={isConnected ? "secondary" : "outline"}
-                  className={isReconnecting ? "animate-pulse" : undefined}
-                >
-                  {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
-                </Badge>
-                <ThemeToggle />
-              </div>
               {children}
             </div>
           </main>
