@@ -18,7 +18,7 @@ import type {
   SessionCleanupResult,
 } from './session-types';
 import {
-  DEFAULT_SESSION_TTL,
+  DEFAULT_SESSION_TTL as _DEFAULT_SESSION_TTL,
   MAX_SESSIONS_PER_TABLE,
   CLEANUP_INTERVAL,
   SESSION_EXTENSION_TIME,

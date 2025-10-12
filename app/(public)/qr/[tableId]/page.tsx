@@ -92,7 +92,7 @@ export default function QrTablePage({ params }: PageParams) {
     detailedItems,
     itemCount,
     totalCents,
-    hasUnavailableItems,
+    hasUnavailableItems: _hasUnavailableItems,
     addOrIncrement,
     increment,
     decrement,

@@ -1,6 +1,19 @@
 ﻿import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
 import type { ModifierGroup, CartItemModifier } from "@/app/(public)/qr/_types/modifiers"
 
+export interface Zone {
+  id: string
+  tenant_id?: string
+  name: string
+  description?: string
+  sort_order: number
+  active: boolean
+  created_at?: string
+  updated_at?: string
+  // Campos calculados
+  table_count?: number
+}
+
 export interface TableCovers {
   current: number
   total: number
@@ -11,8 +24,9 @@ export interface TableCovers {
 
 export interface Table {
   id: string
-  number: number
-  zone?: string
+  number: string  // Cambiado de number a string para permitir "Mesa 1", "M1", etc.
+  zone_id?: string  // FK a zones.id
+  zone?: Zone | string  // Puede ser el objeto completo o solo el nombre (backward compatibility)
   status: TableState
   seats?: number
   covers: TableCovers
@@ -125,12 +139,12 @@ export interface MenuResponse {
 
 // Mock data
 export const MOCK_TABLES: Table[] = [
-  { id: "1", number: 1, zone: "Salon Principal", status: TABLE_STATE.FREE, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
-  { id: "2", number: 2, zone: "Salon Principal", status: TABLE_STATE.OCCUPIED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
-  { id: "3", number: 3, zone: "Salon Principal", status: TABLE_STATE.ORDER_IN_PROGRESS, seats: 6, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
-  { id: "4", number: 4, zone: "Terraza", status: TABLE_STATE.BILL_REQUESTED, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
-  { id: "5", number: 5, zone: "Terraza", status: TABLE_STATE.PAYMENT_CONFIRMED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
-  { id: "6", number: 6, zone: "Terraza", status: TABLE_STATE.FREE, seats: 8, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "1", number: "1", zone: "Salon Principal", status: TABLE_STATE.FREE, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "2", number: "2", zone: "Salon Principal", status: TABLE_STATE.OCCUPIED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "3", number: "3", zone: "Salon Principal", status: TABLE_STATE.ORDER_IN_PROGRESS, seats: 6, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "4", number: "4", zone: "Terraza", status: TABLE_STATE.BILL_REQUESTED, seats: 4, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "5", number: "5", zone: "Terraza", status: TABLE_STATE.PAYMENT_CONFIRMED, seats: 2, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
+  { id: "6", number: "6", zone: "Terraza", status: TABLE_STATE.FREE, seats: 8, covers: { current: 0, total: 0, sessions: 0, lastUpdatedAt: null, lastSessionAt: null } },
 ]
 
 export const MOCK_ALERTS: Alert[] = [

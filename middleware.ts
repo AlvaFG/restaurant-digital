@@ -1,23 +1,107 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
+import { createServerClient, type CookieOptions } from "@supabase/ssr"
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
-  // Allow access to login page and static assets
-  if (pathname === "/login" || pathname.startsWith("/_next") || pathname.startsWith("/api")) {
+  console.log('🔒 [Middleware] Ejecutado para:', pathname)
+
+  // Permitir acceso a páginas públicas y assets
+  const publicPaths = ["/login", "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/callback"]
+  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
+  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon")
+  const isApiRoute = pathname.startsWith("/api")
+  
+  // Permitir todos los assets estáticos y rutas de API sin validación
+  if (isStaticAsset) {
+    return NextResponse.next()
+  }
+  
+  // Permitir rutas públicas sin validación
+  if (isPublicPath) {
+    console.log('✅ [Middleware] Ruta pública, permitiendo acceso sin validación')
     return NextResponse.next()
   }
 
-  // For now, just redirect to login if no auth cookie
-  // In a real app, you'd validate the JWT token here
-  const authCookie = request.cookies.get("restaurant_auth")
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  })
 
-  if (!authCookie && pathname !== "/") {
-    return NextResponse.redirect(new URL("/login", request.url))
+  // Create Supabase client with cookie handling
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value,
+            ...options,
+          })
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          })
+          response.cookies.set({
+            name,
+            value: '',
+            ...options,
+          })
+        },
+      },
+    }
+  )
+
+  // No validar sesión para rutas de API (excepto las públicas ya permitidas)
+  if (isApiRoute) {
+    console.log('✅ [Middleware] Ruta de API, permitiendo acceso')
+    return response
   }
 
-  return NextResponse.next()
+  // Verificar sesión del usuario solo para rutas protegidas
+  const { data: { session }, error } = await supabase.auth.getSession()
+
+  console.log('🔍 [Middleware] Sesión:', { 
+    hasSession: !!session, 
+    error: error?.message,
+    pathname,
+    userId: session?.user?.id
+  })
+
+  // Si no hay sesión válida, redirigir a login
+  if (error || !session) {
+    console.log('⚠️ [Middleware] No hay sesión válida, redirigiendo a /login')
+    const loginUrl = new URL('/login', request.url)
+    return NextResponse.redirect(loginUrl)
+  }
+
+  console.log('✅ [Middleware] Sesión válida, permitiendo acceso')
+  return response
 }
 
 export const config = {

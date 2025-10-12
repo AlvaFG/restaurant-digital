@@ -51,18 +51,18 @@ export function createServerClient() {
       get(name: string) {
         return cookieStore.get(name)?.value
       },
-      set(name: string, value: string, options: any) {
+      set(name: string, value: string, options: Record<string, unknown>) {
         try {
           cookieStore.set({ name, value, ...options })
-        } catch (error) {
+        } catch {
           // Cookie setting can fail in Server Components
           // This is expected and can be ignored
         }
       },
-      remove(name: string, options: any) {
+      remove(name: string, options: Record<string, unknown>) {
         try {
           cookieStore.set({ name, value: '', ...options })
-        } catch (error) {
+        } catch {
           // Cookie removal can fail in Server Components
           // This is expected and can be ignored
         }
@@ -93,4 +93,57 @@ export async function getCurrentUser() {
 export async function hasActiveSession(): Promise<boolean> {
   const user = await getCurrentUser()
   return user !== null
+}
+
+/**
+ * Crear cliente de Supabase con Service Role
+ * 
+ * ⚠️ USAR CON CUIDADO: Este cliente bypasea Row Level Security (RLS)
+ * Solo usar en operaciones del servidor que requieren acceso administrativo
+ * 
+ * @example
+ * ```typescript
+ * // API Route que necesita acceso completo
+ * export async function GET() {
+ *   const supabase = createServiceRoleClient()
+ *   // Este cliente puede acceder a todos los datos sin restricciones RLS
+ *   const { data } = await supabase.from('tenants').select('*')
+ *   return Response.json(data)
+ * }
+ * ```
+ */
+export function createServiceRoleClient() {
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error(
+      'Missing Supabase Service Role environment variables. ' +
+      'Please set NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY'
+    )
+  }
+
+  const cookieStore = cookies()
+
+  return createClient<Database>(supabaseUrl, supabaseServiceKey, {
+    cookies: {
+      get(name: string) {
+        return cookieStore.get(name)?.value
+      },
+      set(name: string, value: string, options: Record<string, unknown>) {
+        try {
+          cookieStore.set({ name, value, ...options })
+        } catch {
+          // Cookie setting can fail in Server Components
+        }
+      },
+      remove(name: string, options: Record<string, unknown>) {
+        try {
+          cookieStore.set({ name, value: '', ...options })
+        } catch {
+          // Cookie removal can fail in Server Components
+        }
+      },
+    },
+  })
 }

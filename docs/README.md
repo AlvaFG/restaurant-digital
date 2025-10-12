@@ -14,6 +14,24 @@ Bienvenido a la documentación del Restaurant Management System. Esta página si
 
 ---
 
+## 🐛 Debugging & Troubleshooting
+
+**Nuevo sistema de debugging de autenticación**:
+
+- **[📚 Índice de documentación de debugging](INDEX_DEBUG_DOCS.md)** - Punto de entrada principal
+- [🔍 Prompt de debugging](prompts/PROMPT_DEBUG_DASHBOARD_LOADING.md) - Guía completa de diagnóstico
+- [🔧 Implementación](IMPLEMENTATION_DEBUG_DASHBOARD.md) - Detalles técnicos
+- [🧪 Testing](TESTING_AUTH_FLOW.md) - Guía de testing del flujo de auth
+- [✅ Checklist rápido](CHECKLIST_VERIFICACION.md) - Verificación rápida post-implementación
+- [📊 Resumen ejecutivo](RESUMEN_IMPLEMENTACION_DEBUG.md) - Vista general
+
+**Script de verificación**:
+```powershell
+npx tsx scripts/test-auth-flow.ts
+```
+
+---
+
 ## 📐 Architecture
 
 Entiende cómo está construido el sistema:

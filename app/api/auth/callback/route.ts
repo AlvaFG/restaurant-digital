@@ -1,6 +1,26 @@
 import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logger } from "@/lib/logger"
+import type { Database } from "@/lib/supabase/database.types"
+
+type UserRow = Database['public']['Tables']['users']['Row']
+type UserInsert = Database['public']['Tables']['users']['Insert']
+
+// Tipo para el select parcial de usuario
+interface UserRecord extends Pick<UserRow, 'id' | 'tenant_id' | 'role' | 'active' | 'name' | 'email'> {}
+
+// Tipo para settings del tenant (JSON)
+interface TenantSettings {
+  logoUrl?: string
+  theme?: {
+    accentColor?: string
+  }
+  features?: {
+    tablets?: boolean
+    kds?: boolean
+    payments?: boolean
+  }
+}
 
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url)
@@ -45,11 +65,11 @@ export async function GET(request: Request) {
     // Verificar si el usuario ya existe en nuestra base de datos
     const { data: existingUser } = await supabase
       .from("users")
-      .select("id, tenant_id, role, active")
+      .select("id, tenant_id, role, active, name, email")
       .eq("email", user.email!)
       .single()
 
-    let userRecord = existingUser as any
+    let userRecord: UserRecord | null = existingUser
 
     // Si no existe, crear el usuario
     if (!userRecord) {
@@ -67,20 +87,22 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/login?error=no_tenant`)
       }
 
-      const tenantId = (defaultTenant as any).id
+      const tenantId = defaultTenant.id
 
       // Crear el usuario en nuestra base de datos
+      const insertData: UserInsert = {
+        email: user.email!,
+        name: user.user_metadata?.full_name || user.email!.split("@")[0],
+        role: "staff",
+        tenant_id: tenantId,
+        active: true,
+        password_hash: "", // Google OAuth no usa contraseña
+      }
+
       const { data: newUser, error: createError } = await supabase
         .from("users")
-        .insert({
-          email: user.email!,
-          name: user.user_metadata?.full_name || user.email!.split("@")[0],
-          role: "staff",
-          tenant_id: tenantId,
-          active: true,
-          password_hash: "", // Google OAuth no usa contraseña
-        } as any)
-        .select()
+        .insert(insertData)
+        .select("id, tenant_id, role, active, name, email")
         .single()
 
       if (createError) {
@@ -88,8 +110,14 @@ export async function GET(request: Request) {
         return NextResponse.redirect(`${requestUrl.origin}/login?error=create_failed`)
       }
 
-      userRecord = newUser as any
-      logger.info("Usuario creado exitosamente", { userId: userRecord.id })
+      userRecord = newUser
+      logger.info("Usuario creado exitosamente", { userId: userRecord?.id })
+    }
+
+    // Verificar que userRecord no sea null después de la creación
+    if (!userRecord) {
+      logger.error("Error: userRecord es null después de la creación")
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=user_creation_failed`)
     }
 
     // Verificar que el usuario esté activo
@@ -105,10 +133,15 @@ export async function GET(request: Request) {
       .eq("id", userRecord.tenant_id)
       .single()
 
-    const tenantData = tenant as any
+    if (!tenant) {
+      logger.error("No se encontró tenant para el usuario")
+      return NextResponse.redirect(`${requestUrl.origin}/login?error=no_tenant`)
+    }
 
     // Crear la respuesta y establecer cookies
     const response = NextResponse.redirect(`${requestUrl.origin}/dashboard`)
+
+    const settings = tenant.settings as TenantSettings | null
 
     // Establecer cookies con la información del usuario y tenant
     response.cookies.set("restaurant_auth", JSON.stringify({
@@ -127,17 +160,17 @@ export async function GET(request: Request) {
     })
 
     response.cookies.set("restaurant_tenant", JSON.stringify({
-      id: tenantData.id,
-      name: tenantData.name,
-      slug: tenantData.slug,
-      logoUrl: tenantData.settings?.logoUrl,
+      id: tenant.id,
+      name: tenant.name,
+      slug: tenant.slug,
+      logoUrl: settings?.logoUrl,
       theme: {
-        accentColor: tenantData.settings?.theme?.accentColor || "#3b82f6",
+        accentColor: settings?.theme?.accentColor || "#3b82f6",
       },
       features: {
-        tablets: tenantData.settings?.features?.tablets ?? true,
-        kds: tenantData.settings?.features?.kds ?? true,
-        payments: tenantData.settings?.features?.payments ?? true,
+        tablets: settings?.features?.tablets ?? true,
+        kds: settings?.features?.kds ?? true,
+        payments: settings?.features?.payments ?? true,
       },
     }), {
       httpOnly: false,

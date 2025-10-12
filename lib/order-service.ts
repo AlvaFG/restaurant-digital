@@ -3,7 +3,7 @@ import type { OrdersSummary } from "@/lib/server/order-store"
 import type { CreateOrderPayload, PaymentStatus, StoredOrder } from "@/lib/server/order-types"
 import type { OrderStatus } from "@/lib/server/order-types"
 import { logger } from './logger'
-import { AppError, NotFoundError, ValidationError } from './errors'
+import { AppError, ValidationError } from './errors'
 import { MENSAJES } from './i18n/mensajes'
 
 export type OrdersSortOption = "newest" | "oldest"
@@ -100,8 +100,9 @@ interface SerializedOrder extends Omit<StoredOrder, "createdAt" | "updatedAt" | 
   metadata?: StoredOrder["metadata"]
 }
 
-const API_TIMEOUT_MESSAGE = "No se pudieron obtener los pedidos"
-const CREATE_ORDER_GENERIC_ERROR_MESSAGE = "No se pudo crear el pedido"
+// Constantes para posible uso futuro
+const _API_TIMEOUT_MESSAGE = "No se pudieron obtener los pedidos"
+const _CREATE_ORDER_GENERIC_ERROR_MESSAGE = "No se pudo crear el pedido"
 
 
 export class OrderServiceError extends Error {

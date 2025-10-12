@@ -9,13 +9,13 @@
 export class AppError extends Error {
   public readonly statusCode: number;
   public readonly isOperational: boolean;
-  public readonly context?: Record<string, any>;
+  public readonly context?: Record<string, unknown>;
 
   constructor(
     message: string,
     statusCode: number = 500,
     isOperational: boolean = true,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ) {
     super(message);
     this.statusCode = statusCode;
@@ -30,7 +30,7 @@ export class AppError extends Error {
  * Error de validación (400)
  */
 export class ValidationError extends AppError {
-  constructor(message: string, context?: Record<string, any>) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, 400, true, context);
   }
 }
@@ -39,7 +39,7 @@ export class ValidationError extends AppError {
  * Error de autenticación (401)
  */
 export class AuthenticationError extends AppError {
-  constructor(message: string = 'No autenticado', context?: Record<string, any>) {
+  constructor(message: string = 'No autenticado', context?: Record<string, unknown>) {
     super(message, 401, true, context);
   }
 }
@@ -48,7 +48,7 @@ export class AuthenticationError extends AppError {
  * Error de autorización (403)
  */
 export class AuthorizationError extends AppError {
-  constructor(message: string = 'No autorizado', context?: Record<string, any>) {
+  constructor(message: string = 'No autorizado', context?: Record<string, unknown>) {
     super(message, 403, true, context);
   }
 }
@@ -57,7 +57,7 @@ export class AuthorizationError extends AppError {
  * Error de recurso no encontrado (404)
  */
 export class NotFoundError extends AppError {
-  constructor(message: string, resource?: string, context?: Record<string, any>) {
+  constructor(message: string, resource?: string, context?: Record<string, unknown>) {
     super(
       message,
       404,
@@ -71,7 +71,7 @@ export class NotFoundError extends AppError {
  * Error de conflicto (409)
  */
 export class ConflictError extends AppError {
-  constructor(message: string, context?: Record<string, any>) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, 409, true, context);
   }
 }
@@ -80,7 +80,7 @@ export class ConflictError extends AppError {
  * Error de base de datos
  */
 export class DatabaseError extends AppError {
-  constructor(message: string, context?: Record<string, any>) {
+  constructor(message: string, context?: Record<string, unknown>) {
     super(message, 500, true, context);
   }
 }
@@ -92,7 +92,7 @@ export class ExternalServiceError extends AppError {
   constructor(
     message: string,
     serviceName?: string,
-    context?: Record<string, any>
+    context?: Record<string, unknown>
   ) {
     super(
       message,
@@ -107,7 +107,7 @@ export class ExternalServiceError extends AppError {
  * Error de timeout (504)
  */
 export class TimeoutError extends AppError {
-  constructor(message: string = 'La operación tardó demasiado tiempo', context?: Record<string, any>) {
+  constructor(message: string = 'La operación tardó demasiado tiempo', context?: Record<string, unknown>) {
     super(message, 504, true, context);
   }
 }

@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from "vitest"
+import { describe, expect, it } from "vitest"
 
 describe("QRValidatePage", () => {
   it("should have QR validation API endpoint", () => {

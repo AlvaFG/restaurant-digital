@@ -22,6 +22,7 @@ import {
   ChefHat,
   Edit,
   Palette,
+  MapPinned,
 } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
@@ -32,7 +33,7 @@ interface NavItem {
   title: string
   href: string
   icon: React.ComponentType<{ className?: string }>
-  roles: ("admin" | "staff")[]
+  roles: ("admin" | "staff" | "manager")[]
 }
 
 const navItems: NavItem[] = [
@@ -80,8 +81,14 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Usuarios",
-    href: "/usuarios",
+    title: "Zonas",
+    href: "/configuracion/zonas",
+    icon: MapPinned,
+    roles: ["admin"],
+  },
+  {
+    title: "Gestión de Staff",
+    href: "/staff",
     icon: Users,
     roles: ["admin"],
   },

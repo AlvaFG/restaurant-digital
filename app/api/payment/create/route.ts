@@ -7,7 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { paymentService } from '@/lib/payment-service'
 import { isConfigured } from '@/lib/mercadopago'
-import { MOCK_ORDERS } from '@/lib/mock-data'
+import { MOCK_ORDERS, type Order } from '@/lib/mock-data'
 import { logRequest, logResponse, validarBody } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Get order from mock data (in production, fetch from database)
-    const order = MOCK_ORDERS.find((o: any) => o.id === orderId)
+    const order = MOCK_ORDERS.find((o: Order) => o.id === orderId)
 
     if (!order) {
       logger.warn('Orden no encontrada', { orderId })
@@ -65,7 +65,11 @@ export async function POST(request: NextRequest) {
 
     // Validate order can be paid
     logger.debug('Validando si orden puede procesarse', { orderId })
-    const validation = paymentService.canProcessPayment(order as any)
+    
+    // Convert Order to OrderWithPayment-like structure for validation
+    const orderForPayment = order as unknown as import('@/lib/payment-types').OrderWithPayment
+    
+    const validation = paymentService.canProcessPayment(orderForPayment)
     if (!validation.valid) {
       logger.warn('Orden no puede procesarse', { orderId, reason: validation.error })
       
@@ -84,22 +88,21 @@ export async function POST(request: NextRequest) {
     // Create payment preference
     logger.info('Creando preferencia de pago', { 
       orderId,
-      amount: (order as any).total
+      amount: order.total
     })
     
-    const payment = await paymentService.createOrderPayment(order as any)
+    const payment = await paymentService.createOrderPayment(orderForPayment)
 
     // Update order with payment info (in production, save to database)
-    const updatedOrder = {
+    const updatedOrder: Order = {
       ...order,
-      paymentUrl: payment.initPoint,
-      paymentStatus: 'pending' as const,
+      paymentStatus: 'pendiente' as const,
     }
 
     // In production: await saveOrder(updatedOrder)
-    const orderIndex = MOCK_ORDERS.findIndex((o: any) => o.id === orderId)
+    const orderIndex = MOCK_ORDERS.findIndex((o: Order) => o.id === orderId)
     if (orderIndex !== -1) {
-      (MOCK_ORDERS as any)[orderIndex] = updatedOrder
+      MOCK_ORDERS[orderIndex] = updatedOrder
     }
 
     const duration = Date.now() - startTime

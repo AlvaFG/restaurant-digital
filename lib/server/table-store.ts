@@ -3,6 +3,8 @@ import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
 import { getDataDir, getDataFile } from "./data-path"
 import { createLogger } from "@/lib/logger"
+import { createServerClient } from "@/lib/supabase/server"
+import { randomBytes } from "crypto"
 
 import {
   MOCK_TABLES,
@@ -162,6 +164,11 @@ function sanitizeTimestamp(value: unknown): string | null {
 }
 
 function prepareTable(table: Table): Table {
+  // Asegurar que number sea string (backward compatibility)
+  if (typeof table.number === 'number') {
+    table.number = String(table.number)
+  }
+  
   table.covers = {
     ...structuredClone(DEFAULT_COVERS),
     ...(table.covers ?? {}),
@@ -352,8 +359,57 @@ function assertValidStateTransition(current: TableState, next: TableState) {
 }
 
 export async function listTables(): Promise<Table[]> {
-  const store = await loadStore()
-  return store.tables.map((table) => prepareTable(deepClone(table)))
+  try {
+    const supabase = createServerClient()
+    
+    const { data: tables, error } = await supabase
+      .from('tables')
+      .select('*')
+      .order('number', { ascending: true })
+    
+    if (error) {
+      logger.error('Error al listar mesas desde Supabase', error)
+      logger.info('Usando fallback a store JSON')
+      // Fallback al store si Supabase falla
+      const store = await loadStore()
+      return store.tables.map((table) => prepareTable(deepClone(table)))
+    }
+    
+    if (!tables || tables.length === 0) {
+      logger.info('No hay mesas en Supabase, usando fallback a store JSON')
+      // Si Supabase está vacío, usar el store JSON
+      const store = await loadStore()
+      return store.tables.map((table) => prepareTable(deepClone(table)))
+    }
+    
+    logger.info('Mesas obtenidas desde Supabase', { count: tables.length })
+    
+    // Convertir datos de Supabase al formato Table
+    return tables.map((t: any) => ({
+      id: t.id,
+      number: String(t.number), // Asegurar que sea string
+      zone_id: t.zone_id || undefined,
+      zone: t.zone || undefined,
+      status: t.status || 'libre',
+      seats: t.capacity || 4,
+      covers: {
+        current: 0,
+        total: 0,
+        sessions: 0,
+        lastUpdatedAt: null,
+        lastSessionAt: null,
+      },
+      qrcodeUrl: t.qrcode_url || '',
+      qrToken: t.qr_token || '',
+      qrTokenExpiry: t.qr_expires_at ? new Date(t.qr_expires_at) : undefined,
+    }))
+  } catch (error) {
+    logger.error('Error inesperado al listar mesas', error as Error)
+    logger.info('Usando fallback a store JSON')
+    // Fallback al store
+    const store = await loadStore()
+    return store.tables.map((table) => prepareTable(deepClone(table)))
+  }
 }
 
 export async function getTableById(tableId: string): Promise<Table | null> {
@@ -508,7 +564,8 @@ export async function updateTableMetadata(
     prepareTable(table)
 
     if (typeof updates.number !== "undefined") {
-      table.number = Math.max(1, Math.floor(updates.number))
+      // Ahora number es string, no hacemos Math operations
+      table.number = String(updates.number)
     }
 
     if (typeof updates.seats !== "undefined") {
@@ -613,4 +670,164 @@ export async function getTableByQRToken(token: string): Promise<Table | null> {
 }
 
 export const DEFAULT_STATE = TABLE_STATE.FREE
+
+/**
+ * Genera un token QR único
+ */
+function generateQRToken(): string {
+  return randomBytes(32).toString('base64url')
+}
+
+/**
+ * Crea una nueva mesa en Supabase
+ */
+export async function createTable(data: {
+  number: string
+  zone_id?: string
+  tenantId: string
+}): Promise<Table> {
+  const supabase = createServerClient()
+
+  // Verificar que el número de mesa no exista para este tenant
+  const { data: existing } = await supabase
+    .from('tables')
+    .select('id')
+    .eq('tenant_id', data.tenantId)
+    .eq('number', data.number)
+    .single()
+
+  if (existing) {
+    throw new Error(`Ya existe una mesa con el identificador "${data.number}"`)
+  }
+
+  // Si se proporciona zone_id, verificar que exista y pertenezca al tenant
+  if (data.zone_id) {
+    const { data: zone } = await supabase
+      .from('zones')
+      .select('id')
+      .eq('id', data.zone_id)
+      .eq('tenant_id', data.tenantId)
+      .single()
+
+    if (!zone) {
+      throw new Error('La zona seleccionada no existe o no pertenece a este tenant')
+    }
+  }
+
+  // Generar token QR único
+  const qrToken = generateQRToken()
+  const qrExpiresAt = new Date()
+  qrExpiresAt.setFullYear(qrExpiresAt.getFullYear() + 1) // Expira en 1 año
+
+  // Crear la mesa (capacity por defecto es 4 según schema)
+  const { data: newTable, error } = await supabase
+    .from('tables')
+    .insert({
+      tenant_id: data.tenantId,
+      number: data.number,
+      zone_id: data.zone_id || null,
+      status: 'libre',
+      qr_token: qrToken,
+      qr_expires_at: qrExpiresAt.toISOString(),
+      qrcode_url: '', // Se generará en el cliente
+      metadata: {},
+    } as any)
+    .select()
+    .single()
+
+  if (error || !newTable) {
+    logger.error('Error al crear mesa', error, {
+      tenantId: data.tenantId,
+      number: data.number,
+    })
+    throw new Error('No se pudo crear la mesa')
+  }
+
+  const tableData = newTable as any
+
+  logger.info('Mesa creada', {
+    tableId: tableData.id,
+    number: tableData.number,
+    tenantId: data.tenantId,
+  })
+
+  // Transformar al formato Table
+  const table: Table = {
+    id: tableData.id,
+    number: tableData.number,
+    zone: tableData.zone || undefined,
+    seats: tableData.capacity,
+    status: tableData.status as TableState,
+    qrcodeUrl: getQrUrl(tableData.id),
+    qrToken: tableData.qr_token || undefined,
+    qrTokenExpiry: tableData.qr_expires_at ? new Date(tableData.qr_expires_at) : undefined,
+    covers: {
+      current: 0,
+      total: 0,
+      sessions: 0,
+      lastUpdatedAt: null,
+      lastSessionAt: null,
+    },
+  }
+
+  // Emitir evento de actualización
+  void emitTableLayoutEvent()
+
+  return table
+}
+
+/**
+ * Elimina una mesa de Supabase
+ */
+export async function deleteTable(tableId: string, tenantId: string): Promise<void> {
+  const supabase = createServerClient()
+
+  // Verificar que la mesa existe y pertenece al tenant
+  const { data: tableData, error: fetchError } = await supabase
+    .from('tables')
+    .select('id, number, status, tenant_id')
+    .eq('id', tableId)
+    .eq('tenant_id', tenantId)
+    .single()
+
+  if (fetchError || !tableData) {
+    throw new Error('Mesa no encontrada')
+  }
+
+  const table = tableData as any
+
+  // No permitir eliminar mesas ocupadas o con pedidos en curso
+  const restrictedStates = ['ocupada', 'pedido-en-curso', 'cuenta-pedida']
+  if (restrictedStates.includes(table.status)) {
+    throw new Error(
+      `No se puede eliminar la mesa ${table.number} porque está ${table.status}. ` +
+      'Por favor, finaliza la sesión primero.'
+    )
+  }
+
+  // Eliminar la mesa
+  const { error: deleteError } = await supabase
+    .from('tables')
+    .delete()
+    .eq('id', tableId)
+    .eq('tenant_id', tenantId)
+
+  if (deleteError) {
+    logger.error('Error al eliminar mesa', deleteError, {
+      tableId,
+      tenantId,
+    })
+    throw new Error('No se pudo eliminar la mesa')
+  }
+
+  logger.info('Mesa eliminada', {
+    tableId,
+    number: table.number,
+    tenantId,
+  })
+
+  // Emitir evento de actualización
+  void emitTableLayoutEvent()
+}
+
 

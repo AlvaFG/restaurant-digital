@@ -75,7 +75,7 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
     return () => {
       if (pollInterval) clearInterval(pollInterval);
     };
-  }, [payment, open, getPaymentStatus, pollInterval]);
+  }, [payment, open, getPaymentStatus, order.id, pollInterval]);
 
   // Cerrar modal automáticamente cuando el pago es aprobado
   useEffect(() => {

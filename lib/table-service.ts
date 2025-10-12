@@ -198,3 +198,46 @@ export async function inviteHouse(tableId: string) {
   logger.info('Invitando la casa', { tableId });
   await updateTableState(tableId, TABLE_STATE.PAYMENT_CONFIRMED, { reason: "invita_la_casa" });
 }
+
+export async function createTable(data: {
+  number: number
+  zone?: string
+}): Promise<Table> {
+  try {
+    logger.info('Creando nueva mesa', { number: data.number, zone: data.zone })
+    
+    if (!data.number || data.number < 1) {
+      throw new ValidationError('El número de mesa es requerido y debe ser mayor a 0', { field: 'number' })
+    }
+    
+    const result = await fetchJSON<{ data: Table }>('/api/tables', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    })
+    
+    logger.info('Mesa creada exitosamente', { tableId: result.data.id, number: result.data.number })
+    return result.data
+  } catch (error) {
+    logger.error('Error al crear mesa', error as Error, { number: data.number })
+    throw error instanceof AppError ? error : new AppError(MENSAJES.ERRORES.GENERICO)
+  }
+}
+
+export async function deleteTable(tableId: string): Promise<void> {
+  try {
+    logger.info('Eliminando mesa', { tableId })
+    
+    if (!tableId) {
+      throw new ValidationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO, { field: 'tableId' })
+    }
+    
+    await fetchJSON(`/api/tables/${tableId}`, {
+      method: 'DELETE',
+    })
+    
+    logger.info('Mesa eliminada exitosamente', { tableId })
+  } catch (error) {
+    logger.error('Error al eliminar mesa', error as Error, { tableId })
+    throw error instanceof AppError ? error : new AppError(MENSAJES.ERRORES.GENERICO)
+  }
+}

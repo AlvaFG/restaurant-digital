@@ -57,84 +57,84 @@ export function useQrSession(currentTableId: string): UseQrSessionReturn {
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
-    validateSession()
-  }, [currentTableId])
-
-  const validateSession = () => {
-    setIsValidating(true)
-    setError(null)
-
-    try {
-      const sessionStr = localStorage.getItem(SESSION_KEY)
-
-      if (!sessionStr) {
-        setError("No se encontró una sesión activa")
-        setSession(null)
-        setIsExpired(false)
-        setIsTableMismatch(false)
-        setIsValidating(false)
-        return
-      }
-
-      const sessionData = JSON.parse(sessionStr) as QrSessionData
-
-      // Validate required fields
-      if (!sessionData.sessionId || !sessionData.tableId || !sessionData.expiresAt) {
-        setError("Sesión inválida o corrupta")
-        setSession(null)
-        setIsExpired(false)
-        setIsTableMismatch(false)
-        // Clear invalid session from localStorage
-        try {
-          localStorage.removeItem(SESSION_KEY)
-        } catch (err) {
-          console.error("[useQrSession] Error removing invalid session:", err)
-        }
-        setIsValidating(false)
-        return
-      }
-
-      const expiresAt = new Date(sessionData.expiresAt)
-      const now = new Date()
-
-      // Check if session has expired
-      if (expiresAt <= now) {
-        setIsExpired(true)
-        setError("La sesión ha expirado")
-        setSession(sessionData) // Keep data for display purposes
-        setIsValidating(false)
-        return
-      }
-
-      // Check if tableId matches
-      if (sessionData.tableId !== currentTableId) {
-        setIsTableMismatch(true)
-        setError(`Esta sesión es para la mesa ${sessionData.table?.number || sessionData.tableId}`)
-        setSession(sessionData)
-        setIsValidating(false)
-        return
-      }
-
-      // Session is valid
-      setSession(sessionData)
-      setIsExpired(false)
-      setIsTableMismatch(false)
+    const validateSession = () => {
+      setIsValidating(true)
       setError(null)
 
-      // Warn if session is about to expire
-      const timeUntilExpiry = expiresAt.getTime() - now.getTime()
-      if (timeUntilExpiry < SESSION_WARNING_THRESHOLD_MS) {
-        console.warn(`[useQrSession] Session expires in ${Math.round(timeUntilExpiry / 60000)} minutes`)
+      try {
+        const sessionStr = localStorage.getItem(SESSION_KEY)
+
+        if (!sessionStr) {
+          setError("No se encontró una sesión activa")
+          setSession(null)
+          setIsExpired(false)
+          setIsTableMismatch(false)
+          setIsValidating(false)
+          return
+        }
+
+        const sessionData = JSON.parse(sessionStr) as QrSessionData
+
+        // Validate required fields
+        if (!sessionData.sessionId || !sessionData.tableId || !sessionData.expiresAt) {
+          setError("Sesión inválida o corrupta")
+          setSession(null)
+          setIsExpired(false)
+          setIsTableMismatch(false)
+          // Clear invalid session from localStorage
+          try {
+            localStorage.removeItem(SESSION_KEY)
+          } catch (err) {
+            console.error("[useQrSession] Error removing invalid session:", err)
+          }
+          setIsValidating(false)
+          return
+        }
+
+        const expiresAt = new Date(sessionData.expiresAt)
+        const now = new Date()
+
+        // Check if session has expired
+        if (expiresAt <= now) {
+          setIsExpired(true)
+          setError("La sesión ha expirado")
+          setSession(sessionData) // Keep data for display purposes
+          setIsValidating(false)
+          return
+        }
+
+        // Check if tableId matches
+        if (sessionData.tableId !== currentTableId) {
+          setIsTableMismatch(true)
+          setError(`Esta sesión es para la mesa ${sessionData.table?.number || sessionData.tableId}`)
+          setSession(sessionData)
+          setIsValidating(false)
+          return
+        }
+
+        // Session is valid
+        setSession(sessionData)
+        setIsExpired(false)
+        setIsTableMismatch(false)
+        setError(null)
+
+        // Warn if session is about to expire
+        const timeUntilExpiry = expiresAt.getTime() - now.getTime()
+        if (timeUntilExpiry < SESSION_WARNING_THRESHOLD_MS) {
+          console.warn(`[useQrSession] Session expires in ${Math.round(timeUntilExpiry / 60000)} minutes`)
+        }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Error desconocido"
+        setError(`Error al validar sesión: ${message}`)
+        setSession(null)
+        console.error("[useQrSession] Validation error:", err)
+      } finally {
+        setIsValidating(false)
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : "Error desconocido"
-      setError(`Error al validar sesión: ${message}`)
-      setSession(null)
-      console.error("[useQrSession] Validation error:", err)
-    } finally {
-      setIsValidating(false)
     }
-  }
+
+    validateSession()
+  }, [currentTableId])
 
   const clearSession = () => {
     try {

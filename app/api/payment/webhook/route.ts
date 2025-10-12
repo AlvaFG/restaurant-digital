@@ -6,7 +6,7 @@
 
 import { NextRequest, NextResponse } from 'next/server'
 import { paymentService } from '@/lib/payment-service'
-import { MOCK_ORDERS } from '@/lib/mock-data'
+import { MOCK_ORDERS, type Order } from '@/lib/mock-data'
 import type { PaymentWebhook } from '@/lib/payment-types'
 
 export const dynamic = 'force-dynamic'
@@ -39,47 +39,46 @@ export async function POST(request: NextRequest) {
     })
 
     // Get associated order
-    const order = MOCK_ORDERS.find((o: any) => o.id === payment.orderId)
+    const order = MOCK_ORDERS.find((o: Order) => o.id === payment.orderId)
     if (!order) {
       console.error('❌ Order not found for payment:', payment.orderId)
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
     // Update order based on payment status
-    const updatedOrder: any = { ...order }
+    // Note: Order type doesn't have paymentId/paidAt fields, so we need to extend or use partial updates
+    const updatedOrder: Partial<Order> & Pick<Order, 'id' | 'tableId' | 'items' | 'subtotal' | 'total' | 'status' | 'paymentStatus' | 'createdAt'> = { 
+      ...order,
+    }
 
     switch (payment.status) {
       case 'approved':
-        updatedOrder.paymentStatus = 'completed'
-        updatedOrder.paymentId = payment.id
-        updatedOrder.paidAt = new Date().toISOString()
-        updatedOrder.status = 'confirmed' // Auto-confirm paid orders
+        updatedOrder.paymentStatus = 'pagado'
+        updatedOrder.status = 'preparando' // Auto-confirm paid orders
         console.log('✅ Payment approved, order confirmed')
         break
 
       case 'rejected':
-        updatedOrder.paymentStatus = 'failed'
-        updatedOrder.paymentId = payment.id
+        updatedOrder.paymentStatus = 'cancelado'
         console.log('❌ Payment rejected')
         break
 
       case 'pending':
-        updatedOrder.paymentStatus = 'processing'
-        updatedOrder.paymentId = payment.id
+        updatedOrder.paymentStatus = 'pendiente'
         console.log('⏳ Payment pending')
         break
 
       case 'refunded':
-        updatedOrder.paymentStatus = 'refunded'
-        updatedOrder.status = 'cancelled'
+        updatedOrder.paymentStatus = 'cancelado'
+        updatedOrder.status = 'cerrado'
         console.log('💸 Payment refunded')
         break
     }
 
     // Save updated order (in production, save to database)
-    const orderIndex = MOCK_ORDERS.findIndex((o: any) => o.id === order.id)
+    const orderIndex = MOCK_ORDERS.findIndex((o: Order) => o.id === order.id)
     if (orderIndex !== -1) {
-      (MOCK_ORDERS as any)[orderIndex] = updatedOrder
+      MOCK_ORDERS[orderIndex] = updatedOrder as Order
     }
 
     console.log(`✓ Order ${order.id} payment status: ${payment.status}`)
@@ -97,6 +96,6 @@ export async function POST(request: NextRequest) {
 }
 
 // Handle GET requests (MercadoPago sometimes sends GET for webhook validation)
-export async function GET(request: NextRequest) {
+export async function GET(_request: NextRequest) {
   return NextResponse.json({ message: 'Webhook endpoint active' })
 }

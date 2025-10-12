@@ -26,66 +26,66 @@ export function AnalyticsDashboard() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   
-  // Fetch analytics data
-  const fetchAnalytics = async () => {
-    const startTime = Date.now();
-    setLoading(true)
-    setError(null)
-    
-    try {
-      logger.debug('Obteniendo datos de analítica', { preset: datePreset });
-      
-      // Fetch all analytics endpoints in parallel
-      const [salesRes, revenueRes, popularItemsRes, qrUsageRes] = await Promise.all([
-        fetch(`/api/analytics/sales?preset=${datePreset}`),
-        fetch(`/api/analytics/revenue?preset=${datePreset}`),
-        fetch(`/api/analytics/popular-items?preset=${datePreset}`),
-        fetch(`/api/analytics/qr-usage?preset=${datePreset}`),
-      ])
-      
-      if (!salesRes.ok || !revenueRes.ok || !popularItemsRes.ok || !qrUsageRes.ok) {
-        throw new Error('Failed to fetch analytics data')
-      }
-      
-      const [salesData, revenueData, popularItemsData, qrUsageData] = await Promise.all([
-        salesRes.json(),
-        revenueRes.json(),
-        popularItemsRes.json(),
-        qrUsageRes.json(),
-      ])
-      
-      // Combine all data into DashboardAnalytics
-      const combinedAnalytics: DashboardAnalytics = {
-        salesMetrics: salesData.data,
-        revenueAnalytics: revenueData.data,
-        popularItems: popularItemsData.data,
-        qrUsage: qrUsageData.data,
-        dateRange: {
-          from: new Date(salesData.data.dateRange.from),
-          to: new Date(salesData.data.dateRange.to),
-        },
-        lastUpdated: new Date().toISOString(),
-      }
-      
-      setAnalytics(combinedAnalytics)
-      
-      const duration = Date.now() - startTime;
-      logger.info('Datos de analítica obtenidos exitosamente', { 
-        preset: datePreset,
-        duration: `${duration}ms`
-      });
-    } catch (err) {
-      logger.error('Error al obtener datos de analítica', err as Error, { 
-        preset: datePreset 
-      });
-      setError('Error al cargar los datos de analítica. Por favor, intenta nuevamente.')
-    } finally {
-      setLoading(false)
-    }
-  }
-  
   // Fetch on mount and when date preset changes
   useEffect(() => {
+    // Fetch analytics data
+    const fetchAnalytics = async () => {
+      const startTime = Date.now();
+      setLoading(true)
+      setError(null)
+      
+      try {
+        logger.debug('Obteniendo datos de analítica', { preset: datePreset });
+        
+        // Fetch all analytics endpoints in parallel
+        const [salesRes, revenueRes, popularItemsRes, qrUsageRes] = await Promise.all([
+          fetch(`/api/analytics/sales?preset=${datePreset}`),
+          fetch(`/api/analytics/revenue?preset=${datePreset}`),
+          fetch(`/api/analytics/popular-items?preset=${datePreset}`),
+          fetch(`/api/analytics/qr-usage?preset=${datePreset}`),
+        ])
+        
+        if (!salesRes.ok || !revenueRes.ok || !popularItemsRes.ok || !qrUsageRes.ok) {
+          throw new Error('Failed to fetch analytics data')
+        }
+        
+        const [salesData, revenueData, popularItemsData, qrUsageData] = await Promise.all([
+          salesRes.json(),
+          revenueRes.json(),
+          popularItemsRes.json(),
+          qrUsageRes.json(),
+        ])
+        
+        // Combine all data into DashboardAnalytics
+        const combinedAnalytics: DashboardAnalytics = {
+          salesMetrics: salesData.data,
+          revenueAnalytics: revenueData.data,
+          popularItems: popularItemsData.data,
+          qrUsage: qrUsageData.data,
+          dateRange: {
+            from: new Date(salesData.data.dateRange.from),
+            to: new Date(salesData.data.dateRange.to),
+          },
+          lastUpdated: new Date().toISOString(),
+        }
+        
+        setAnalytics(combinedAnalytics)
+        
+        const duration = Date.now() - startTime;
+        logger.info('Datos de analítica obtenidos exitosamente', { 
+          preset: datePreset,
+          duration: `${duration}ms`
+        });
+      } catch (err) {
+        logger.error('Error al obtener datos de analítica', err as Error, { 
+          preset: datePreset 
+        });
+        setError('Error al cargar los datos de analítica. Por favor, intenta nuevamente.')
+      } finally {
+        setLoading(false)
+      }
+    }
+    
     fetchAnalytics()
   }, [datePreset])
   
@@ -137,7 +137,7 @@ export function AnalyticsDashboard() {
         <Button
           variant="outline"
           size="sm"
-          onClick={fetchAnalytics}
+          onClick={() => window.location.reload()}
           disabled={loading}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />

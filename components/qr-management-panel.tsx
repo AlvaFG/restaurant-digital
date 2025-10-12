@@ -18,7 +18,6 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -263,6 +262,7 @@ export function QRManagementPanel() {
               <CardContent className="space-y-4">
                 <div className="flex justify-center">
                   <div className="border rounded-lg p-4 bg-white">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       src={generatedQR.qrCodeDataURL}
                       alt={`QR Code for Table ${generatedQR.tableNumber}`}
@@ -383,6 +383,7 @@ export function QRManagementPanel() {
                       className="border rounded-lg p-3 space-y-2 hover:border-primary transition-colors"
                     >
                       <div className="flex justify-center bg-white rounded p-2">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
                           src={qr.qrCodeDataURL}
                           alt={`Table ${qr.tableNumber}`}

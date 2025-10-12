@@ -6,7 +6,7 @@
 
 'use client'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { QrCode, Users, ShoppingCart, TrendingUp } from 'lucide-react'
 import type { QrUsageMetrics } from '@/lib/analytics-types'
 

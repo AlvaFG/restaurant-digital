@@ -29,14 +29,6 @@ interface QrOrderRequest {
   }>
 }
 
-interface OrderItem {
-  menuItemId: string
-  quantity: number
-  customizationId?: string
-  modifiers?: Array<{ name: string; priceCents: number }>
-  notes?: string
-}
-
 export async function POST(request: NextRequest) {
   try {
     const body = (await request.json()) as QrOrderRequest
@@ -90,7 +82,7 @@ export async function POST(request: NextRequest) {
 
     // Create order object
     const orderId = `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
-    const order = {
+    const _order = {
       id: orderId,
       tableId: body.tableId,
       sessionId: body.sessionId,

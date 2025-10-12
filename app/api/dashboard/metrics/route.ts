@@ -156,7 +156,7 @@ export async function GET(request: Request) {
     yesterday.setDate(yesterday.getDate() - 1)
     const yesterdayISO = yesterday.toISOString()
 
-    const { data: ordersYesterday, error: yesterdayError } = await supabase
+    const { data: ordersYesterday, error: _yesterdayError } = await supabase
       .from('orders')
       .select('total')
       .eq('tenant_id', tenantId)

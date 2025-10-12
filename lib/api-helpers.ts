@@ -107,7 +107,7 @@ export function respuestaExitosa<T>(
   mensaje?: string,
   status: number = 200
 ): NextResponse {
-  const response: any = { data }
+  const response: { data: T; message?: string } = { data }
   
   if (mensaje) {
     response.message = mensaje
@@ -121,7 +121,7 @@ export function respuestaExitosa<T>(
  */
 export async function validarBody<T>(
   request: Request,
-  schema?: (data: any) => T
+  schema?: (data: Record<string, unknown>) => T
 ): Promise<T> {
   try {
     const body = await request.json()
@@ -131,7 +131,7 @@ export async function validarBody<T>(
     }
     
     return body as T
-  } catch (error) {
+  } catch {
     throw new ValidationError(MENSAJES.ERRORES.VALIDACION_FALLIDA, {
       detail: 'Cuerpo de la petición inválido'
     })
@@ -159,7 +159,7 @@ export function validarQueryParams(
  * Extrae y valida ID de los params de la ruta
  */
 export function obtenerIdDeParams(
-  params: any,
+  params: Record<string, string | undefined>,
   nombreParam: string = 'id'
 ): string {
   const id = params[nombreParam]
@@ -178,9 +178,9 @@ export function obtenerIdDeParams(
  * Wrapper para proteger rutas que requieren autenticación
  */
 export function requiereAutenticacion(
-  handler: (request: Request, context?: any) => Promise<NextResponse>
+  handler: (request: Request, context?: Record<string, unknown>) => Promise<NextResponse>
 ) {
-  return async (request: Request, context?: any): Promise<NextResponse> => {
+  return async (request: Request, context?: Record<string, unknown>): Promise<NextResponse> => {
     try {
       // TODO: Implementar verificación de autenticación
       // Por ahora, continuamos
@@ -202,7 +202,7 @@ export function requiereAutenticacion(
 export function logRequest(
   method: string,
   path: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ): void {
   logger.info(`${method} ${path}`, metadata)
 }

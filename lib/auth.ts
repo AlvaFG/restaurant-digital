@@ -1,4 +1,14 @@
-﻿import { logger } from './logger';
+﻿/**
+ * AuthService - Cliente de autenticación con Supabase
+ * 
+ * Maneja la autenticación del lado del cliente usando Supabase Auth.
+ * La sesión se gestiona automáticamente mediante cookies de Supabase.
+ * 
+ * @module lib/auth
+ */
+
+import { createBrowserClient } from '@/lib/supabase/client';
+import { logger } from './logger';
 import { AuthenticationError, AppError } from './errors';
 import { MENSAJES } from './i18n/mensajes';
 
@@ -28,40 +38,28 @@ export interface Tenant {
 }
 
 export class AuthService {
-  private static readonly STORAGE_KEY = "restaurant_auth"
   private static readonly TENANT_KEY = "restaurant_tenant"
 
-  private static setCookie(name: string, value: string, days = 7): void {
-    if (typeof document === "undefined") return
-
-    const expires = new Date()
-    expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000)
-    const encodedValue = encodeURIComponent(value)
-    document.cookie = `${name}=${encodedValue};expires=${expires.toUTCString()};path=/;SameSite=Lax`
-  }
-
-  private static deleteCookie(name: string): void {
-    if (typeof document === "undefined") return
-
-    document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 UTC;path=/;`
-  }
-
-  static async login(email: string, password: string): Promise<User | null> {
+  /**
+   * Iniciar sesión con email y contraseña
+   * Usa Supabase Auth para autenticación
+   */
+  static async login(email: string, password: string): Promise<User> {
     const startTime = Date.now();
     
     try {
       logger.info('Iniciando login', { email });
-      console.log('[AuthService] Iniciando login para:', email);
 
       // Validar inputs
       if (!email || !password) {
-        console.error('[AuthService] Faltan credenciales');
         throw new AuthenticationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO);
       }
 
-      console.log('[AuthService] Enviando petición a /api/auth/login');
+      if (!email.includes('@')) {
+        throw new AuthenticationError(MENSAJES.VALIDACIONES.EMAIL_INVALIDO);
+      }
       
-      // Llamar a la API route en el servidor
+      // Llamar a la API route que maneja el login con Supabase
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -69,17 +67,8 @@ export class AuthService {
         },
         body: JSON.stringify({ email, password }),
       });
-
-      console.log('[AuthService] Respuesta recibida, status:', response.status);
       
-      let responseData;
-      try {
-        responseData = await response.json();
-        console.log('[AuthService] Datos de respuesta:', JSON.stringify(responseData, null, 2));
-      } catch (jsonError) {
-        console.error('[AuthService] Error al parsear JSON:', jsonError);
-        throw new AppError('Error al procesar respuesta del servidor');
-      }
+      const responseData = await response.json();
 
       if (!response.ok) {
         logger.error('Error en login', undefined, { 
@@ -88,36 +77,21 @@ export class AuthService {
           error: responseData.error 
         });
         
-        console.error('[AuthService] Error en login:', responseData.error);
-        
-        // Extraer mensaje de error del objeto error
         const errorMessage = responseData.error?.message || responseData.error || MENSAJES.ERRORES.CREDENCIALES_INVALIDAS;
         throw new AuthenticationError(errorMessage);
       }
 
-      // La respuesta exitosa viene en el formato { data: { user, tenant }, message }
-      const data = responseData.data || responseData;
+      const data = responseData.data;
       
-      if (!data || !data.user || !data.tenant) {
-        console.error('[AuthService] Respuesta incompleta:', data);
+      if (!data?.user || !data?.tenant) {
         throw new AppError('Respuesta del servidor incompleta');
       }
       
       const { user, tenant } = data;
 
-      if (!user.id || !user.email || !tenant.id) {
-        console.error('[AuthService] Datos inválidos:', { user, tenant });
-        throw new AppError('Datos de usuario o tenant inválidos');
-      }
-
-      console.log('[AuthService] Usuario autenticado:', user.email, 'Rol:', user.role);
-
-      // Store in localStorage
-      localStorage.setItem(this.STORAGE_KEY, JSON.stringify(user));
+      // Guardar tenant en localStorage para acceso rápido
+      // La sesión de usuario está en las cookies de Supabase
       localStorage.setItem(this.TENANT_KEY, JSON.stringify(tenant));
-
-      this.setCookie(this.STORAGE_KEY, JSON.stringify(user));
-      this.setCookie(this.TENANT_KEY, JSON.stringify(tenant));
 
       const duration = Date.now() - startTime;
       logger.info('Login completado exitosamente', { 
@@ -125,17 +99,13 @@ export class AuthService {
         tenantId: tenant.id,
         duration: `${duration}ms`
       });
-      
-      console.log('[AuthService] Login completado exitosamente en', duration, 'ms');
 
       return user;
     } catch (error) {
       const duration = Date.now() - startTime;
       logger.error('Login falló', error as Error, { email, duration: `${duration}ms` });
       
-      console.error('[AuthService] Login falló:', error);
-      
-      if (error instanceof AuthenticationError) {
+      if (error instanceof AuthenticationError || error instanceof AppError) {
         throw error;
       }
       
@@ -148,50 +118,73 @@ export class AuthService {
     }
   }
 
-  static logout(): void {
+  /**
+   * Cerrar sesión
+   * Llama a Supabase signOut y limpia datos locales
+   */
+  static async logout(): Promise<void> {
     try {
-      const user = this.getCurrentUser();
-      logger.info('Cerrando sesión', { userId: user?.id });
+      logger.info('Cerrando sesión');
 
-      localStorage.removeItem(this.STORAGE_KEY);
+      const supabase = createBrowserClient();
+      
+      // Cerrar sesión en Supabase (limpia cookies automáticamente)
+      const { error } = await supabase.auth.signOut();
+      
+      if (error) {
+        logger.error('Error al cerrar sesión en Supabase', error);
+      }
+
+      // Limpiar datos locales
       localStorage.removeItem(this.TENANT_KEY);
-
-      this.deleteCookie(this.STORAGE_KEY);
-      this.deleteCookie(this.TENANT_KEY);
 
       logger.info('Sesión cerrada exitosamente');
     } catch (error) {
       logger.error('Error al cerrar sesión', error as Error);
-      // Aún así intentamos limpiar el storage
-      localStorage.removeItem(this.STORAGE_KEY);
+      // Intentar limpiar de todos modos
       localStorage.removeItem(this.TENANT_KEY);
+      throw new AppError('Error al cerrar sesión');
     }
   }
 
-  static getCurrentUser(): User | null {
+  /**
+   * Obtener usuario actual desde Supabase
+   * Consulta la sesión activa de Supabase
+   */
+  static async getCurrentUser(): Promise<User | null> {
     if (typeof window === "undefined") return null;
 
     try {
-      const stored = localStorage.getItem(this.STORAGE_KEY);
-      if (!stored) return null;
+      const supabase = createBrowserClient();
+      const { data: { session }, error } = await supabase.auth.getSession();
       
-      const user = JSON.parse(stored) as User;
-      
-      // Validar que el usuario tiene los campos requeridos
-      if (!user.id || !user.email) {
-        logger.warn('Usuario en storage inválido, limpiando sesión');
-        this.logout();
+      if (error || !session) {
         return null;
       }
-      
-      return user;
+
+      // Obtener datos adicionales del usuario desde la base de datos
+      const response = await fetch('/api/auth/me', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (!response.ok) {
+        return null;
+      }
+
+      const data = await response.json();
+      return data.data?.user || null;
     } catch (error) {
-      logger.error('Error al leer usuario del storage', error as Error);
-      this.logout();
+      logger.error('Error al obtener usuario actual', error as Error);
       return null;
     }
   }
 
+  /**
+   * Obtener tenant del localStorage
+   */
   static getTenant(): Tenant | null {
     if (typeof window === "undefined") return null;
 
@@ -201,7 +194,6 @@ export class AuthService {
       
       const tenant = JSON.parse(stored) as Tenant;
       
-      // Validar que el tenant tiene los campos requeridos
       if (!tenant.id || !tenant.slug) {
         logger.warn('Tenant en storage inválido, limpiando');
         localStorage.removeItem(this.TENANT_KEY);
@@ -216,6 +208,9 @@ export class AuthService {
     }
   }
 
+  /**
+   * Actualizar información del tenant
+   */
   static updateTenant(updates: Partial<Tenant>): void {
     try {
       const current = this.getTenant();
@@ -226,12 +221,57 @@ export class AuthService {
 
       const updated = { ...current, ...updates };
       localStorage.setItem(this.TENANT_KEY, JSON.stringify(updated));
-      this.setCookie(this.TENANT_KEY, JSON.stringify(updated));
 
       logger.info('Tenant actualizado', { tenantId: updated.id, updates: Object.keys(updates) });
     } catch (error) {
       logger.error('Error al actualizar tenant', error as Error);
       throw new AppError(MENSAJES.ERRORES.GENERICO);
+    }
+  }
+
+  /**
+   * Registrar nuevo usuario
+   */
+  static async register(email: string, password: string, name: string): Promise<void> {
+    try {
+      logger.info('Iniciando registro', { email, name });
+
+      if (!email || !password || !name) {
+        throw new AuthenticationError(MENSAJES.VALIDACIONES.CAMPO_REQUERIDO);
+      }
+
+      if (!email.includes('@')) {
+        throw new AuthenticationError(MENSAJES.VALIDACIONES.EMAIL_INVALIDO);
+      }
+
+      if (password.length < 6) {
+        throw new AuthenticationError('La contraseña debe tener al menos 6 caracteres');
+      }
+
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        const errorMessage = data.error?.message || data.error || 'Error al crear cuenta';
+        throw new AuthenticationError(errorMessage);
+      }
+
+      logger.info('Registro completado exitosamente', { email });
+    } catch (error) {
+      logger.error('Registro falló', error as Error, { email });
+      
+      if (error instanceof AuthenticationError || error instanceof AppError) {
+        throw error;
+      }
+      
+      throw new AppError('Error al crear cuenta');
     }
   }
 }

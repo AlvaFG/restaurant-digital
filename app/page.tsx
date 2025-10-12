@@ -9,7 +9,16 @@ export default function HomePage() {
   const { user, isLoading, isHydrated } = useAuth()
   const router = useRouter()
 
+  // 🚧 BYPASS TEMPORAL PARA DESARROLLO
+  const bypassAuth = process.env.NEXT_PUBLIC_BYPASS_AUTH === 'true'
+
   useEffect(() => {
+    // Si bypass está activo, ir directo al dashboard
+    if (bypassAuth) {
+      router.replace("/dashboard")
+      return
+    }
+
     if (isHydrated && !isLoading) {
       if (user) {
         router.replace("/dashboard")
@@ -17,7 +26,7 @@ export default function HomePage() {
         router.replace("/login")
       }
     }
-  }, [user, isLoading, isHydrated, router])
+  }, [user, isLoading, isHydrated, router, bypassAuth])
 
   if (!isHydrated || isLoading) {
     return (

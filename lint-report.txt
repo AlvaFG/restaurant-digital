@@ -1,0 +1,254 @@
+﻿
+> restaurant-management-system@1.0.0 lint
+> next lint
+
+node.exe : 
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+./app/(public)/qr/validate/__tests__/validate-page.test.tsx
+1:32  Warning: 'vi' is defined but never used. Allowed unused vars must match /^_/u.  
+@typescript-eslint/no-unused-vars
+1:36  Warning: 'beforeEach' is defined but never used. Allowed unused vars must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+
+./app/(public)/qr/[tableId]/page.tsx
+95:5  Warning: 'hasUnavailableItems' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/(public)/qr/_components/item-customization-modal.tsx
+45:9  Warning: The 'modifierGroups' logical expression could make the dependencies of 
+useMemo Hook (at line 50) change on every render. To fix this, wrap the 
+initialization of 'modifierGroups' in its own useMemo() Hook.  
+react-hooks/exhaustive-deps
+45:9  Warning: The 'modifierGroups' logical expression could make the dependencies of 
+useMemo Hook (at line 56) change on every render. To fix this, wrap the 
+initialization of 'modifierGroups' in its own useMemo() Hook.  
+react-hooks/exhaustive-deps
+
+./app/(public)/qr/_components/qr-checkout-form.tsx
+47:3  Warning: 'sessionId' is defined but never used. Allowed unused args must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+83:15  Warning: 'basePrice' is assigned a value but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+84:15  Warning: 'modifiersPrice' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/analitica/_components/category-chart.tsx
+61:30  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/auth/callback/route.ts
+52:38  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+70:42  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+82:14  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+91:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+108:34  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/auth/login/route.ts
+91:25  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/dashboard/metrics/route.ts
+127:32  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+159:43  Warning: 'yesterdayError' is assigned a value but never used. Allowed unused 
+vars must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/debug/auth/route.ts
+36:28  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+36:71  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/order/qr/route.ts
+32:11  Warning: 'OrderItem' is defined but never used. Allowed unused vars must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+93:11  Warning: 'order' is assigned a value but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/order/qr/__tests__/route.test.ts
+158:76  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+221:76  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+268:76  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/payment/create/route.ts
+49:40  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+68:66  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+87:25  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+90:70  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+100:50  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+102:23  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/payment/webhook/route.ts
+42:40  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+49:25  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+80:50  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+82:23  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+100:27  Warning: 'request' is defined but never used. Allowed unused args must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/tables/route.ts
+90:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+90:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/tables/[id]/route.ts
+148:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+148:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/api/zones/route.ts
+20:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+20:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+41:11  Warning: 'duration' is assigned a value but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+65:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+65:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+107:11  Warning: 'duration' is assigned a value but never used. Allowed unused vars 
+must match /^_/u.  @typescript-eslint/no-unused-vars
+
+./app/api/zones/[id]/route.ts
+16:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+16:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+45:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+45:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+55:20  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+88:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+88:73  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./app/menu/__tests__/menu-page.test.tsx
+30:7  Warning: 'user' is assigned a value but never used. Allowed unused vars must 
+match /^_/u.  @typescript-eslint/no-unused-vars
+
+./components/add-table-dialog.tsx
+146:9  Warning: 'handleInputChange' is assigned a value but never used. Allowed 
+unused vars must match /^_/u.  @typescript-eslint/no-unused-vars
+195:66  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:68  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:71  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:78  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:81  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:84  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:87  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+195:90  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+
+./components/qr-management-panel.tsx
+265:21  Warning: Using `<img>` could result in slower LCP and higher bandwidth. 
+Consider using `<Image />` from `next/image` or a custom image loader to 
+automatically optimize images. This may incur additional usage or cost from your 
+provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+385:25  Warning: Using `<img>` could result in slower LCP and higher bandwidth. 
+Consider using `<Image />` from `next/image` or a custom image loader to 
+automatically optimize images. This may incur additional usage or cost from your 
+provider. See: https://nextjs.org/docs/messages/no-img-element  
+@next/next/no-img-element
+
+./components/zones-management.tsx
+60:14  Warning: 'error' is defined but never used.  @typescript-eslint/no-unused-vars
+424:57  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+424:78  Warning: `"` can be escaped with `&quot;`, `&ldquo;`, `&#34;`, `&rdquo;`.  
+react/no-unescaped-entities
+
+./lib/dashboard-service.ts
+70:64  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+126:35  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+182:39  Warning: 'tenantId' is defined but never used. Allowed unused args must match 
+/^_/u.  @typescript-eslint/no-unused-vars
+
+./lib/payment-service.ts
+46:44  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+49:30  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/payment-types.ts
+16:28  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+57:28  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+71:10  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/server/table-store.ts
+388:27  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+734:10  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+746:33  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+797:30  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/server/zones-store.ts
+34:34  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+34:52  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+74:28  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+124:10  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+136:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+189:39  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+198:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+209:31  Warning: Unexpected any. Specify a different type.  
+@typescript-eslint/no-explicit-any
+
+./lib/supabase/database.types.ts
+Error: Parsing error: File appears to be binary.
+
+./lib/supabase/types.ts
+Error: Parsing error: File appears to be binary.
+
+info  - Need to disable some ESLint rules? Learn more here: 
+https://nextjs.org/docs/basic-features/eslint#disabling-rules

@@ -44,7 +44,7 @@ export function QrCheckoutForm({
   currencyFormatter,
   tableNumber,
   tableId,
-  sessionId,
+  sessionId: _sessionId,
   onSubmit,
   isSubmitting = false,
 }: QrCheckoutFormProps) {
@@ -80,8 +80,8 @@ export function QrCheckoutForm({
       customerNotes: customerNotes.trim() || undefined,
       paymentMethod,
       items: items.map(entry => {
-        const basePrice = entry.item.priceCents
-        const modifiersPrice = entry.modifiers.reduce((sum, m) => sum + m.priceCents, 0)
+        const _basePrice = entry.item.priceCents
+        const _modifiersPrice = entry.modifiers.reduce((sum, m) => sum + m.priceCents, 0)
         
         return {
           menuItemId: entry.item.id,

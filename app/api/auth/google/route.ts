@@ -1,9 +1,8 @@
-import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { manejarError, respuestaExitosa, logRequest, logResponse } from "@/lib/api-helpers"
 import { logger } from "@/lib/logger"
 
-export async function POST(request: Request) {
+export async function POST(_request: Request) {
   const startTime = Date.now()
 
   try {

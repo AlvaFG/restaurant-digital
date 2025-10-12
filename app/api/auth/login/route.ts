@@ -1,6 +1,4 @@
-import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
-import bcrypt from 'bcryptjs'
 import { manejarError, validarBody, respuestaExitosa, logRequest, logResponse } from '@/lib/api-helpers'
 import { AuthenticationError, ValidationError, DatabaseError } from '@/lib/errors'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -26,13 +24,27 @@ export async function POST(request: Request) {
       throw new ValidationError(MENSAJES.VALIDACIONES.EMAIL_INVALIDO)
     }
 
-    // Usar admin client para bypassear RLS
+    // Usar admin client para Supabase Auth
     const supabase = createAdminClient()
 
-    logger.info('Buscando usuario', { email })
+    logger.info('Iniciando autenticación con Supabase', { email })
 
-    // 1. Buscar usuario
-    const { data: users, error } = await supabase
+    // 1. Autenticar con Supabase Auth
+    const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    })
+
+    if (authError || !authData.session) {
+      logger.warn('Error en autenticación de Supabase', { email, error: authError?.message })
+      throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
+    }
+
+    const authUser = authData.user
+    logger.info('Usuario autenticado en Supabase', { userId: authUser.id, email: authUser.email })
+
+    // 2. Buscar datos del usuario en la tabla users
+    const { data: userData, error: userError } = await supabase
       .from('users')
       .select(`
         *,
@@ -45,69 +57,78 @@ export async function POST(request: Request) {
       `)
       .eq('email', email)
       .eq('active', true)
-      .limit(1)
+      .single()
 
-    if (error) {
-      logger.error('Error al buscar usuario', error as Error, { email })
-      throw new DatabaseError(MENSAJES.ERRORES.DB_ERROR, { 
+    if (userError || !userData) {
+      logger.error('Usuario no encontrado en tabla users', userError as Error, { email })
+      throw new DatabaseError('Usuario no encontrado o inactivo', { 
         operation: 'findUser',
         email 
       })
     }
 
-    if (!users || users.length === 0) {
-      logger.warn('Usuario no encontrado o inactivo', { email })
-      throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
+    interface UserWithTenant {
+      id: string
+      name: string
+      email: string
+      role: string
+      active: boolean
+      tenant_id: string
+      last_login_at?: string
+      tenants: {
+        id: string
+        name: string
+        slug: string
+        settings?: Record<string, unknown>
+      }
     }
 
-    const userData: any = users[0]
-
-    // 2. Verificar password
-    logger.debug('Verificando contraseña')
-    const isValid = await bcrypt.compare(password, userData.password_hash)
-    
-    if (!isValid) {
-      logger.warn('Contraseña inválida', { email })
-      throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
-    }
+    const userDataTyped = userData as UserWithTenant
 
     // 3. Actualizar last_login_at
-    const updateResult = await supabase
-      .from('users')
-      .update({ last_login_at: new Date().toISOString() } as any)
-      .eq('id', userData.id)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const updateResult = await (supabase
+      .from('users') as any)
+      .update({ last_login_at: new Date().toISOString() })
+      .eq('id', userDataTyped.id)
 
     if (updateResult.error) {
       logger.warn('No se pudo actualizar last_login_at', { 
-        userId: userData.id,
+        userId: userDataTyped.id,
         error: updateResult.error.message 
       })
     }
 
     // 4. Preparar respuesta
     const user = {
-      id: userData.id,
-      name: userData.name,
-      email: userData.email,
-      role: userData.role,
-      active: userData.active,
-      tenant_id: userData.tenant_id,
+      id: userDataTyped.id,
+      name: userDataTyped.name,
+      email: userDataTyped.email,
+      role: userDataTyped.role,
+      active: userDataTyped.active,
+      tenant_id: userDataTyped.tenant_id,
       last_login_at: new Date().toISOString(),
     }
 
-    const tenantData = userData.tenants as any
+    const tenantData = userDataTyped.tenants
+    const tenantSettings = tenantData.settings as {
+      logoUrl?: string
+      theme?: { accentColor?: string }
+      features?: { tablets?: boolean; kds?: boolean; payments?: boolean }
+    } | undefined
+
     const tenant = {
       id: tenantData.id,
       name: tenantData.name,
       slug: tenantData.slug,
-      logoUrl: tenantData.settings?.logoUrl,
+      logoUrl: tenantSettings?.logoUrl,
       theme: {
-        accentColor: tenantData.settings?.theme?.accentColor || '#3b82f6',
+        accentColor: tenantSettings?.theme?.accentColor || '#3b82f6',
       },
       features: {
-        tablets: tenantData.settings?.features?.tablets ?? true,
-        kds: tenantData.settings?.features?.kds ?? true,
-        payments: tenantData.settings?.features?.payments ?? true,
+        tablets: tenantSettings?.features?.tablets ?? true,
+        kds: tenantSettings?.features?.kds ?? true,
+        payments: tenantSettings?.features?.payments ?? true,
       },
     }
 
@@ -120,7 +141,16 @@ export async function POST(request: Request) {
       duration: `${duration}ms`
     })
 
-    return respuestaExitosa({ user, tenant }, MENSAJES.EXITOS.LOGIN_EXITOSO)
+    // Devolver session y datos del usuario/tenant
+    return respuestaExitosa({ 
+      user, 
+      tenant,
+      session: {
+        access_token: authData.session.access_token,
+        refresh_token: authData.session.refresh_token,
+        expires_at: authData.session.expires_at,
+      }
+    }, MENSAJES.EXITOS.LOGIN_EXITOSO)
   } catch (error) {
     const duration = Date.now() - startTime
     logResponse('POST', '/api/auth/login', error instanceof AuthenticationError ? 401 : 500, duration)

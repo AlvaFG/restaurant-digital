@@ -35,6 +35,8 @@ export function LoginForm() {
 
     try {
       if (mode === "register") {
+        console.log('📝 [LoginForm] Intentando registro con:', email)
+        
         // Validar contraseñas
         if (password !== confirmPassword) {
           throw new Error("Las contraseñas no coinciden")
@@ -58,19 +60,61 @@ export function LoginForm() {
         const data = await response.json()
 
         if (!response.ok) {
-          throw new Error(data.error?.message || "Error al crear cuenta")
+          const errorMsg = data.error?.message || data.error || "Error al crear cuenta"
+          throw new Error(errorMsg)
         }
 
+        console.log('✅ [LoginForm] Registro exitoso, iniciando sesión automática...')
+        
         // Después de registro exitoso, hacer login automáticamente
         await login(email, password)
+        console.log('✅ [LoginForm] Login automático exitoso, redirigiendo a dashboard...')
+        
+        // Pequeño delay para asegurar que el estado se actualizó
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
         router.push("/dashboard")
       } else {
         // Login normal
+        console.log('📝 [LoginForm] Intentando login con:', email)
+        console.log('⏳ [LoginForm] Llamando a login()...')
+        
+        const loginStartTime = Date.now()
         await login(email, password)
+        const loginDuration = Date.now() - loginStartTime
+        
+        console.log(`✅ [LoginForm] Login completado en ${loginDuration}ms`)
+        console.log('⏳ [LoginForm] Esperando 300ms antes de redireccionar...')
+        
+        // Pequeño delay para asegurar que el estado se actualizó
+        await new Promise(resolve => setTimeout(resolve, 300))
+        
+        console.log('🔄 [LoginForm] Redirigiendo a /dashboard...')
         router.push("/dashboard")
+        console.log('✅ [LoginForm] Router.push ejecutado')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Error en la operación")
+      console.error('❌ [LoginForm] Error en', mode === 'login' ? 'login' : 'registro', ':', err)
+      const errorMessage = err instanceof Error ? err.message : "Error en la operación"
+      
+      // Traducir mensajes de error comunes de Supabase
+      let friendlyError = errorMessage
+      
+      if (errorMessage.includes("Invalid login credentials")) {
+        friendlyError = "Correo o contraseña incorrectos"
+      } else if (errorMessage.includes("Email not confirmed")) {
+        friendlyError = "Debes confirmar tu email antes de iniciar sesión"
+      } else if (errorMessage.includes("User already registered")) {
+        friendlyError = "Este email ya está registrado"
+      } else if (errorMessage.includes("Unable to validate email address")) {
+        friendlyError = "El formato del email es inválido"
+      } else if (errorMessage.includes("Network request failed")) {
+        friendlyError = "Error de conexión. Verifica tu internet e intenta nuevamente"
+      } else if (errorMessage.includes("Failed to fetch")) {
+        friendlyError = "Error al conectar con el servidor. Intenta nuevamente"
+      }
+      
+      setError(friendlyError)
     } finally {
       setIsLoading(false)
     }

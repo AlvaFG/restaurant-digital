@@ -19,47 +19,47 @@ export default function QRValidatePage() {
       return;
     }
 
-    validateToken(token);
-  }, [searchParams]);
+    async function validateToken(token: string) {
+      try {
+        const response = await fetch('/api/qr/validate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ token }),
+        });
 
-  async function validateToken(token: string) {
-    try {
-      const response = await fetch('/api/qr/validate', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token }),
-      });
+        const data = await response.json();
 
-      const data = await response.json();
+        if (!response.ok || !data.valid) {
+          setStatus('error');
+          setError(data.error || 'Código QR inválido o expirado');
+          return;
+        }
 
-      if (!response.ok || !data.valid) {
+        // Guardar sesión en localStorage
+        localStorage.setItem('qr_session', JSON.stringify({
+          sessionId: data.sessionId,
+          tableId: data.tableId,
+          table: data.table,
+          expiresAt: data.session.expiresAt,
+        }));
+
+        setStatus('success');
+
+        // Redirigir al menú después de 1 segundo
+        setTimeout(() => {
+          router.push(`/qr/${data.tableId}`);
+        }, 1000);
+      } catch (err) {
         setStatus('error');
-        setError(data.error || 'Código QR inválido o expirado');
-        return;
+        setError('Error al validar el código QR. Por favor, inténtalo de nuevo.');
+        console.error('Validation error:', err);
       }
-
-      // Guardar sesión en localStorage
-      localStorage.setItem('qr_session', JSON.stringify({
-        sessionId: data.sessionId,
-        tableId: data.tableId,
-        table: data.table,
-        expiresAt: data.session.expiresAt,
-      }));
-
-      setStatus('success');
-
-      // Redirigir al menú después de 1 segundo
-      setTimeout(() => {
-        router.push(`/qr/${data.tableId}`);
-      }, 1000);
-    } catch (err) {
-      setStatus('error');
-      setError('Error al validar el código QR. Por favor, inténtalo de nuevo.');
-      console.error('Validation error:', err);
     }
-  }
+
+    validateToken(token);
+  }, [searchParams, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">

@@ -97,7 +97,6 @@ export function OrdersPanel() {
     statusFilters,
     paymentFilter,
     search,
-    lastUpdated,
     setStatusFilters,
     setPaymentFilter,
     setSearch,

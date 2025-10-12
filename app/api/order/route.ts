@@ -17,7 +17,7 @@ import {
   type PaymentStatus,
   type StoredOrder,
 } from "@/lib/server/order-types"
-import { logRequest, logResponse, manejarError } from '@/lib/api-helpers'
+import { logRequest, logResponse } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
 

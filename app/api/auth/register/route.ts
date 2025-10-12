@@ -1,4 +1,3 @@
-import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import bcrypt from "bcryptjs"
 import {
@@ -67,36 +66,76 @@ export async function POST(request: Request) {
       throw new DatabaseError("No se encontró un tenant para asignar")
     }
 
-    const tenantId = (defaultTenant as any).id
+    interface TenantData {
+      id: string
+    }
+
+    const tenantId = (defaultTenant as TenantData).id
 
     logger.info("Creando nuevo usuario", { email, tenantId })
 
-    // Hash de la contraseña
+    // 1. Crear usuario en Supabase Auth primero
+    const { data: authData, error: authError } = await supabase.auth.admin.createUser({
+      email,
+      password,
+      email_confirm: true, // Auto-confirmar email
+      user_metadata: {
+        name,
+      }
+    })
+
+    if (authError || !authData.user) {
+      logger.error("Error al crear usuario en Auth", authError as Error, { email })
+      throw new DatabaseError('Error al crear usuario en el sistema de autenticación', {
+        operation: "createAuthUser",
+        email,
+        error: authError?.message
+      })
+    }
+
+    const authUser = authData.user
+    logger.info("Usuario creado en Supabase Auth", { authUserId: authUser.id, email })
+
+    // 2. Hash de la contraseña para guardar en tabla users (backup)
     const passwordHash = await bcrypt.hash(password, 10)
 
-    // Crear usuario
-    const { data: newUser, error: createError } = await supabase
-      .from("users")
+    // 3. Crear usuario en tabla users con el mismo ID de Auth
+    interface NewUserData {
+      id: string
+      email: string
+      name: string
+      role: string
+    }
+
+    // ✅ REGISTRO PÚBLICO: Solo se permite crear usuarios con rol 'admin'
+    // Los usuarios 'staff' solo pueden ser creados por un admin desde el panel
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data: newUser, error: createError } = await (supabase.from("users") as any)
       .insert({
+        id: authUser.id, // Usar el mismo ID que auth.users
         email,
         password_hash: passwordHash,
         name,
-        role: "admin", // Los usuarios que se registran son administradores
+        role: "admin", // 🔒 FORZAR ROL ADMIN en registro público
         tenant_id: tenantId,
         active: true,
-      } as any)
+        created_by_admin_id: null, // Admin no tiene creador
+      })
       .select()
       .single()
 
     if (createError) {
-      logger.error("Error al crear usuario", createError as Error, { email })
+      // Si falla la inserción en users, borrar el usuario de Auth
+      logger.error("Error al crear usuario en tabla users, rollback Auth user", createError as Error, { email })
+      await supabase.auth.admin.deleteUser(authUser.id)
+      
       throw new DatabaseError(MENSAJES.ERRORES.DB_ERROR, {
         operation: "createUser",
         email,
       })
     }
 
-    const userData = newUser as any
+    const userData = newUser as NewUserData
 
     const duration = Date.now() - startTime
     logResponse("POST", "/api/auth/register", 201, duration)

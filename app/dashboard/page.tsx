@@ -4,7 +4,7 @@ import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MOCK_ALERTS } from "@/lib/mock-data"
-import { Bell, DollarSign, Users, TrendingUp, AlertCircle, UtensilsCrossed } from "lucide-react"
+import { DollarSign, Users, TrendingUp, AlertCircle, UtensilsCrossed } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { ProtectedRoute } from "@/components/protected-route"
 import { useAuth } from "@/contexts/auth-context"
@@ -26,7 +26,7 @@ interface Metrics {
 }
 
 export default function DashboardPage() {
-  const { user, tenant } = useAuth()
+  const { user } = useAuth()
   const [metrics, setMetrics] = useState<Metrics>({
     totalOrders: 0,
     activeOrders: 0,
@@ -51,16 +51,21 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
+    console.log('🔍 Dashboard useEffect ejecutado', { 
+      hasUser: !!user, 
+      tenantId: user?.tenant_id 
+    })
+    
     // Cargar métricas reales desde la API
     const loadMetrics = async () => {
       try {
         if (!user?.tenant_id) {
-          console.error('No se encontró tenant_id')
+          console.error('❌ No se encontró tenant_id en user')
           setIsLoading(false)
           return
         }
 
-        console.log('Cargando métricas para tenant:', user.tenant_id)
+        console.log('📊 Cargando métricas para tenant:', user.tenant_id)
         
         const response = await fetch(`/api/dashboard/metrics?tenantId=${user.tenant_id}`)
         
@@ -69,7 +74,7 @@ export default function DashboardPage() {
         }
 
         const data = await response.json()
-        console.log('Métricas recibidas:', data)
+        console.log('✅ Métricas cargadas:', data)
 
         if (data.data) {
           setMetrics({
@@ -91,7 +96,7 @@ export default function DashboardPage() {
           })
         }
       } catch (error) {
-        console.error('Error loading metrics:', error)
+        console.error('❌ Error loading metrics:', error)
         // En caso de error, usar datos mock
         setMetrics({
           totalOrders: 0,
@@ -111,6 +116,7 @@ export default function DashboardPage() {
           topDishes: [{ name: 'Sin datos', orders: 0 }],
         })
       } finally {
+        console.log('✅ Finalizando loadMetrics, isLoading → false')
         setIsLoading(false)
       }
     }
@@ -121,6 +127,8 @@ export default function DashboardPage() {
       // Actualizar cada 30 segundos
       const interval = setInterval(loadMetrics, 30000)
       return () => clearInterval(interval)
+    } else {
+      console.log('⚠️ Usuario no disponible aún, esperando...')
     }
   }, [user])
 
@@ -128,10 +136,11 @@ export default function DashboardPage() {
   const activeAlerts = MOCK_ALERTS.filter((alert) => !alert.acknowledged)
 
   // Calcular métricas de crecimiento (por ahora hardcoded, se puede mejorar con comparación histórica)
-  const salesGrowth = "+12%"
-  const ticketGrowth = "+5%"
+  const _salesGrowth = "+12%"
+  const _ticketGrowth = "+5%"
 
   if (isLoading) {
+    console.log('⏳ Dashboard en estado de carga...')
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -139,6 +148,8 @@ export default function DashboardPage() {
     )
   }
 
+  console.log('✅ Renderizando Dashboard completo')
+  
   return (
     <ProtectedRoute>
       <DashboardLayout>
@@ -163,9 +174,6 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-light tracking-tight dark:text-zinc-100">${metrics.dailySales.toLocaleString()}</div>
-              <p className="text-xs text-emerald-500 font-light mt-1">
-                {salesGrowth} desde ayer
-              </p>
             </CardContent>
           </Card>
 
@@ -181,9 +189,6 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-light tracking-tight dark:text-zinc-100">${metrics.averageTicket}</div>
-              <p className="text-xs text-emerald-500 font-light mt-1">
-                {ticketGrowth} desde ayer
-              </p>
             </CardContent>
           </Card>
 

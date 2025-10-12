@@ -34,60 +34,97 @@ function askQuestion(query: string): Promise<string> {
 }
 
 async function deleteAllUsers() {
-  console.log('⚠️  ADVERTENCIA: Estás a punto de BORRAR TODOS los usuarios\n')
+  console.log('\n🗑️  ELIMINANDO TODOS LOS USUARIOS\n')
+  console.log('═══════════════════════════════════════════════════════\n')
 
-  // Mostrar usuarios actuales
-  const { data: users, error: fetchError } = await supabase
-    .from('users')
-    .select('id, name, email, role')
-    .order('created_at', { ascending: false })
+  try {
+    // 1. Listar usuarios en Auth
+    const { data: authData, error: authListError } = await supabase.auth.admin.listUsers()
 
-  if (fetchError) {
-    console.error('❌ Error al consultar usuarios:', fetchError.message)
-    return
+    if (authListError) {
+      console.error('❌ Error al listar usuarios de Auth:', authListError.message)
+      return
+    }
+
+    const authUsers = authData.users
+
+    // 2. Listar usuarios en DB
+    const { data: dbUsers, error: dbError } = await supabase
+      .from('users')
+      .select('id, name, email, role')
+      .order('created_at', { ascending: false })
+
+    if (dbError) {
+      console.error('❌ Error al consultar usuarios en DB:', dbError.message)
+      return
+    }
+
+    const totalUsers = authUsers.length
+
+    if (totalUsers === 0 && (!dbUsers || dbUsers.length === 0)) {
+      console.log('✅ No hay usuarios para eliminar\n')
+      console.log('═══════════════════════════════════════════════════════\n')
+      return
+    }
+
+    console.log(`� Usuarios a eliminar:\n`)
+    console.log(`   Auth: ${authUsers.length} usuarios`)
+    console.log(`   DB:   ${dbUsers?.length || 0} usuarios\n`)
+
+    if (authUsers.length > 0) {
+      console.log('📋 Lista de usuarios:\n')
+      authUsers.forEach((user, index) => {
+        console.log(`   ${index + 1}. ${user.email}`)
+      })
+      console.log('')
+    }
+
+    console.log('─────────────────────────────────────────────────────\n')
+    console.log('🗑️  Eliminando usuarios...\n')
+
+    let deletedCount = 0
+    let errorCount = 0
+
+    // 3. Eliminar cada usuario de Auth (esto también limpia la tabla users por CASCADE)
+    for (const user of authUsers) {
+      try {
+        console.log(`   Eliminando: ${user.email}...`)
+
+        const { error: deleteError } = await supabase.auth.admin.deleteUser(user.id)
+
+        if (deleteError) {
+          throw deleteError
+        }
+
+        console.log(`   ✅ ${user.email} eliminado`)
+        deletedCount++
+      } catch (error: any) {
+        console.error(`   ❌ Error al eliminar ${user.email}:`, error.message)
+        errorCount++
+      }
+    }
+
+    console.log('\n─────────────────────────────────────────────────────\n')
+    console.log('✅ RESUMEN:\n')
+    console.log(`   Eliminados: ${deletedCount}/${totalUsers}`)
+    console.log(`   Errores: ${errorCount}`)
+    console.log('')
+
+    if (deletedCount === totalUsers) {
+      console.log('🎉 TODOS LOS USUARIOS HAN SIDO ELIMINADOS\n')
+      console.log('🎯 Ahora puedes probar el flujo completo:\n')
+      console.log('   1. npm run dev')
+      console.log('   2. Abrir http://localhost:3000/login')
+      console.log('   3. Click en "¿No tienes cuenta? Créala aquí"')
+      console.log('   4. Registrar tu usuario')
+      console.log('   5. Iniciar sesión\n')
+    }
+
+  } catch (error: any) {
+    console.error('❌ Error:', error.message)
   }
 
-  if (!users || users.length === 0) {
-    console.log('✅ No hay usuarios en la base de datos')
-    return
-  }
-
-  console.log(`📋 Usuarios actuales (${users.length}):\n`)
-  users.forEach((user, index) => {
-    console.log(`${index + 1}. ${user.name} (${user.email}) - ${user.role}`)
-  })
-
-  console.log('\n')
-  const answer = await askQuestion('¿Estás seguro de que quieres BORRAR TODOS estos usuarios? (escribe "SI" para confirmar): ')
-
-  if (answer.toUpperCase() !== 'SI') {
-    console.log('❌ Operación cancelada')
-    return
-  }
-
-  // Confirmar una segunda vez
-  const answer2 = await askQuestion('⚠️  Última confirmación. Escribe "BORRAR TODO" para continuar: ')
-
-  if (answer2 !== 'BORRAR TODO') {
-    console.log('❌ Operación cancelada')
-    return
-  }
-
-  console.log('\n🗑️  Borrando usuarios...\n')
-
-  // Borrar todos los usuarios
-  const { error: deleteError, count } = await supabase
-    .from('users')
-    .delete()
-    .neq('id', '00000000-0000-0000-0000-000000000000') // Evitar borrar por error algún ID nulo
-
-  if (deleteError) {
-    console.error('❌ Error al borrar usuarios:', deleteError.message)
-    return
-  }
-
-  console.log(`✅ Se han borrado ${count || users.length} usuarios exitosamente\n`)
-  console.log('🎉 La base de datos está limpia. Puedes crear usuarios nuevos desde cero.\n')
+  console.log('═══════════════════════════════════════════════════════\n')
 }
 
 deleteAllUsers().catch(console.error)

@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -10,7 +10,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Badge } from "@/components/ui/badge"
 import type { MenuItem } from "@/lib/mock-data"
 import type { CartItemModifier, ModifierGroup, ModifierSelection } from "../_types/modifiers"
-import { useCartItem } from "../_hooks/use-cart-item"
+import { useModifierCalculations } from "./useModifierCalculations"
 import { AlertCircle, Check, ShoppingCart } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -31,7 +31,9 @@ export function ItemCustomizationModal({
 }: ItemCustomizationModalProps) {
   const [selections, setSelections] = useState<ModifierSelection[]>([])
   const [notes, setNotes] = useState<string>("")
-  const { calculateItemTotal, validateModifiers, selectionsToModifiers } = useCartItem()
+  
+  // Use custom hook for all modifier calculations (prevents React Hook warnings)
+  const { modifierGroups, validation, cartModifiers, totalPrice } = useModifierCalculations(item, selections)
 
   // Reset state when item changes
   useEffect(() => {
@@ -41,25 +43,6 @@ export function ItemCustomizationModal({
       setNotes("")
     }
   }, [item, isOpen])
-
-  const modifierGroups = item?.modifierGroups ?? []
-
-  // Validate current selections
-  const validation = useMemo(
-    () => validateModifiers(modifierGroups, selections),
-    [modifierGroups, selections, validateModifiers],
-  )
-
-  // Calculate total price
-  const cartModifiers = useMemo(
-    () => selectionsToModifiers(modifierGroups, selections),
-    [modifierGroups, selections, selectionsToModifiers],
-  )
-
-  const totalPrice = useMemo(() => {
-    if (!item) return 0
-    return calculateItemTotal(item.priceCents, cartModifiers)
-  }, [item, cartModifiers, calculateItemTotal])
 
   const handleToggleOption = useCallback(
     (groupId: string, optionId: string, maxSelection: number) => {

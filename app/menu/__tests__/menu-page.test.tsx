@@ -27,12 +27,12 @@ async function renderMenuPage() {
 }
 
 describe("MenuPage", () => {
-  let user: ReturnType<typeof userEvent.setup>
+  let _user: ReturnType<typeof userEvent.setup>
 
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    user = userEvent.setup()
+    _user = userEvent.setup()
   })
 
   afterEach(() => {
