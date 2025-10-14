@@ -403,25 +403,22 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                   </div>
                 </div>
               ) : null}
-
-              {user?.role === "staff" ? (
-                <div className="space-y-2 border-t pt-4">
-                  <p className="text-sm font-medium">Gestión de mesa</p>
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => setShowDeleteDialog(true)}
-                    className="w-full"
-                  >
-                    <Trash2 className="mr-2 h-4 w-4" />
-                    Eliminar mesa
-                  </Button>
-                </div>
-              ) : null}
             </div>
           ) : null}
 
-          <DialogFooter>
+          <DialogFooter className="flex-row gap-2 sm:justify-between">
+            {user?.role === "admin" ? (
+              <Button 
+                variant="destructive" 
+                onClick={() => setShowDeleteDialog(true)}
+                className="flex items-center gap-2"
+                size="icon"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            ) : (
+              <div />
+            )}
             <Button variant="outline" onClick={() => setSelectedTableId(null)}>
               Cerrar
             </Button>
@@ -482,7 +479,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
             <AlertDialogAction 
               onClick={handleDeleteTable} 
               disabled={isProcessingAction}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              className="bg-destructive text-white hover:bg-destructive/90"
             >
               {isProcessingAction ? "Eliminando..." : "Eliminar mesa"}
             </AlertDialogAction>

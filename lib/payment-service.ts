@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Payment Service
  * Business logic for payment processing
  */
@@ -7,7 +7,8 @@ import { createPaymentPreference, getPayment } from './mercadopago'
 import type { 
   Payment, 
   PaymentPreferenceResponse, 
-  OrderWithPayment 
+  OrderWithPayment, 
+  OrderItemModifier 
 } from './payment-types'
 import { logger } from './logger'
 import { AppError, ValidationError } from './errors'
@@ -43,12 +44,11 @@ export class PaymentService {
       }
 
       // Convert order items to MercadoPago format
-      const items = order.items.map((item: any, index: number) => {
+      const items = order.items.map((item, index) => {
         const itemTotal = item.basePriceCents * item.quantity;
-        const modifiersTotal = item.selectedModifiers?.reduce(
-          (sum: number, mod: any) => sum + mod.priceCents,
-          0
-        ) || 0;
+        const modifiersTotal = (
+          item.selectedModifiers?.reduce((sum: number, mod: OrderItemModifier) => sum + mod.priceCents, 0) ?? 0
+        );
         const totalPrice = (itemTotal + modifiersTotal) / 100; // Convert cents to ARS
 
         return {

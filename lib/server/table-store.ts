@@ -4,6 +4,7 @@ import { constants as fsConstants } from "node:fs"
 import { getDataDir, getDataFile } from "./data-path"
 import { createLogger } from "@/lib/logger"
 import { createServerClient } from "@/lib/supabase/server"
+import type { Database } from "@/lib/supabase/database.types"
 import { randomBytes } from "crypto"
 
 import {
@@ -38,6 +39,10 @@ const DEFAULT_COVERS: TableCovers = {
   lastUpdatedAt: null,
   lastSessionAt: null,
 }
+
+type TableRow = Database['public']['Tables']['tables']['Row']
+type TableInsert = Database['public']['Tables']['tables']['Insert']
+type SupabaseTableRow = TableRow & { zone?: string | null }
 
 interface TableStateHistoryEntry {
   id: string
@@ -385,13 +390,13 @@ export async function listTables(): Promise<Table[]> {
     logger.info('Mesas obtenidas desde Supabase', { count: tables.length })
     
     // Convertir datos de Supabase al formato Table
-    return tables.map((t: any) => ({
+    return tables.map((t: SupabaseTableRow) => ({
       id: t.id,
       number: String(t.number), // Asegurar que sea string
-      zone_id: t.zone_id || undefined,
-      zone: t.zone || undefined,
-      status: t.status || 'libre',
-      seats: t.capacity || 4,
+      zone_id: t.zone_id ?? undefined,
+      zone: t.zone ?? undefined,
+      status: t.status ?? 'libre',
+      seats: t.capacity ?? 4,
       covers: {
         current: 0,
         total: 0,
@@ -399,8 +404,8 @@ export async function listTables(): Promise<Table[]> {
         lastUpdatedAt: null,
         lastSessionAt: null,
       },
-      qrcodeUrl: t.qrcode_url || '',
-      qrToken: t.qr_token || '',
+      qrcodeUrl: t.qrcode_url ?? '',
+      qrToken: t.qr_token ?? '',
       qrTokenExpiry: t.qr_expires_at ? new Date(t.qr_expires_at) : undefined,
     }))
   } catch (error) {
@@ -720,20 +725,21 @@ export async function createTable(data: {
   qrExpiresAt.setFullYear(qrExpiresAt.getFullYear() + 1) // Expira en 1 año
 
   // Crear la mesa (capacity por defecto es 4 según schema)
+  const insertPayload: TableInsert = {
+    tenant_id: data.tenantId,
+    number: data.number,
+    zone_id: data.zone_id ?? null,
+    status: 'libre',
+    qr_token: qrToken,
+    qr_expires_at: qrExpiresAt.toISOString(),
+    qrcode_url: '', // Se generará en el cliente
+  }
+
   const { data: newTable, error } = await supabase
     .from('tables')
-    .insert({
-      tenant_id: data.tenantId,
-      number: data.number,
-      zone_id: data.zone_id || null,
-      status: 'libre',
-      qr_token: qrToken,
-      qr_expires_at: qrExpiresAt.toISOString(),
-      qrcode_url: '', // Se generará en el cliente
-      metadata: {},
-    } as any)
+    .insert(insertPayload)
     .select()
-    .single()
+    .single<TableRow>()
 
   if (error || !newTable) {
     logger.error('Error al crear mesa', error, {
@@ -743,7 +749,7 @@ export async function createTable(data: {
     throw new Error('No se pudo crear la mesa')
   }
 
-  const tableData = newTable as any
+  const tableData = newTable
 
   logger.info('Mesa creada', {
     tableId: tableData.id,
@@ -794,7 +800,7 @@ export async function deleteTable(tableId: string, tenantId: string): Promise<vo
     throw new Error('Mesa no encontrada')
   }
 
-  const table = tableData as any
+  const table = tableData
 
   // No permitir eliminar mesas ocupadas o con pedidos en curso
   const restrictedStates = ['ocupada', 'pedido-en-curso', 'cuenta-pedida']

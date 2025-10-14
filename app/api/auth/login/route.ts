@@ -1,4 +1,4 @@
-import { createAdminClient } from '@/lib/supabase/admin'
+﻿import { createAdminClient } from '@/lib/supabase/admin'
 import { manejarError, validarBody, respuestaExitosa, logRequest, logResponse } from '@/lib/api-helpers'
 import { AuthenticationError, ValidationError, DatabaseError } from '@/lib/errors'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -85,10 +85,38 @@ export async function POST(request: Request) {
 
     const userDataTyped = userData as UserWithTenant
 
-    // 3. Actualizar last_login_at
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const updateResult = await (supabase
-      .from('users') as any)
+    // 3. Actualizar user_metadata con tenant_id en Supabase Auth
+    logger.info('Actualizando user_metadata con tenant_id', { 
+      userId: userDataTyped.id, 
+      tenantId: userDataTyped.tenant_id 
+    })
+    
+    const { error: updateMetadataError } = await supabase.auth.admin.updateUserById(
+      userDataTyped.id,
+      {
+        user_metadata: {
+          tenant_id: userDataTyped.tenant_id,
+          name: userDataTyped.name,
+          role: userDataTyped.role,
+        }
+      }
+    )
+
+    if (updateMetadataError) {
+      logger.warn('No se pudo actualizar user_metadata', { 
+        userId: userDataTyped.id,
+        error: updateMetadataError.message 
+      })
+    } else {
+      logger.info('user_metadata actualizado exitosamente', { 
+        userId: userDataTyped.id,
+        tenantId: userDataTyped.tenant_id 
+      })
+    }
+
+    // 4. Actualizar last_login_at
+    const updateResult = await supabase
+      .from('users')
       .update({ last_login_at: new Date().toISOString() })
       .eq('id', userDataTyped.id)
 
@@ -99,7 +127,7 @@ export async function POST(request: Request) {
       })
     }
 
-    // 4. Preparar respuesta
+    // 5. Preparar respuesta
     const user = {
       id: userDataTyped.id,
       name: userDataTyped.name,

@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Tests for QR Order API
  * @vitest-environment node
  */
@@ -155,7 +155,7 @@ describe('POST /api/order/qr', () => {
     }
 
     vi.mocked(sessionManager.getSession).mockReturnValue(mockSession)
-    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined as any)
+    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined)
 
     const request = new NextRequest('http://localhost:3000/api/order/qr', {
       method: 'POST',
@@ -218,7 +218,7 @@ describe('POST /api/order/qr', () => {
     }
 
     vi.mocked(sessionManager.getSession).mockReturnValue(mockSession)
-    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined as any)
+    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined)
 
     const request = new NextRequest('http://localhost:3000/api/order/qr', {
       method: 'POST',
@@ -265,7 +265,7 @@ describe('POST /api/order/qr', () => {
     }
 
     vi.mocked(sessionManager.getSession).mockReturnValue(mockSession)
-    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined as any)
+    vi.mocked(sessionManager.updateSession).mockResolvedValue(undefined)
 
     const paymentMethods: Array<'cash' | 'card' | 'mercadopago'> = ['cash', 'card', 'mercadopago']
 

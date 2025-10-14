@@ -1,4 +1,4 @@
-import { createServerClient } from "@/lib/supabase/server"
+﻿import { createServerClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 import { MENSAJES } from "@/lib/i18n/mensajes"
 
@@ -16,6 +16,16 @@ export interface DashboardMetrics {
     orders: number
     revenue: number
   }>
+}
+
+interface CoverItem {
+  quantity: number | null
+}
+
+interface TopDishRow {
+  name: string
+  quantity: number
+  total_cents: number
 }
 
 /**
@@ -67,7 +77,7 @@ export async function getDashboardMetrics(tenantId: string): Promise<DashboardMe
       throw new Error(MENSAJES.ERRORES.GENERICO)
     }
 
-    const totalCovers = coversData?.reduce((sum: number, item: any) => sum + item.quantity, 0) || 0
+    const totalCovers = coversData?.reduce((sum: number, item: CoverItem) => sum + (item.quantity ?? 0), 0) || 0
 
     // 3. Obtener estado de mesas
     const { data: tablesData, error: tablesError } = await supabase
@@ -123,7 +133,7 @@ export async function getDashboardMetrics(tenantId: string): Promise<DashboardMe
       }
     >()
 
-    topDishesData?.forEach((item: any) => {
+    topDishesData?.forEach((item: TopDishRow) => {
       const key = item.name
       const existing = dishMap.get(key)
 
@@ -179,7 +189,7 @@ export async function getDashboardMetrics(tenantId: string): Promise<DashboardMe
 /**
  * Obtiene las alertas activas (por implementar)
  */
-export async function getActiveAlerts(tenantId: string) {
+export async function getActiveAlerts(_tenantId: string) {
   // TODO: Implementar cuando tengas tabla de alertas en Supabase
   return []
 }

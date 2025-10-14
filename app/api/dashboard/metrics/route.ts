@@ -124,9 +124,15 @@ export async function GET(request: Request) {
 
     // Agrupar por plato y contar
     const dishCounts: Record<string, number> = {}
-    orderItems?.forEach((item: any) => {
-      const menuItemId = item.menu_item_id
-      dishCounts[menuItemId] = (dishCounts[menuItemId] || 0) + (item.quantity || 1)
+    const typedOrderItems = (orderItems ?? []) as Array<{ menu_item_id: string | null; quantity: number | null }>
+
+    typedOrderItems.forEach((item) => {
+      if (!item.menu_item_id) {
+        return
+      }
+
+      const quantity = item.quantity ?? 1
+      dishCounts[item.menu_item_id] = (dishCounts[item.menu_item_id] || 0) + quantity
     })
 
     // Obtener nombres de los platos más vendidos
@@ -201,3 +207,4 @@ export async function GET(request: Request) {
     return manejarError(error, 'dashboard-metrics')
   }
 }
+

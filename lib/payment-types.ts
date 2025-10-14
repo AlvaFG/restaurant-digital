@@ -1,4 +1,4 @@
-/**
+﻿/**
  * Payment Types & Interfaces
  * Types for payment processing with MercadoPago
  */
@@ -13,7 +13,7 @@ export interface Payment {
   merchantOrderId: string
   preferenceId: string
   externalReference: string // Our order ID reference
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
   createdAt: string
   updatedAt: string
 }
@@ -54,7 +54,7 @@ export interface CreatePreferenceInput {
   }
   notification_url: string
   external_reference: string
-  metadata: Record<string, any>
+  metadata: Record<string, unknown>
 }
 
 export interface PaymentPreferenceResponse {
@@ -64,11 +64,25 @@ export interface PaymentPreferenceResponse {
 }
 
 // Extend Order type with payment fields
+export interface OrderItemModifier {
+  id: string
+  name: string
+  priceCents: number
+}
+
+export interface OrderItemForPayment {
+  id?: string
+  name: string
+  basePriceCents: number
+  quantity: number
+  selectedModifiers?: OrderItemModifier[]
+}
+
 export interface OrderWithPayment {
   id: string
   tableId: string
   sessionId: string
-  items: any[]
+  items: OrderItemForPayment[]
   customerName: string
   customerContact: string
   paymentMethod: 'cash' | 'card' | 'mercadopago' | 'transfer'

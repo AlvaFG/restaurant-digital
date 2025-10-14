@@ -8,12 +8,21 @@
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts'
+import type { PieLabelRenderProps, TooltipProps } from 'recharts'
 import type { RevenueByCategory } from '@/lib/analytics-types'
 
 interface CategoryChartProps {
   data: RevenueByCategory[]
   title?: string
   description?: string
+}
+
+interface ChartDatum {
+  name: string
+  value: number
+  percentage: number
+  orderCount: number
+  color: string
 }
 
 const COLORS = [
@@ -36,7 +45,7 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
   }
   
   // Prepare chart data
-  const chartData = data.map((item, index) => ({
+  const chartData: ChartDatum[] = data.map((item, index) => ({
     name: item.category,
     value: item.revenue / 100, // Convert to ARS
     percentage: item.percentage,
@@ -58,7 +67,10 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
               cx="50%"
               cy="50%"
               labelLine={false}
-              label={(entry: any) => `${entry.percentage.toFixed(0)}%`}
+              label={({ payload }: PieLabelRenderProps) => {
+                const datum = payload as ChartDatum | undefined
+                return `${(datum?.percentage ?? 0).toFixed(0)}%`
+              }}
               outerRadius={100}
               fill="#8884d8"
               dataKey="value"
@@ -68,13 +80,18 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
               ))}
             </Pie>
             <Tooltip
-              content={({ active, payload }) => {
+              content={(tooltipProps: TooltipProps<number, string>) => {
+                const { active, payload } = tooltipProps
                 if (!active || !payload || payload.length === 0) {
                   return null
                 }
-                
-                const data = payload[0].payload
-                
+
+                const datum = payload[0]?.payload as ChartDatum | undefined
+
+                if (!datum) {
+                  return null
+                }
+
                 return (
                   <div className="rounded-lg border bg-background p-2 shadow-sm">
                     <div className="grid gap-2">
@@ -83,7 +100,7 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
                           Categoría
                         </span>
                         <span className="font-bold text-muted-foreground">
-                          {data.name}
+                          {datum.name}
                         </span>
                       </div>
                       <div className="flex flex-col">
@@ -91,7 +108,7 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
                           Ingresos
                         </span>
                         <span className="font-bold">
-                          {formatCurrency(data.value * 100)}
+                          {formatCurrency(datum.value * 100)}
                         </span>
                       </div>
                       <div className="flex flex-col">
@@ -99,7 +116,7 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
                           Porcentaje
                         </span>
                         <span className="font-bold">
-                          {data.percentage.toFixed(1)}%
+                          {datum.percentage.toFixed(1)}%
                         </span>
                       </div>
                       <div className="flex flex-col">
@@ -107,7 +124,7 @@ export function CategoryChart({ data, title, description }: CategoryChartProps) 
                           Pedidos
                         </span>
                         <span className="font-bold">
-                          {data.orderCount}
+                          {datum.orderCount}
                         </span>
                       </div>
                     </div>

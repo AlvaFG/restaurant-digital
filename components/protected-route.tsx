@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import type React from "react"
 
@@ -38,7 +38,7 @@ export function ProtectedRoute({ children, requiredRole, allowedRoles }: Protect
       })
 
       // Verificar roles permitidos
-      if (allowedRoles && !allowedRoles.includes(user.role as any)) {
+      if (allowedRoles && !allowedRoles.includes(user.role)) {
         console.log('⚠️ Rol no permitido, redirigiendo a dashboard...')
         router.push("/dashboard")
         return
@@ -70,7 +70,7 @@ export function ProtectedRoute({ children, requiredRole, allowedRoles }: Protect
   }
 
   // Verificar roles permitidos
-  if (allowedRoles && !allowedRoles.includes(user.role as any)) {
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
     return null
   }
 

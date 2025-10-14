@@ -23,6 +23,7 @@ import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { fetchZones } from "@/lib/zones-service"
 import type { Zone } from "@/lib/mock-data"
+import { logger } from "@/lib/logger"
 
 interface AddTableDialogProps {
   open: boolean
@@ -45,55 +46,54 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [zones, setZones] = useState<Zone[]>([])
   const [loadingZones, setLoadingZones] = useState(false)
-  const [formData, setFormData] = useState<FormData>({
-    number: "",
-    zone_id: "",
-  })
+  const [formData, setFormData] = useState<FormData>({ number: '', zone_id: '' })
   const [errors, setErrors] = useState<FormErrors>({})
 
-  // Cargar zonas cuando se abre el diálogo
   useEffect(() => {
-    if (open) {
-      const loadZones = async () => {
-        try {
-          setLoadingZones(true)
-          const data = await fetchZones()
-          setZones(data.filter(z => z.active).sort((a, b) => a.sort_order - b.sort_order))
-        } catch (error) {
-          console.error("Error loading zones:", error)
-          toast({
-            title: "Advertencia",
-            description: "No se pudieron cargar las zonas",
-            variant: "destructive",
-          })
-        } finally {
-          setLoadingZones(false)
-        }
-      }
-      
-      loadZones()
+    if (!open) {
+      return
     }
+
+    const loadZones = async () => {
+      try {
+        setLoadingZones(true)
+        const data = await fetchZones()
+        const enabledZones = data.filter((zone) => zone.active !== false)
+        setZones(
+          enabledZones.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
+        )
+      } catch (error) {
+        logger.error('No se pudieron cargar las zonas disponibles', error as Error)
+        toast({
+          title: 'No se pudieron cargar las zonas',
+          description: 'OcurriA3 un problema al conectar con Supabase. IntentA nuevamente.',
+          variant: 'destructive',
+        })
+      } finally {
+        setLoadingZones(false)
+      }
+    }
+
+    void loadZones()
   }, [open, toast])
 
-  const validateForm = (): boolean => {
+  const validateForm = () => {
     const newErrors: FormErrors = {}
 
-    // Validar número de mesa (ahora acepta texto)
-    if (!formData.number || formData.number.trim().length === 0) {
-      newErrors.number = "El número/identificador de mesa es requerido"
+    if (!formData.number.trim()) {
+      newErrors.number = 'IngresA un identificador para la mesa'
     }
 
-    // Validar zona
     if (!formData.zone_id) {
-      newErrors.zone_id = "Debes seleccionar una zona"
+      newErrors.zone_id = 'SeleccionA una zona'
     }
 
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
   }
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
 
     if (!validateForm()) {
       return
@@ -102,11 +102,9 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
     setIsSubmitting(true)
 
     try {
-      const response = await fetch("/api/tables", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+      const response = await fetch('/api/tables', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           number: formData.number.trim(),
           zone_id: formData.zone_id,
@@ -116,40 +114,42 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error || "Error al crear la mesa")
+        throw new Error(data.error ?? 'No se pudo crear la mesa')
       }
 
       toast({
-        title: "Mesa creada",
-        description: `La mesa ${formData.number} ha sido creada exitosamente.`,
+        title: 'Mesa registrada',
+        description: `La mesa ${formData.number.trim()} se creA3 correctamente.`,
       })
 
-      // Reset form
-      setFormData({ number: "", zone_id: "" })
+      setFormData({ number: '', zone_id: '' })
       setErrors({})
-      
-      // Close dialog and notify parent
       onOpenChange(false)
       onTableCreated()
     } catch (error) {
-      console.error("Error creating table:", error)
+      logger.error('Error al crear mesa', error as Error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo crear la mesa",
-        variant: "destructive",
+        title: 'No se pudo crear la mesa',
+        description: error instanceof Error ? error.message : 'IntentA nuevamente mAs tarde.',
+        variant: 'destructive',
       })
     } finally {
       setIsSubmitting(false)
     }
   }
 
-  const _handleInputChange = (field: keyof FormData) => (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setFormData((prev) => ({ ...prev, [field]: e.target.value }))
-    // Clear error when user starts typing
-    if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: undefined }))
+  const handleNumberChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const value = event.target.value
+    setFormData((prev) => ({ ...prev, number: value }))
+    if (errors.number) {
+      setErrors((prev) => ({ ...prev, number: undefined }))
+    }
+  }
+
+  const handleZoneChange = (value: string) => {
+    setFormData((prev) => ({ ...prev, zone_id: value }))
+    if (errors.zone_id) {
+      setErrors((prev) => ({ ...prev, zone_id: undefined }))
     }
   }
 
@@ -159,65 +159,57 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Plus className="h-5 w-5" />
-            Agregar Nueva Mesa
+            Agregar mesa
           </DialogTitle>
           <DialogDescription>
-            Completa los datos para crear una nueva mesa en el sistema.
+            IndicA el identificador y la zona a la que pertenece la nueva mesa.
           </DialogDescription>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4 py-4">
-            {/* Número de Mesa */}
             <div className="grid gap-2">
-              <Label htmlFor="number">
-                Identificador de Mesa <span className="text-destructive">*</span>
+              <Label htmlFor="table-number">
+                Identificador de mesa <span className="text-destructive">*</span>
               </Label>
               <Input
-                id="number"
+                id="table-number"
                 type="text"
-                placeholder="Ej: Mesa 1, M1, 1, A1..."
+                placeholder="Ejemplo: Mesa 1, Terraza 3 o M1"
                 value={formData.number}
-                onChange={(e) => {
-                  setFormData(prev => ({ ...prev, number: e.target.value }))
-                  if (errors.number) {
-                    setErrors(prev => ({ ...prev, number: undefined }))
-                  }
-                }}
+                onChange={handleNumberChange}
                 maxLength={20}
-                className={errors.number ? "border-destructive" : ""}
+                className={errors.number ? 'border-destructive' : ''}
                 disabled={isSubmitting}
               />
               {errors.number && (
                 <p className="text-sm text-destructive">{errors.number}</p>
               )}
               <p className="text-xs text-muted-foreground">
-                Puedes usar números, letras o combinaciones (ej: &quot;1&quot;, &quot;Mesa 1&quot;, &quot;M1&quot;, &quot;A1&quot;)
+                PodAs usar nAomeros, letras o combinaciones (por ejemplo: 1, Mesa 1 o M1).
               </p>
             </div>
 
-            {/* Zona */}
             <div className="grid gap-2">
-              <Label htmlFor="zone_id">
+              <Label htmlFor="table-zone">
                 Zona <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={formData.zone_id}
-                onValueChange={(value) => {
-                  setFormData(prev => ({ ...prev, zone_id: value }))
-                  if (errors.zone_id) {
-                    setErrors(prev => ({ ...prev, zone_id: undefined }))
-                  }
-                }}
+                onValueChange={handleZoneChange}
                 disabled={isSubmitting || loadingZones}
               >
-                <SelectTrigger className={errors.zone_id ? "border-destructive" : ""}>
-                  <SelectValue placeholder="Selecciona una zona" />
+                <SelectTrigger className={errors.zone_id ? 'border-destructive' : ''}>
+                  <SelectValue placeholder="SeleccionA una zona" />
                 </SelectTrigger>
                 <SelectContent>
-                  {zones.length === 0 ? (
-                    <div className="p-2 text-sm text-muted-foreground text-center">
-                      {loadingZones ? "Cargando zonas..." : "No hay zonas disponibles"}
+                  {loadingZones ? (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      Cargando zonas...
+                    </div>
+                  ) : zones.length === 0 ? (
+                    <div className="p-2 text-center text-sm text-muted-foreground">
+                      No hay zonas creadas. CreA una antes de agregar mesas.
                     </div>
                   ) : (
                     zones.map((zone) => (
@@ -243,8 +235,8 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Creando..." : "Crear Mesa"}
+            <Button type="submit" disabled={isSubmitting || zones.length === 0}>
+              {isSubmitting ? 'Guardando...' : 'Guardar mesa'}
             </Button>
           </DialogFooter>
         </form>
@@ -252,3 +244,5 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
     </Dialog>
   )
 }
+
+

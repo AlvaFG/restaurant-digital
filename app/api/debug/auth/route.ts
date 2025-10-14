@@ -18,6 +18,11 @@ export async function GET() {
     const supabase = createServerClient()
     const { data: session, error: sessionError } = await supabase.auth.getSession()
 
+    const metadata = user?.user_metadata as Record<string, unknown> | undefined
+    const tenantIdFromMetadata = typeof metadata?.tenant_id === 'string' ? metadata.tenant_id : undefined
+    const userWithTenant = user as (typeof user & { tenant_id?: string }) | null
+    const tenantIdFromUser = typeof userWithTenant?.tenant_id === 'string' ? userWithTenant.tenant_id : undefined
+    const resolvedTenantId = tenantIdFromMetadata ?? tenantIdFromUser
     // 4. Verificar variables de entorno
     const envCheck = {
       SUPABASE_URL: !!process.env.NEXT_PUBLIC_SUPABASE_URL,
@@ -33,7 +38,7 @@ export async function GET() {
         hasUser: !!user,
         userId: user?.id,
         email: user?.email,
-        tenantId: (user as any)?.user_metadata?.tenant_id || (user as any)?.tenant_id,
+        tenantId: resolvedTenantId,
         metadata: user?.user_metadata,
       },
       session: {

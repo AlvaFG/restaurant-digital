@@ -64,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (currentSession) {
           console.log('✅ Sesión válida encontrada, cargando datos...')
           setSession(currentSession)
-          await loadUserData()
+          await loadUserData(currentSession)
         } else {
           console.log('⚠️ No hay sesión activa')
           setUser(null)
@@ -94,7 +94,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
         if (event === 'SIGNED_IN' && currentSession) {
           console.log('✅ SIGNED_IN detectado, cargando datos del usuario...')
-          await loadUserData()
+          await loadUserData(currentSession)
         } else if (event === 'SIGNED_OUT') {
           console.log('🚪 SIGNED_OUT detectado, limpiando estado...')
           setUser(null)
@@ -118,29 +118,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   /**
    * Cargar datos completos del usuario desde la API
    */
-  const loadUserData = async () => {
+  const loadUserData = async (activeSession?: Session | null) => {
     try {
-      console.log('🔍 [loadUserData] Llamando a /api/auth/me...')
-      
-      // Pequeño delay para dar tiempo a que las cookies se establezcan
-      await new Promise(resolve => setTimeout(resolve, 100))
-      
-      // AGREGAR TIMEOUT para evitar espera infinita
+      console.log('[loadUserData] Fetching /api/auth/me...')
+
+      // Determine active session token so the API can authenticate even if cookies lag
+      const accessToken =
+        activeSession?.access_token ??
+        session?.access_token ??
+        null
+
+      const headers: Record<string, string> = {}
+      if (accessToken) {
+        headers.Authorization = `Bearer ${accessToken}`
+      } else {
+        console.warn('[loadUserData] No access token found, relying on cookies only')
+      }
+
+      // Pequeno delay para dar tiempo a que las cookies se establezcan
+      await new Promise((resolve) => setTimeout(resolve, 100))
+
+      // Timeout defensivo para evitar esperas infinitas
       const controller = new AbortController()
       const timeoutId = setTimeout(() => {
-        console.warn('⚠️ [loadUserData] Timeout de 10 segundos alcanzado')
+        console.warn('[loadUserData] Timeout de 10 segundos alcanzado')
         controller.abort()
       }, 10000) // 10 segundos max
-      
+
       const response = await fetch('/api/auth/me', {
         signal: controller.signal,
-        credentials: 'include', // Asegurar que las cookies se envíen
+        credentials: 'include', // Asegurar que las cookies se envien
+        headers,
+        cache: 'no-store',
       })
-      
+
       clearTimeout(timeoutId)
-      
-      console.log('📦 [loadUserData] Respuesta de /api/auth/me:', response.status)
-      
+
+      console.log('[loadUserData] Respuesta de /api/auth/me:', response.status)
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}))
         console.error('❌ [loadUserData] Error en /api/auth/me:', errorData)
@@ -220,7 +234,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       const loadStartTime = Date.now()
       
       try {
-        await loadUserData()
+        await loadUserData(data.session)
         const loadDuration = Date.now() - loadStartTime
         console.log(`✅ [AuthContext.login] Datos cargados en ${loadDuration}ms`)
       } catch (loadError) {

@@ -159,11 +159,11 @@ export function SidebarNav() {
           {filteredNavItems.map((item) => {
             const isActive = pathname === item.href
             return (
-              <Link key={item.href} href={item.href}>
+              <Link key={item.href} href={item.href} className="block">
                 <Button
                   variant={isActive ? "secondary" : "ghost"}
                   className={cn(
-                    "w-full justify-start gap-2 h-9 font-light border",
+                    "w-full justify-start gap-2 h-9 font-light border mb-0.5",
                     isActive && "bg-accent text-accent-foreground border-border/70 shadow-sm dark:bg-zinc-800 dark:text-white dark:border-zinc-600 dark:shadow-lg",
                     !isActive && "hover:bg-accent/50 border-transparent hover:border-border/50 dark:hover:bg-zinc-800/50 dark:border-transparent dark:hover:border-zinc-700 dark:text-zinc-300 dark:hover:text-white"
                   )}

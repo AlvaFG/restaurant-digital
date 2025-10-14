@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
-import { RefreshCw, Search, CreditCard } from "lucide-react"
+import { Search, CreditCard } from "lucide-react"
 
 import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -154,26 +154,9 @@ export function OrdersPanel() {
     : "Sin registros"
 
   const emptyState = !isLoading && filteredOrders.length === 0
-  const refreshDisabled = isLoading || isRefreshing
 
   return (
-    <div className="space-y-6">
-      {/* Botón de actualizar alineado a la derecha */}
-      <div className="flex items-center justify-end">
-        <Button
-          type="button"
-          onClick={() => void refetch({ silent: true })}
-          variant="outline"
-          size="sm"
-          aria-label="Actualizar pedidos"
-          data-testid="orders-manual-refresh"
-          disabled={refreshDisabled}
-        >
-          <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-          <span className="sr-only">Actualizar pedidos</span>
-        </Button>
-      </div>
-
+    <div className="space-y-4">
       {error ? (
         <Alert variant="destructive">
           <AlertTitle>Error al obtener pedidos</AlertTitle>

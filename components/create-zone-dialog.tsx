@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,8 +12,6 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { useToast } from "@/hooks/use-toast"
 import { createZone } from '@/lib/zones-service'
 
@@ -25,29 +23,28 @@ interface CreateZoneDialogProps {
 
 export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZoneDialogProps) {
   const { toast } = useToast()
+  const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    sort_order: 0,
-    active: true
-  })
 
-  function resetForm() {
-    setFormData({
-      name: '',
-      description: '',
-      sort_order: 0,
-      active: true
-    })
+  const resetForm = () => {
+    setName('')
   }
 
-  async function handleCreate() {
-    if (!formData.name.trim()) {
+  const handleOpenChange = (value: boolean) => {
+    if (!value) {
+      resetForm()
+    }
+    onOpenChange(value)
+  }
+
+  const handleCreate = async () => {
+    const trimmedName = name.trim()
+
+    if (!trimmedName) {
       toast({
-        title: "Error",
-        description: "El nombre de la zona es requerido",
-        variant: "destructive",
+        title: 'Nombre requerido',
+        description: 'Ingresa un nombre para la zona antes de guardarla.',
+        variant: 'destructive',
       })
       return
     }
@@ -55,31 +52,22 @@ export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZo
     setIsSubmitting(true)
 
     try {
-      await createZone({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        sort_order: formData.sort_order,
-        active: formData.active
-      })
-      
+      await createZone({ name: trimmedName })
+
       toast({
-        title: "Zona creada",
-        description: `La zona "${formData.name}" ha sido creada exitosamente`,
+        title: 'Zona guardada',
+        description: `Guardada con exito la nueva zona "${trimmedName}".`,
+        className: 'border border-emerald-500 bg-emerald-50 text-emerald-900',
       })
-      
+
       resetForm()
       onOpenChange(false)
-      
-      // Notificar al componente padre para recargar
-      if (onZoneCreated) {
-        onZoneCreated()
-      }
+      onZoneCreated?.()
     } catch (error) {
-      console.error('Error al crear zona:', error)
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo crear la zona",
-        variant: "destructive",
+        title: 'Error al crear la zona',
+        description: error instanceof Error ? error.message : 'Intenta nuevamente mas tarde.',
+        variant: 'destructive',
       })
     } finally {
       setIsSubmitting(false)
@@ -87,79 +75,47 @@ export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZo
   }
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Agregar Nueva Zona</DialogTitle>
+          <DialogTitle>Crear zona</DialogTitle>
           <DialogDescription>
-            Crea una nueva zona para organizar las mesas de tu restaurante
+            Defini un nombre para identificar la nueva zona del restaurante.
           </DialogDescription>
         </DialogHeader>
-        
+
         <div className="space-y-4">
-          <div>
-            <Label htmlFor="name">Nombre *</Label>
+          <div className="space-y-2">
+            <Label htmlFor="zone-name">
+              Nombre de la zona <span className="text-destructive">*</span>
+            </Label>
             <Input
-              id="name"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Ej: Salón Principal"
-              maxLength={50}
+              id="zone-name"
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ejemplo: Salon principal"
+              maxLength={80}
               disabled={isSubmitting}
+              autoFocus
             />
-          </div>
-          
-          <div>
-            <Label htmlFor="description">Descripción</Label>
-            <Textarea
-              id="description"
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              placeholder="Descripción opcional de la zona"
-              rows={3}
-              disabled={isSubmitting}
-            />
-          </div>
-          
-          <div>
-            <Label htmlFor="sort-order">Orden</Label>
-            <Input
-              id="sort-order"
-              type="number"
-              value={formData.sort_order}
-              onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-              min={0}
-              disabled={isSubmitting}
-            />
-          </div>
-          
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="active"
-              checked={formData.active}
-              onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-              disabled={isSubmitting}
-            />
-            <Label htmlFor="active">Zona activa</Label>
           </div>
         </div>
-        
+
         <DialogFooter>
-          <Button 
-            variant="outline" 
+          <Button
+            type="button"
+            variant="outline"
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
             Cancelar
           </Button>
-          <Button 
-            onClick={handleCreate}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? "Creando..." : "Crear Zona"}
+          <Button onClick={handleCreate} disabled={isSubmitting}>
+            {isSubmitting ? 'Guardando...' : 'Guardar zona'}
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   )
 }
+

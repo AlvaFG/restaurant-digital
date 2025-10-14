@@ -18,12 +18,10 @@ export default function MesasPage() {
   }
 
   const handleTableCreated = () => {
-    // Recargar la lista después de crear una mesa
     tableListRef.current?.reload()
   }
 
   const handleZoneCreated = () => {
-    // Recargar la lista después de crear una zona (para actualizar el filtro)
     tableListRef.current?.reload()
   }
 
@@ -33,7 +31,9 @@ export default function MesasPage() {
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-3xl font-light tracking-tight">Mesas</h1>
-            <p className="text-muted-foreground font-light">Lista y gestión de mesas</p>
+            <p className="text-muted-foreground font-light">
+              Gestiona las mesas y organizalas por zonas.
+            </p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh}>
@@ -42,11 +42,11 @@ export default function MesasPage() {
             </Button>
             <Button variant="outline" size="sm" onClick={() => setShowZoneDialog(true)}>
               <MapPinned className="mr-2 h-4 w-4" />
-              Crear Zona
+              Crear zona
             </Button>
             <Button size="sm" onClick={() => setShowAddDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
-              Agregar Mesa
+              Agregar mesa
             </Button>
           </div>
         </div>
@@ -68,3 +68,4 @@ export default function MesasPage() {
     </DashboardLayout>
   )
 }
+

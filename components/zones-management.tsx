@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -22,422 +22,321 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
 import { Badge } from "@/components/ui/badge"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
-import { Plus, Edit, Trash2, GripVertical } from 'lucide-react'
-import { fetchZones, createZone, updateZone, deleteZone } from '@/lib/zones-service'
+import { Plus, Pencil, Trash2 } from 'lucide-react'
+import { logger } from '@/lib/logger'
+import { createZone, deleteZone, fetchZones, updateZone } from '@/lib/zones-service'
 import type { Zone } from '@/lib/mock-data'
 
-interface ZoneFormData {
+interface ZoneFormState {
+  id?: string
   name: string
-  description: string
-  sort_order: number
-  active: boolean
 }
+
+type FormMode = 'create' | 'edit'
 
 export function ZonesManagement() {
   const { toast } = useToast()
   const [zones, setZones] = useState<Zone[]>([])
-  const [loading, setLoading] = useState(true)
-  const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showEditDialog, setShowEditDialog] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [selectedZone, setSelectedZone] = useState<Zone | null>(null)
-  const [formData, setFormData] = useState<ZoneFormData>({
-    name: '',
-    description: '',
-    sort_order: 0,
-    active: true
-  })
+  const [isLoading, setIsLoading] = useState(true)
+  const [formMode, setFormMode] = useState<FormMode>('create')
+  const [showForm, setShowForm] = useState(false)
+  const [showDelete, setShowDelete] = useState(false)
+  const [formState, setFormState] = useState<ZoneFormState>({ name: '' })
+  const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   const loadZones = useCallback(async () => {
     try {
-      setLoading(true)
+      setIsLoading(true)
       const data = await fetchZones()
-      setZones(data.sort((a, b) => a.sort_order - b.sort_order))
-    } catch (_error) {
+      setZones(
+        data
+          .slice()
+          .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
+      )
+    } catch (error) {
+      logger.error('No se pudieron cargar las zonas', error as Error)
       toast({
-        title: "Error",
-        description: "No se pudieron cargar las zonas",
-        variant: "destructive",
+        title: 'Error al cargar zonas',
+        description: 'Ocurrio un problema al conectar con Supabase. Intenta nuevamente.',
+        variant: 'destructive',
       })
     } finally {
-      setLoading(false)
+      setIsLoading(false)
     }
   }, [toast])
 
   useEffect(() => {
-    loadZones()
+    void loadZones()
   }, [loadZones])
 
-  function resetForm() {
-    setFormData({
-      name: '',
-      description: '',
-      sort_order: zones.length,
-      active: true
-    })
+  const openCreateModal = () => {
+    setFormMode('create')
+    setFormState({ name: '' })
+    setShowForm(true)
   }
 
-  function openAddDialog() {
-    resetForm()
-    setShowAddDialog(true)
+  const openEditModal = (zone: Zone) => {
+    setFormMode('edit')
+    setFormState({ id: zone.id, name: zone.name })
+    setShowForm(true)
   }
 
-  function openEditDialog(zone: Zone) {
-    setSelectedZone(zone)
-    setFormData({
-      name: zone.name,
-      description: zone.description || '',
-      sort_order: zone.sort_order,
-      active: zone.active
-    })
-    setShowEditDialog(true)
+  const handleFormClose = (open: boolean) => {
+    if (!open) {
+      setFormState({ name: '' })
+    }
+    setShowForm(open)
   }
 
-  function openDeleteDialog(zone: Zone) {
-    setSelectedZone(zone)
-    setShowDeleteDialog(true)
-  }
+  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const trimmedName = formState.name.trim()
 
-  async function handleCreate() {
-    if (!formData.name.trim()) {
+    if (!trimmedName) {
       toast({
-        title: "Error",
-        description: "El nombre de la zona es requerido",
-        variant: "destructive",
+        title: 'Nombre obligatorio',
+        description: 'Ingresa un nombre valido antes de guardar la zona.',
+        variant: 'destructive',
       })
       return
     }
 
+    setIsSubmitting(true)
+
     try {
-      await createZone({
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        sort_order: formData.sort_order,
-        active: formData.active
-      })
-      
-      toast({
-        title: "Zona creada",
-        description: `La zona "${formData.name}" ha sido creada exitosamente`,
-      })
-      
-      setShowAddDialog(false)
-      resetForm()
+      if (formMode === 'create') {
+        await createZone({ name: trimmedName })
+        toast({
+          title: 'Zona guardada',
+          description: `Guardada con exito la nueva zona "${trimmedName}".`,
+          className: 'border border-emerald-500 bg-emerald-50 text-emerald-900',
+        })
+      } else if (formState.id) {
+        await updateZone(formState.id, { name: trimmedName })
+        toast({
+          title: 'Zona guardada',
+          description: 'Los cambios se guardaron correctamente.',
+          className: 'border border-emerald-500 bg-emerald-50 text-emerald-900',
+        })
+      }
+
+      setShowForm(false)
+      setFormState({ name: '' })
       await loadZones()
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo crear la zona",
-        variant: "destructive",
+        title: 'No se pudo guardar la zona',
+        description: error instanceof Error ? error.message : 'Intenta nuevamente mas tarde.',
+        variant: 'destructive',
       })
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
-  async function handleUpdate() {
-    if (!selectedZone) return
-    
-    if (!formData.name.trim()) {
-      toast({
-        title: "Error",
-        description: "El nombre de la zona es requerido",
-        variant: "destructive",
-      })
+  const openDeleteModal = (zone: Zone) => {
+    setZoneToDelete(zone)
+    setShowDelete(true)
+  }
+
+  const handleDelete = async () => {
+    if (!zoneToDelete) {
       return
     }
 
+    setIsSubmitting(true)
+
     try {
-      await updateZone(selectedZone.id, {
-        name: formData.name.trim(),
-        description: formData.description.trim() || undefined,
-        sort_order: formData.sort_order,
-        active: formData.active
-      })
-      
+      await deleteZone(zoneToDelete.id)
       toast({
-        title: "Zona actualizada",
-        description: `La zona "${formData.name}" ha sido actualizada exitosamente`,
+        title: 'Zona eliminada',
+        description: `La zona ${zoneToDelete.name} se elimino correctamente.`,
       })
-      
-      setShowEditDialog(false)
-      setSelectedZone(null)
-      resetForm()
+      setShowDelete(false)
+      setZoneToDelete(null)
       await loadZones()
     } catch (error) {
       toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo actualizar la zona",
-        variant: "destructive",
+        title: 'No se pudo eliminar la zona',
+        description: error instanceof Error ? error.message : 'Intenta nuevamente mas tarde.',
+        variant: 'destructive',
       })
+    } finally {
+      setIsSubmitting(false)
     }
-  }
-
-  async function handleDelete() {
-    if (!selectedZone) return
-
-    try {
-      await deleteZone(selectedZone.id)
-      
-      toast({
-        title: "Zona eliminada",
-        description: `La zona "${selectedZone.name}" ha sido eliminada exitosamente`,
-      })
-      
-      setShowDeleteDialog(false)
-      setSelectedZone(null)
-      await loadZones()
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: error instanceof Error ? error.message : "No se pudo eliminar la zona",
-        variant: "destructive",
-      })
-    }
-  }
-
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="text-muted-foreground">Cargando zonas...</div>
-      </div>
-    )
   }
 
   return (
-    <div className="space-y-4">
-      <div className="flex justify-between items-center">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Gestión de Zonas</h2>
-          <p className="text-muted-foreground text-sm">
-            Administra las zonas de tu restaurante
+          <h2 className="text-2xl font-semibold tracking-tight">Zonas del restaurante</h2>
+          <p className="text-sm text-muted-foreground">
+            Organiza tus mesas por zonas para encontrarlas mas rapido.
           </p>
         </div>
-        <Button onClick={openAddDialog}>
-          <Plus className="h-4 w-4 mr-2" />
-          Agregar Zona
+        <Button onClick={openCreateModal}>
+          <Plus className="mr-2 h-4 w-4" />
+          Crear zona
         </Button>
       </div>
 
-      <div className="border rounded-lg">
-        <div className="grid grid-cols-[40px_1fr_auto_100px_100px] gap-4 p-4 border-b bg-muted/50 font-medium text-sm">
-          <div></div>
-          <div>Nombre</div>
-          <div>Descripción</div>
-          <div className="text-center">Mesas</div>
-          <div className="text-right">Acciones</div>
-        </div>
-        
-        {zones.length === 0 ? (
-          <div className="p-8 text-center text-muted-foreground">
-            No hay zonas configuradas
-          </div>
-        ) : (
-          zones.map((zone) => (
-            <div
-              key={zone.id}
-              className="grid grid-cols-[40px_1fr_auto_100px_100px] gap-4 p-4 border-b last:border-b-0 hover:bg-muted/50 transition-colors"
-            >
-              <div className="flex items-center">
-                <GripVertical className="h-4 w-4 text-muted-foreground" />
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <span className="font-medium">{zone.name}</span>
-                {!zone.active && (
-                  <Badge variant="secondary" className="text-xs">
-                    Inactiva
-                  </Badge>
-                )}
-              </div>
-              
-              <div className="flex items-center text-sm text-muted-foreground">
-                {zone.description || '—'}
-              </div>
-              
-              <div className="flex items-center justify-center">
-                <Badge variant="outline">
-                  {zone.table_count || 0}
-                </Badge>
-              </div>
-              
-              <div className="flex items-center justify-end gap-2">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openEditDialog(zone)}
-                >
-                  <Edit className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => openDeleteDialog(zone)}
-                  disabled={(zone.table_count || 0) > 0}
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
-              </div>
+      <Card>
+        <CardHeader>
+          <CardTitle>Listado de zonas</CardTitle>
+          <CardDescription>
+            Agrega, edita o elimina zonas segun la disposicion de tu salon.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isLoading ? (
+            <p className="text-sm text-muted-foreground">Cargando zonas...</p>
+          ) : zones.length === 0 ? (
+            <div className="rounded-md border border-dashed p-6 text-center">
+              <p className="font-medium">Todavia no creaste zonas.</p>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Crea tu primera zona para empezar a organizar las mesas.
+              </p>
             </div>
-          ))
-        )}
-      </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nombre</TableHead>
+                  <TableHead className="hidden sm:table-cell">Mesas asignadas</TableHead>
+                  <TableHead className="w-[140px] text-right">Acciones</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {zones.map((zone) => (
+                  <TableRow key={zone.id}>
+                    <TableCell className="font-medium">
+                      {zone.name}
+                      {(zone.table_count ?? 0) === 0 && (
+                        <Badge variant="secondary" className="ml-2">
+                          Sin mesas
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="hidden sm:table-cell">
+                      {zone.table_count ?? 0}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => openEditModal(zone)}
+                        >
+                          <Pencil className="mr-2 h-4 w-4" />
+                          Editar
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => openDeleteModal(zone)}
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Eliminar
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
 
-      {/* Add Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
+      <Dialog open={showForm} onOpenChange={handleFormClose}>
         <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Agregar Nueva Zona</DialogTitle>
-            <DialogDescription>
-              Crea una nueva zona para organizar las mesas de tu restaurante
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="add-name">Nombre *</Label>
-              <Input
-                id="add-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Salón Principal"
-                maxLength={50}
-              />
+          <form onSubmit={handleSubmit}>
+            <DialogHeader>
+              <DialogTitle>
+                {formMode === 'create' ? 'Crear nueva zona' : 'Editar zona'}
+              </DialogTitle>
+              <DialogDescription>
+                {formMode === 'create'
+                  ? 'Asigna un nombre descriptivo para ubicarla facilmente al crear mesas.'
+                  : 'Actualiza el nombre de la zona para reflejar cambios en el salon.'}
+              </DialogDescription>
+            </DialogHeader>
+
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="zone-name-input">
+                  Nombre de la zona <span className="text-destructive">*</span>
+                </Label>
+                <Input
+                  id="zone-name-input"
+                  value={formState.name}
+                  onChange={(event) => setFormState((prev) => ({
+                    ...prev,
+                    name: event.target.value,
+                  }))}
+                  placeholder="Ejemplo: Terraza"
+                  maxLength={80}
+                  disabled={isSubmitting}
+                  autoFocus
+                />
+              </div>
             </div>
-            
-            <div>
-              <Label htmlFor="add-description">Descripción</Label>
-              <Textarea
-                id="add-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descripción opcional de la zona"
-                rows={3}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="add-sort-order">Orden</Label>
-              <Input
-                id="add-sort-order"
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                min={0}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="add-active"
-                checked={formData.active}
-                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-              />
-              <Label htmlFor="add-active">Zona activa</Label>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleCreate}>
-              Crear Zona
-            </Button>
-          </DialogFooter>
+
+            <DialogFooter>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowForm(false)}
+                disabled={isSubmitting}
+              >
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting}>
+                {isSubmitting ? 'Guardando...' : 'Guardar zona'}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 
-      {/* Edit Dialog */}
-      <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Editar Zona</DialogTitle>
-            <DialogDescription>
-              Modifica los detalles de la zona
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">Nombre *</Label>
-              <Input
-                id="edit-name"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Ej: Salón Principal"
-                maxLength={50}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-description">Descripción</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                placeholder="Descripción opcional de la zona"
-                rows={3}
-              />
-            </div>
-            
-            <div>
-              <Label htmlFor="edit-sort-order">Orden</Label>
-              <Input
-                id="edit-sort-order"
-                type="number"
-                value={formData.sort_order}
-                onChange={(e) => setFormData({ ...formData, sort_order: parseInt(e.target.value) || 0 })}
-                min={0}
-              />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Switch
-                id="edit-active"
-                checked={formData.active}
-                onCheckedChange={(checked) => setFormData({ ...formData, active: checked })}
-              />
-              <Label htmlFor="edit-active">Zona activa</Label>
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditDialog(false)}>
-              Cancelar
-            </Button>
-            <Button onClick={handleUpdate}>
-              Guardar Cambios
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Dialog */}
-      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+      <AlertDialog open={showDelete} onOpenChange={setShowDelete}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar zona?</AlertDialogTitle>
+            <AlertDialogTitle>Eliminar zona?</AlertDialogTitle>
             <AlertDialogDescription>
-              ¿Estás seguro que deseas eliminar la zona &quot;{selectedZone?.name}&quot;?
-              {(selectedZone?.table_count || 0) > 0 && (
-                <span className="block mt-2 text-destructive font-medium">
-                  Esta zona tiene {selectedZone?.table_count} mesa(s) asignada(s) y no puede ser eliminada.
-                  Reasigna las mesas a otra zona primero.
+              {zoneToDelete?.table_count ? (
+                <span>
+                  No podes eliminar la zona {zoneToDelete.name} porque tiene {zoneToDelete.table_count} mesa(s)
+                  asociada(s). Reasignalas antes de continuar.
                 </span>
+              ) : (
+                <span>Esta accion no se puede deshacer. La zona {zoneToDelete?.name} sera eliminada.</span>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSubmitting}>Cancelar</AlertDialogCancel>
             <AlertDialogAction
               onClick={handleDelete}
-              disabled={(selectedZone?.table_count || 0) > 0}
+              disabled={isSubmitting || (zoneToDelete?.table_count ?? 0) > 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Eliminar
+              Eliminar zona
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -445,3 +344,10 @@ export function ZonesManagement() {
     </div>
   )
 }
+
+
+
+
+
+
+

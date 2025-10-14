@@ -1,4 +1,4 @@
-import { NextResponse } from "next/server"
+﻿import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logger } from "@/lib/logger"
 import type { Database } from "@/lib/supabase/database.types"
@@ -7,7 +7,7 @@ type UserRow = Database['public']['Tables']['users']['Row']
 type UserInsert = Database['public']['Tables']['users']['Insert']
 
 // Tipo para el select parcial de usuario
-interface UserRecord extends Pick<UserRow, 'id' | 'tenant_id' | 'role' | 'active' | 'name' | 'email'> {}
+type UserRecord = Pick<UserRow, 'id' | 'tenant_id' | 'role' | 'active' | 'name' | 'email'>
 
 // Tipo para settings del tenant (JSON)
 interface TenantSettings {
@@ -124,6 +124,35 @@ export async function GET(request: Request) {
     if (!userRecord.active) {
       logger.warn("Intento de login con usuario inactivo", { userId: userRecord.id })
       return NextResponse.redirect(`${requestUrl.origin}/login?error=user_inactive`)
+    }
+
+    // Actualizar user_metadata con tenant_id en Supabase Auth
+    logger.info('Actualizando user_metadata con tenant_id', { 
+      userId: userRecord.id, 
+      tenantId: userRecord.tenant_id 
+    })
+    
+    const { error: updateMetadataError } = await supabase.auth.admin.updateUserById(
+      userRecord.id,
+      {
+        user_metadata: {
+          tenant_id: userRecord.tenant_id,
+          name: userRecord.name,
+          role: userRecord.role,
+        }
+      }
+    )
+
+    if (updateMetadataError) {
+      logger.warn('No se pudo actualizar user_metadata', { 
+        userId: userRecord.id,
+        error: updateMetadataError.message 
+      })
+    } else {
+      logger.info('user_metadata actualizado exitosamente', { 
+        userId: userRecord.id,
+        tenantId: userRecord.tenant_id 
+      })
     }
 
     // Obtener tenant info

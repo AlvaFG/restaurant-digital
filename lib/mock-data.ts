@@ -3,13 +3,11 @@ import type { ModifierGroup, CartItemModifier } from "@/app/(public)/qr/_types/m
 
 export interface Zone {
   id: string
-  tenant_id?: string
   name: string
-  description?: string
-  sort_order: number
-  active: boolean
+  admin_id?: string
+  tenant_id?: string
+  active?: boolean
   created_at?: string
-  updated_at?: string
   // Campos calculados
   table_count?: number
 }
