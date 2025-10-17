@@ -8,7 +8,9 @@ import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { ScrollArea } from "@/components/ui/scroll-area"
-import { AlertService, MOCK_ORDERS, MOCK_TABLES, type Alert, type Order } from "@/lib/mock-data"
+import { useTables } from "@/hooks/use-tables"
+import { useOrders } from "@/hooks/use-orders"
+import { AlertService, type Alert, type Order } from "@/lib/mock-data"
 import { deserializeAlert, deserializeOrderToMock, getReadyAlerts } from "@/lib/socket-client-utils"
 import { useSocket } from "@/hooks/use-socket"
 import type { SocketEventPayload } from "@/lib/socket"
@@ -141,11 +143,16 @@ function LiveAlertsPanel() {
 
 function ActiveOrdersPanel() {
   const { on, off } = useSocket()
-  const [orders, setOrders] = useState<Order[]>(() => MOCK_ORDERS.filter((order) => order.status !== "cerrado"))
+  const { orders: initialOrders } = useOrders()
+  const { tables } = useTables()
+  
+  const [orders, setOrders] = useState<Order[]>(() => 
+    (initialOrders as any).filter((order: any) => order.status !== "cerrado")
+  )
 
   const tablesById = useMemo(() => {
-    return new Map(MOCK_TABLES.map((table) => [table.id, table]))
-  }, [])
+    return new Map(tables.map((table) => [table.id, table]))
+  }, [tables])
 
   useEffect(() => {
     const handleOrderEvent = (payload: SocketEventPayload<"order.updated">) => {

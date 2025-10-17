@@ -1,11 +1,19 @@
 ﻿"use client"
 
 import { useCallback, useEffect, useMemo, useState, useImperativeHandle, forwardRef } from "react"
-import type { Table, Zone } from "@/lib/mock-data"
+import type { Database } from "@/lib/supabase/database.types"
 import { TABLE_STATE, TABLE_STATE_BADGE_VARIANT, TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
-import { fetchTables, inviteHouse, resetTable, deleteTable } from "@/lib/table-service"
-import { fetchZones } from "@/lib/zones-service"
+import { useTables } from "@/hooks/use-tables"
+import { useZones } from "@/hooks/use-zones"
 import { useAuth } from "@/contexts/auth-context"
+import { getZoneName as getZoneNameHelper } from "@/lib/type-guards"
+
+type Table = Database['public']['Tables']['tables']['Row'] & {
+  zone?: Database['public']['Tables']['zones']['Row'] | { id: string; name: string; description: string | null }
+}
+type Zone = Database['public']['Tables']['zones']['Row'] & {
+  table_count?: number
+}
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,16 +54,20 @@ export interface TableListRef {
 export const TableList = forwardRef<TableListRef>((props, ref) => {
   const { user } = useAuth()
   const { toast } = useToast()
-  const [tables, setTables] = useState<Table[]>([])
-  const [zones, setZones] = useState<Zone[]>([])
+  
+  // Use hooks for data fetching and mutations
+  const { tables, loading: tablesLoading, error: tablesError, updateStatus, deleteTable: deleteTableMutation } = useTables()
+  const { zones, loading: zonesLoading } = useZones()
+  
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
   const [selectedZoneFilter, setSelectedZoneFilter] = useState<string>("all")
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isProcessingAction, setIsProcessingAction] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
+
+  const isLoading = tablesLoading || zonesLoading
+  const error = tablesError ? tablesError.message : null
 
   const selectedTable = useMemo(
     () => tables.find((table) => table.id === selectedTableId) ?? null,
@@ -63,7 +75,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
   )
 
   // Helper function to get zone name from a table
-  const getZoneName = useCallback((table: Table): string => {
+  const getZoneName = useCallback((table: Table | any): string => {
     if (typeof table.zone === 'string') {
       return table.zone
     }
@@ -90,7 +102,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
 
   // Group tables by zone
   const tablesByZone = useMemo(() => {
-    const grouped = new Map<string, Table[]>()
+    const grouped = new Map<string, any[]>()
     
     filteredTables.forEach(table => {
       const zoneName = getZoneName(table)
@@ -107,36 +119,12 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
     })
   }, [filteredTables, getZoneName])
 
-  const loadTables = useCallback(async () => {
-    setIsLoading(true)
-    setError(null)
-    try {
-      logger.debug('Cargando lista de mesas y zonas')
-      const [tablesResponse, zonesData] = await Promise.all([
-        fetchTables(),
-        fetchZones()
-      ])
-      setTables(tablesResponse.data)
-      setZones(zonesData)
-      logger.info('Lista de mesas y zonas cargada', {
-        tablesCount: tablesResponse.data.length,
-        zonesCount: zonesData.length
-      })
-    } catch (loadError) {
-      logger.error('Error al cargar lista de mesas', loadError as Error)
-      setError("No se pudieron cargar las mesas. Intenta nuevamente.")
-    } finally {
-      setIsLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadTables()
-  }, [loadTables])
-
-  // Expose reload method to parent via ref
+  // Expose reload method to parent via ref (data auto-refreshes via hooks)
   useImperativeHandle(ref, () => ({
-    reload: loadTables
+    reload: async () => {
+      // The hooks automatically refetch data when mutations occur
+      logger.info('Reload requested - data automatically refreshes via hooks')
+    }
   }))
 
   const handleInviteHouse = async () => {
@@ -150,7 +138,9 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
         userId: user?.id
       })
       
-      await inviteHouse(selectedTable.id)
+      // TODO: Implement inviteHouse logic in service/hook
+      // For now, we just update the status
+      await updateStatus(selectedTable.id, 'libre')
       
       logger.info('Casa invitada exitosamente', {
         tableId: selectedTable.id,
@@ -159,7 +149,6 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       
       setShowInviteDialog(false)
       setSelectedTableId(null)
-      await loadTables()
     } catch (actionError) {
       logger.error('Error al invitar la casa', actionError as Error, {
         tableId: selectedTable.id,
@@ -182,7 +171,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
         userId: user?.id
       })
       
-      await resetTable(selectedTable.id)
+      await updateStatus(selectedTable.id, 'libre')
       
       logger.info('Mesa reseteada exitosamente', {
         tableId: selectedTable.id,
@@ -196,7 +185,6 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       
       setShowResetDialog(false)
       setSelectedTableId(null)
-      await loadTables()
     } catch (actionError) {
       logger.error('Error al resetear mesa', actionError as Error, {
         tableId: selectedTable.id,
@@ -223,7 +211,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
         userId: user?.id
       })
       
-      await deleteTable(selectedTable.id)
+      await deleteTableMutation(selectedTable.id)
       
       logger.info('Mesa eliminada exitosamente', {
         tableId: selectedTable.id,
@@ -237,7 +225,6 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       
       setShowDeleteDialog(false)
       setSelectedTableId(null)
-      await loadTables()
     } catch (actionError) {
       logger.error('Error al eliminar mesa', actionError as Error, {
         tableId: selectedTable.id,
@@ -258,7 +245,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
     }
   }
 
-  const getStatusBadgeVariant = (status: Table["status"]) => TABLE_STATE_BADGE_VARIANT[status] ?? "outline"
+  const getStatusBadgeVariant = (status: string) => TABLE_STATE_BADGE_VARIANT[status as keyof typeof TABLE_STATE_BADGE_VARIANT] ?? "outline"
 
   return (
     <div className="space-y-6">
@@ -277,7 +264,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
               <SelectItem value="none">Sin zona</SelectItem>
               {zones.map((zone) => (
                 <SelectItem key={zone.id} value={zone.id}>
-                  {zone.name} ({zone.table_count || 0})
+                  {zone.name} ({(zone as any).table_count || tables.filter(t => t.zone_id === zone.id).length})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -309,9 +296,9 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                         <CardTitle className="text-lg font-light dark:text-zinc-100">Mesa {table.number}</CardTitle>
                         <Badge
                           variant={getStatusBadgeVariant(table.status)}
-                          style={{ backgroundColor: TABLE_STATE_COLORS[table.status], color: "white" }}
+                          style={{ backgroundColor: TABLE_STATE_COLORS[table.status as keyof typeof TABLE_STATE_COLORS], color: "white" }}
                         >
-                          {TABLE_STATE_LABELS[table.status]}
+                          {TABLE_STATE_LABELS[table.status as keyof typeof TABLE_STATE_LABELS]}
                         </Badge>
                       </div>
                     </CardHeader>
@@ -321,10 +308,10 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                           <MapPin className="h-4 w-4" />
                           {getZoneName(table)}
                         </div>
-                        {table.seats ? (
+                        {table.capacity ? (
                           <div className="flex items-center gap-2">
                             <Users className="h-4 w-4" />
-                            {table.seats} asientos
+                            {table.capacity} asientos
                           </div>
                         ) : null}
 
@@ -363,9 +350,9 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                   <span className="font-medium">Estado:</span>
                   <Badge
                     className="ml-2"
-                    style={{ backgroundColor: TABLE_STATE_COLORS[selectedTable.status], color: "white" }}
+                    style={{ backgroundColor: TABLE_STATE_COLORS[selectedTable.status as keyof typeof TABLE_STATE_COLORS], color: "white" }}
                   >
-                    {TABLE_STATE_LABELS[selectedTable.status]}
+                    {TABLE_STATE_LABELS[selectedTable.status as keyof typeof TABLE_STATE_LABELS]}
                   </Badge>
                 </div>
                 <div>
@@ -374,7 +361,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                 </div>
                 <div>
                   <span className="font-medium">Asientos:</span>
-                  <span className="ml-2">{selectedTable.seats || "No especificado"}</span>
+                  <span className="ml-2">{selectedTable.capacity || "No especificado"}</span>
                 </div>
               </div>
 
@@ -469,7 +456,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
               Esta operación no se puede deshacer.
               {selectedTable?.status && selectedTable.status !== TABLE_STATE.FREE && (
                 <span className="block mt-2 text-destructive font-medium">
-                  Advertencia: La mesa está actualmente {TABLE_STATE_LABELS[selectedTable.status].toLowerCase()}.
+                  Advertencia: La mesa está actualmente {TABLE_STATE_LABELS[selectedTable.status as keyof typeof TABLE_STATE_LABELS].toLowerCase()}.
                 </span>
               )}
             </AlertDialogDescription>

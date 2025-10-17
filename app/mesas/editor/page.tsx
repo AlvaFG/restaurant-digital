@@ -1,7 +1,16 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { TableMap } from "@/components/table-map"
+import { LoadingSpinner } from "@/components/loading-spinner"
+
+const TableMap = dynamic(
+  () => import("@/components/table-map").then(mod => ({ default: mod.TableMap })),
+  { 
+    ssr: false,
+    loading: () => <div className="flex h-[600px] items-center justify-center"><LoadingSpinner /></div>
+  }
+)
 
 export default function TableEditorPage() {
   return (

@@ -5,16 +5,22 @@
  * Combines QRManagementPanel and SessionMonitorDashboard.
  */
 
-import { Metadata } from 'next';
+"use client"
+
+import dynamic from 'next/dynamic';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { QRManagementPanel } from '@/components/qr-management-panel';
-import { SessionMonitorDashboard } from '@/components/session-monitor-dashboard';
+import { LoadingSpinner } from '@/components/loading-spinner';
 import { QrCode, Activity } from 'lucide-react';
 
-export const metadata: Metadata = {
-  title: 'QR Management | Restaurant Admin',
-  description: 'Manage QR codes and monitor customer sessions',
-};
+const QRManagementPanel = dynamic(
+  () => import('@/components/qr-management-panel').then(mod => ({ default: mod.QRManagementPanel })),
+  { loading: () => <div className="flex h-[400px] items-center justify-center"><LoadingSpinner /></div> }
+);
+
+const SessionMonitorDashboard = dynamic(
+  () => import('@/components/session-monitor-dashboard').then(mod => ({ default: mod.SessionMonitorDashboard })),
+  { loading: () => <div className="flex h-[400px] items-center justify-center"><LoadingSpinner /></div> }
+);
 
 export default function QRManagementPage() {
   return (

@@ -1,8 +1,9 @@
 import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/supabase/server"
-import { listZones, createZone } from "@/lib/server/zones-store"
-import { logger } from "@/lib/logger"
+import { getCurrentUser, createServerClient } from "@/lib/supabase/server"
+import { createLogger } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
+
+const logger = createLogger('api-zones')
 
 function getTenantIdFromUser(user: User): string | undefined {
   // Intentar desde user_metadata primero
@@ -28,30 +29,45 @@ export async function GET() {
   const startTime = Date.now()
 
   try {
-    console.log('[GET /api/zones] Iniciando petición...')
+    logger.debug('GET /api/zones - Iniciando petición')
     const user = await getCurrentUser()
     if (!user) {
-      console.log('[GET /api/zones] ❌ Usuario no autenticado')
+      logger.warn('GET /api/zones - Usuario no autenticado')
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    console.log('[GET /api/zones] ✅ Usuario autenticado:', user.id)
+    logger.debug('GET /api/zones - Usuario autenticado', { userId: user.id })
     const tenantId = getTenantIdFromUser(user)
-    console.log('[GET /api/zones] tenant_id extraído:', tenantId)
+    logger.debug('GET /api/zones - tenant_id extraído', { tenantId })
     
     if (!tenantId) {
-      console.log('[GET /api/zones] ❌ Usuario sin tenant asignado')
-      console.log('[GET /api/zones] user_metadata:', JSON.stringify(user.user_metadata))
+      logger.error('GET /api/zones - Usuario sin tenant asignado', new Error('Missing tenant_id'), {
+        userId: user.id,
+        metadata: user.user_metadata
+      })
       return NextResponse.json({ error: 'Usuario sin tenant asignado' }, { status: 403 })
     }
 
-    console.log('[GET /api/zones] Llamando listZones con tenant_id:', tenantId)
-    const zones = await listZones(tenantId)
-    console.log('[GET /api/zones] ✅ Zonas obtenidas:', zones.length)
+    logger.debug('GET /api/zones - Consultando base de datos', { tenantId })
+    
+    // Usar createServerClient directamente (no zones-service que usa browser client)
+    const supabase = createServerClient()
+    
+    const { data: zones, error } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('tenant_id', tenantId)
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
+    
+    if (error) {
+      logger.error('GET /api/zones - Error al obtener zonas', error as Error, { tenantId })
+      throw error
+    }
 
     const duration = Date.now() - startTime
     logger.info('Zonas obtenidas', {
-      count: zones.length,
+      count: zones?.length || 0,
       duration: `${duration}ms`,
       tenantId,
     })
@@ -84,6 +100,8 @@ export async function POST(request: Request) {
 
     const body = await request.json().catch(() => ({})) as {
       name?: string
+      description?: string
+      sortOrder?: number
       active?: boolean
     }
 
@@ -92,16 +110,29 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'El nombre de la zona es obligatorio' }, { status: 400 })
     }
 
-    const zone = await createZone({
-      name,
-      active: body.active,
-      tenantId,
-    })
+    // Usar createServerClient directamente
+    const supabase = createServerClient()
+    
+    const { data: zone, error } = await supabase
+      .from('zones')
+      .insert({
+        tenant_id: tenantId,
+        name,
+        description: body.description || null,
+        sort_order: body.sortOrder || 0,
+        active: true,
+      })
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
 
     const duration = Date.now() - startTime
     logger.info('Zona creada exitosamente', {
-      zoneId: zone.id,
-      name: zone.name,
+      zoneId: zone?.id,
+      name: zone?.name,
       tenantId,
       duration: `${duration}ms`,
     })

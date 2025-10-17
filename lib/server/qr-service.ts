@@ -11,7 +11,8 @@
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import { createLogger } from '@/lib/logger';
-import { getTableById, updateTableQR } from './table-store';
+import { getTableById, updateTable } from '@/lib/services/tables-service';
+import { createBrowserClient } from '@/lib/supabase/client';
 import type {
   QRTokenPayload,
   QRGenerationOptions,
@@ -24,6 +25,21 @@ import type {
 import { QRValidationErrorCode } from './qr-types';
 
 const logger = createLogger('qr-service');
+
+/**
+ * Get tenant ID from Supabase session
+ * Required for tables service calls
+ */
+async function getTenantId(): Promise<string> {
+  const supabase = createBrowserClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  
+  if (!user?.user_metadata?.tenant_id) {
+    throw new Error('No tenant ID found in session');
+  }
+  
+  return user.user_metadata.tenant_id;
+}
 
 // JWT Configuration
 const getJWTSecret = () => process.env.QR_JWT_SECRET || process.env.JWT_SECRET || 'default-secret-change-in-production';
@@ -71,14 +87,15 @@ export async function generateQR(
 
   try {
     // Get table data
-    const table = await getTableById(tableId);
+    const tenantId = await getTenantId();
+    const { data: table, error: tableError } = await getTableById(tableId, tenantId);
     
-    if (!table) {
+    if (tableError || !table) {
       throw new Error(`Table not found: ${tableId}`);
     }
 
     // Generate JWT token
-    const token = createToken(table.id, table.number, table.zone || 'main');
+    const token = createToken(table.id, Number(table.number), table.zone_id || 'main');
     const decoded = jwt.decode(token) as QRTokenPayload;
 
     // Build access URL - direct to table page with token
@@ -116,8 +133,8 @@ export async function generateQR(
       expiresAt: new Date(decoded.exp * 1000),
       table: {
         id: table.id,
-        number: table.number,
-        zone: table.zone || 'main',
+        number: Number(table.number),
+        zone: table.zone_id || 'main',
       },
     };
 
@@ -219,9 +236,10 @@ export async function validateToken(token: string): Promise<QRValidationResult> 
     }
 
     // Get table data
-    const table = await getTableById(decoded.tableId);
+    const tenantId = await getTenantId();
+    const { data: table, error: tableError } = await getTableById(decoded.tableId, tenantId);
 
-    if (!table) {
+    if (tableError || !table) {
       logger.warn(`[validateToken] Table not found: ${decoded.tableId}`);
       return {
         valid: false,
@@ -239,10 +257,10 @@ export async function validateToken(token: string): Promise<QRValidationResult> 
       payload: decoded,
       tableData: {
         id: table.id,
-        number: table.number,
-        zone: table.zone || 'main',
+        number: Number(table.number),
+        zone: table.zone_id || 'main',
         status: table.status,
-        seats: table.seats || 4,
+        seats: table.capacity || 4,
       },
     };
   } catch (error) {
@@ -358,8 +376,27 @@ async function updateTableQRMetadata(
   metadata: QRMetadata
 ): Promise<void> {
   try {
-    // Store QR token in table using existing updateTableQR function
-    await updateTableQR(tableId, metadata.token, metadata.expiresAt);
+    const tenantId = await getTenantId();
+    
+    const { error } = await updateTable(
+      tableId,
+      {
+        qrToken: metadata.token,
+        qrExpiresAt: metadata.expiresAt.toISOString(),
+        // Store additional metadata in the metadata field
+        metadata: {
+          qr_generated_at: metadata.generatedAt.toISOString(),
+          scan_count: metadata.scanCount || 0,
+        },
+      },
+      tenantId
+    );
+
+    if (error) {
+      throw error;
+    }
+
+    logger.debug(`[updateTableQRMetadata] Metadata updated for table ${tableId}`);
   } catch (error) {
     logger.error(
       `[updateTableQRMetadata] Error updating metadata:`,
@@ -371,13 +408,40 @@ async function updateTableQRMetadata(
 
 /**
  * Increment scan count for table
- * Note: Scan counting is stored separately and will be implemented
- * when we add session management in Day 2-3
  */
 async function incrementScanCount(tableId: string): Promise<void> {
   try {
-    // TODO: Implement scan counting in session store (Day 2-3)
-    logger.debug(`[incrementScanCount] Scan counted for table ${tableId}`);
+    const tenantId = await getTenantId();
+    
+    // Get current table to read scan_count from metadata
+    const { data: table, error: getError } = await getTableById(tableId, tenantId);
+    
+    if (getError || !table) {
+      logger.warn(`[incrementScanCount] Table not found: ${tableId}`);
+      return;
+    }
+
+    // Increment scan count in metadata
+    const currentMetadata = (table.metadata as Record<string, any>) || {};
+    const scanCount = (currentMetadata.scan_count || 0) + 1;
+
+    const { error: updateError } = await updateTable(
+      tableId,
+      {
+        metadata: {
+          ...currentMetadata,
+          scan_count: scanCount,
+          last_scanned_at: new Date().toISOString(),
+        },
+      },
+      tenantId
+    );
+
+    if (updateError) {
+      throw updateError;
+    }
+
+    logger.debug(`[incrementScanCount] Scan counted for table ${tableId} (count: ${scanCount})`);
   } catch (error) {
     logger.error(
       `[incrementScanCount] Error:`,

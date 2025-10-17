@@ -1,13 +1,13 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 
 import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
-import { MOCK_MENU_CATEGORIES, MOCK_MENU_ITEMS, type MenuItem, type Table } from "@/lib/mock-data"
-import { createOrder, OrderServiceError } from "@/lib/order-service"
-import type { CreateOrderPayload } from "@/lib/server/order-types"
+import { useTables } from "@/hooks/use-tables"
+import { useMenuItems, useMenuCategories } from "@/hooks/use-menu"
+import { useOrders } from "@/hooks/use-orders"
+import type { Database } from "@/lib/supabase/database.types"
 import { TABLE_STATE, TABLE_STATE_LABELS } from "@/lib/table-states"
-import { fetchTables } from "@/lib/table-service"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -25,15 +25,19 @@ import { ChevronDown, Minus, Plus, ShoppingCart, X } from "lucide-react"
 import { logger } from "@/lib/logger"
 import { MENSAJES } from "@/lib/i18n/mensajes"
 
+type MenuItem = Database['public']['Tables']['menu_items']['Row']
+
 interface OrderItem {
   menuItem: MenuItem
   quantity: number
 }
 
 export function OrderForm() {
-  const [tables, setTables] = useState<Table[]>([])
-  const [tablesLoading, setTablesLoading] = useState(true)
-  const [tablesError, setTablesError] = useState<string | null>(null)
+  const { tables, loading: tablesLoading, error: tablesError } = useTables()
+  const { items: menuItems, loading: menuItemsLoading } = useMenuItems()
+  const { categories, loading: categoriesLoading } = useMenuCategories()
+  const { createOrder } = useOrders()
+  
   const [selectedTableId, setSelectedTableId] = useState<string>("")
   const [selectedCategory, setSelectedCategory] = useState<string>("all")
   const [orderItems, setOrderItems] = useState<OrderItem[]>([])
@@ -42,45 +46,25 @@ export function OrderForm() {
   const { refetch } = useOrdersPanelContext()
   const { toast } = useToast()
 
-  const loadTables = useCallback(async () => {
-    setTablesLoading(true)
-    setTablesError(null)
-    try {
-      logger.debug('Cargando mesas para formulario de pedido')
-      const response = await fetchTables()
-      setTables(response.data)
-      logger.info('Mesas cargadas en formulario', { count: response.data.length })
-    } catch (error) {
-      logger.error('Error al cargar mesas en formulario', error as Error)
-      setTablesError("No se pudieron cargar las mesas")
-    } finally {
-      setTablesLoading(false)
-    }
-  }, [])
-
-  useEffect(() => {
-    void loadTables()
-  }, [loadTables])
-
   const availableTables = useMemo(
     () => tables.filter((table) => table.status === TABLE_STATE.FREE || table.status === TABLE_STATE.OCCUPIED),
     [tables],
   )
 
   const filteredMenuItems = useMemo(() => {
-    const availableItems = MOCK_MENU_ITEMS.filter((item) => item.available)
+    const availableItems = menuItems.filter((item) => item.available !== false)
     if (selectedCategory !== "all") {
-      return availableItems.filter((item) => item.categoryId === selectedCategory)
+      return availableItems.filter((item) => item.category_id === selectedCategory)
     }
     return availableItems
-  }, [selectedCategory])
+  }, [menuItems, selectedCategory])
 
   const categoryOptions = useMemo(
     () => [
       { id: "all", name: "Todas las categorias" },
-      ...MOCK_MENU_CATEGORIES.map((category) => ({ id: category.id, name: category.name })),
+      ...categories.map((category) => ({ id: category.id, name: category.name })),
     ],
-    [],
+    [categories],
   )
 
   const selectedCategoryLabel = useMemo(() => {
@@ -112,7 +96,7 @@ export function OrderForm() {
     setOrderItems((current) => current.filter((item) => item.menuItem.id !== menuItemId))
   }
 
-  const calculateTotal = () => orderItems.reduce((sum, item) => sum + item.menuItem.priceCents * item.quantity, 0)
+  const calculateTotal = () => orderItems.reduce((sum, item) => sum + item.menuItem.price_cents * item.quantity, 0)
 
   const handleSubmit = async () => {
     if (!selectedTableId || orderItems.length === 0) {
@@ -137,8 +121,8 @@ export function OrderForm() {
           menuItemId: item.menuItem.id,
           quantity: item.quantity,
         })),
-        source: "staff",
-      } satisfies CreateOrderPayload
+        source: "staff" as const,
+      }
 
       logger.info('Creando pedido desde formulario', { 
         tableId: selectedTableId,
@@ -175,7 +159,7 @@ export function OrderForm() {
         itemsCount: orderItems.length
       })
       
-      const message = error instanceof OrderServiceError ? error.message : MENSAJES.ERRORES.GENERICO
+      const message = error instanceof Error ? error.message : MENSAJES.ERRORES.GENERICO
       toast({
         title: "No se pudo crear el pedido",
         description: message,
@@ -200,7 +184,7 @@ export function OrderForm() {
               </div>
             ) : tablesError ? (
               <div className="rounded-md border border-destructive/20 bg-destructive/10 px-3 py-2 text-sm text-destructive">
-                {tablesError}
+                {tablesError.message}
               </div>
             ) : (
               <Select disabled={isSubmitting} value={selectedTableId} onValueChange={setSelectedTableId}>
@@ -215,7 +199,7 @@ export function OrderForm() {
                   ) : (
                     availableTables.map((table) => (
                       <SelectItem key={table.id} value={table.id}>
-                        Mesa {table.number} - {table.zone || "Sin zona"} ({TABLE_STATE_LABELS[table.status]})
+                        Mesa {table.number} - Sin zona ({TABLE_STATE_LABELS[table.status as keyof typeof TABLE_STATE_LABELS]})
                       </SelectItem>
                     ))
                   )}
@@ -264,7 +248,7 @@ export function OrderForm() {
                     <div className="flex-1">
                       <h4 className="font-light dark:text-zinc-100">{item.name}</h4>
                       <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">{item.description}</p>
-                      <p className="text-sm font-light dark:text-zinc-200">${(item.priceCents / 100).toFixed(2)}</p>
+                      <p className="text-sm font-light dark:text-zinc-200">${(item.price_cents / 100).toFixed(2)}</p>
                     </div>
                     <Button
                       onClick={() => addToOrder(item)}
@@ -299,7 +283,7 @@ export function OrderForm() {
                   <div key={item.menuItem.id} className="flex items-center justify-between rounded-lg border border-border/50 bg-accent/30 p-3 dark:border-transparent dark:bg-zinc-800/30">
                     <div className="flex-1">
                       <p className="text-sm font-light dark:text-zinc-100">{item.menuItem.name}</p>
-                      <p className="text-xs text-muted-foreground font-light dark:text-zinc-400">${(item.menuItem.priceCents / 100).toFixed(2)} c/u</p>
+                      <p className="text-xs text-muted-foreground font-light dark:text-zinc-400">${(item.menuItem.price_cents / 100).toFixed(2)} c/u</p>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button

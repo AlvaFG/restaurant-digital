@@ -1,5 +1,10 @@
 /**
- * Zones Store - Server Side
+ * @deprecated Este archivo está deprecado y será eliminado.
+ * Usar en su lugar: lib/services/zones-service.ts
+ * 
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ * 
+ * Zones Store - Server Side (LEGACY)
  *
  * Funciones para gestionar zonas del restaurante en Supabase.
  */

@@ -6,15 +6,14 @@ import {
   ALERT_PRIORITIES,
   ALERT_TYPE_COLORS,
   ALERT_TYPE_LABELS,
-  AlertService,
-  MOCK_ALERTS,
-  MOCK_TABLES,
   type Alert,
 } from "@/lib/mock-data"
 import { deserializeAlert, getReadyAlerts, getReadyTables } from "@/lib/socket-client-utils"
 import { cn } from "@/lib/utils"
 import { useSocket } from "@/hooks/use-socket"
 import { useToast } from "@/hooks/use-toast"
+import { useAlerts } from "@/hooks/use-alerts"
+import { useTables } from "@/hooks/use-tables"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,99 +25,87 @@ import type { SocketEventPayload } from "@/lib/socket"
 
 type TableMeta = { number?: number }
 
-function cloneAlerts(source: Alert[]): Alert[] {
-  return source.map((alert) => ({ ...alert, createdAt: new Date(alert.createdAt) }))
-}
-
 export function AlertsCenter() {
   const { on, off, emit, state, lastReadyPayload, isConnected, isReconnecting } = useSocket()
   const { toast } = useToast()
+  
+  // Use useAlerts hook for data management
+  const { 
+    alerts: alertsFromHook, 
+    activeAlerts: activeAlertsFromHook,
+    acknowledgedAlerts: acknowledgedAlertsFromHook,
+    acknowledgeAlert: acknowledgeAlertMutation,
+    refresh,
+    isLoading: isLoadingAlerts
+  } = useAlerts()
+  
+  // Use useTables hook for table number lookups
+  const { tables } = useTables()
 
-  const [alerts, setAlerts] = useState<Alert[]>(() => {
-    const snapshot = getReadyAlerts(lastReadyPayload)
-    return snapshot ?? cloneAlerts(MOCK_ALERTS)
-  })
-  const [filter, setFilter] = useState<"all" | Alert["type"]>("all")
+  const [filter, setFilter] = useState<"all" | string>("all")
   const [isLoading, setIsLoading] = useState(false)
 
   const readyAlerts = useMemo(() => getReadyAlerts(lastReadyPayload), [lastReadyPayload])
   const readyTables = useMemo(() => getReadyTables(lastReadyPayload), [lastReadyPayload])
 
+  // Build table index from useTables hook
   const tablesIndex = useMemo(() => {
     const lookup = new Map<string, TableMeta>()
+    
+    // Priority 1: Use socket data if available
     readyTables?.tables.forEach((table) => {
-      lookup.set(table.id, { number: table.number })
+      lookup.set(table.id, { number: Number(table.number) })
     })
+    
+    // Priority 2: Use useTables data
     if (lookup.size === 0) {
-      for (const table of MOCK_TABLES) {
-        lookup.set(table.id, { number: table.number })
-      }
+      tables.forEach((table) => {
+        lookup.set(table.id, { number: Number(table.number) })
+      })
     }
+    
     return lookup
-  }, [readyTables])
+  }, [readyTables, tables])
 
+  // Socket integration for real-time updates (keep existing socket events)
   useEffect(() => {
-    if (!state.isReady || !readyAlerts) {
-      return
-    }
-    setAlerts(readyAlerts)
-  }, [readyAlerts, state.isReady])
-
-  useEffect(() => {
-    const handleReady = (payload: SocketEventPayload<"socket.ready">) => {
-      const snapshot = getReadyAlerts(payload)
-      if (snapshot) {
-        setAlerts(snapshot)
-      }
-    }
-
     const handleCreated = (payload: SocketEventPayload<"alert.created">) => {
-      const alert = deserializeAlert(payload.alert)
-      setAlerts((previous) => [alert, ...previous])
+      // Refresh alerts from hook when new alert arrives
+      refresh()
       toast({
         title: "Nueva alerta",
-        description: alert.message,
+        description: payload.alert.message || "Nueva notificación recibida",
         variant: "destructive",
       })
     }
 
-    const handleUpdated = (payload: SocketEventPayload<"alert.updated">) => {
-      setAlerts((previous) =>
-        previous.map((alert) =>
-          alert.id === payload.alertId ? { ...alert, acknowledged: payload.acknowledged } : alert,
-        ),
-      )
-    }
-
     const handleAcknowledged = (payload: SocketEventPayload<"alert.acknowledged">) => {
-      setAlerts((previous) => previous.filter((alert) => alert.id !== payload.alertId))
+      // Refresh alerts when acknowledged via socket
+      refresh()
     }
 
-    on("socket.ready", handleReady)
     on("alert.created", handleCreated)
-    on("alert.updated", handleUpdated)
     on("alert.acknowledged", handleAcknowledged)
 
     return () => {
-      off("socket.ready", handleReady)
       off("alert.created", handleCreated)
-      off("alert.updated", handleUpdated)
       off("alert.acknowledged", handleAcknowledged)
     }
-  }, [off, on, toast])
+  }, [off, on, toast, refresh])
 
-  const activeAlerts = alerts.filter((alert) => !alert.acknowledged)
-  const acknowledgedAlerts = alerts.filter((alert) => alert.acknowledged)
+  // Use alerts from hook
+  const activeAlerts = activeAlertsFromHook
+  const acknowledgedAlerts = acknowledgedAlertsFromHook
 
-  const filteredActiveAlerts = filter === "all" ? activeAlerts : activeAlerts.filter((alert) => alert.type === filter)
+  const filteredActiveAlerts = filter === "all" ? activeAlerts : activeAlerts.filter((alert: any) => alert.type === filter)
   const sortedActiveAlerts = [...filteredActiveAlerts].sort(
-    (a, b) => ALERT_PRIORITIES[a.type] - ALERT_PRIORITIES[b.type],
+    (a: any, b: any) => ALERT_PRIORITIES[a.type as keyof typeof ALERT_PRIORITIES] - ALERT_PRIORITIES[b.type as keyof typeof ALERT_PRIORITIES],
   )
 
   const handleAcknowledge = async (alertId: string) => {
     setIsLoading(true)
     try {
-      await AlertService.acknowledgeAlert(alertId)
+      await acknowledgeAlertMutation(alertId)
       emit("alert.acknowledged", { alertId, acknowledged: true })
       toast({
         title: "Alerta confirmada",
@@ -139,8 +126,7 @@ export function AlertsCenter() {
   const handleRefresh = async () => {
     setIsLoading(true)
     try {
-      const data = await AlertService.getActiveAlerts()
-      setAlerts(cloneAlerts(data))
+      await refresh()
       toast({
         title: "Alertas sincronizadas",
         description: "Se actualizaron las alertas activas",
@@ -157,7 +143,8 @@ export function AlertsCenter() {
     }
   }
 
-  const getTimeAgo = (date: Date) => {
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
     if (minutes < 1) return "Ahora"
     if (minutes < 60) return minutes.toString() + "m"
@@ -167,18 +154,18 @@ export function AlertsCenter() {
     return days.toString() + "d"
   }
 
-  const AlertCard = ({ alert, showAcknowledge = true }: { alert: Alert; showAcknowledge?: boolean }) => {
-    const tableMeta = tablesIndex.get(alert.tableId)
-    const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + alert.tableId
+  const AlertCard = ({ alert, showAcknowledge = true }: { alert: any; showAcknowledge?: boolean }) => {
+    const tableMeta = tablesIndex.get(alert.table_id || alert.tableId)
+    const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + (alert.table_id || alert.tableId)
 
     return (
-      <Card className="mb-3 border-l-4" style={{ borderLeftColor: ALERT_TYPE_COLORS[alert.type] }}>
+      <Card className="mb-3 border-l-4" style={{ borderLeftColor: ALERT_TYPE_COLORS[alert.type as keyof typeof ALERT_TYPE_COLORS] }}>
         <CardContent className="p-4">
           <div className="flex items-center justify-between gap-4">
             <div className="flex gap-3">
               <div
                 className="flex h-10 w-10 items-center justify-center rounded bg-muted"
-                style={{ color: ALERT_TYPE_COLORS[alert.type] }}
+                style={{ color: ALERT_TYPE_COLORS[alert.type as keyof typeof ALERT_TYPE_COLORS] }}
               >
                 <Bell className="h-5 w-5" />
               </div>
@@ -186,13 +173,13 @@ export function AlertsCenter() {
                 <div className="mb-1 flex items-center gap-2">
                   <span className="font-medium">{label}</span>
                   <Badge variant="outline" className="text-xs">
-                    {ALERT_TYPE_LABELS[alert.type]}
+                    {ALERT_TYPE_LABELS[alert.type as keyof typeof ALERT_TYPE_LABELS]}
                   </Badge>
                 </div>
                 <p className="mb-2 text-sm text-muted-foreground">{alert.message}</p>
                 <div className="flex items-center gap-2 text-xs text-muted-foreground">
                   <Clock className="h-3 w-3" />
-                  <span>{getTimeAgo(alert.createdAt)}</span>
+                  <span>{getTimeAgo(alert.created_at || alert.createdAt)}</span>
                 </div>
               </div>
             </div>

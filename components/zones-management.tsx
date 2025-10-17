@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useCallback, useEffect } from 'react'
+import { useState } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -33,10 +33,15 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { useToast } from "@/hooks/use-toast"
+import { useZones } from "@/hooks/use-zones"
+import { useTables } from "@/hooks/use-tables"
 import { Plus, Pencil, Trash2 } from 'lucide-react'
 import { logger } from '@/lib/logger'
-import { createZone, deleteZone, fetchZones, updateZone } from '@/lib/zones-service'
-import type { Zone } from '@/lib/mock-data'
+import type { Database } from '@/lib/supabase/database.types'
+
+type ZoneWithStats = Database['public']['Tables']['zones']['Row'] & {
+  table_count?: number
+}
 
 interface ZoneFormState {
   id?: string
@@ -47,39 +52,25 @@ type FormMode = 'create' | 'edit'
 
 export function ZonesManagement() {
   const { toast } = useToast()
-  const [zones, setZones] = useState<Zone[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const { zones, loading: isLoading, createZone, updateZone, deleteZone } = useZones()
+  const { tables } = useTables()
+  
   const [formMode, setFormMode] = useState<FormMode>('create')
   const [showForm, setShowForm] = useState(false)
   const [showDelete, setShowDelete] = useState(false)
   const [formState, setFormState] = useState<ZoneFormState>({ name: '' })
-  const [zoneToDelete, setZoneToDelete] = useState<Zone | null>(null)
+  const [zoneToDelete, setZoneToDelete] = useState<ZoneWithStats | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const loadZones = useCallback(async () => {
-    try {
-      setIsLoading(true)
-      const data = await fetchZones()
-      setZones(
-        data
-          .slice()
-          .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
-      )
-    } catch (error) {
-      logger.error('No se pudieron cargar las zonas', error as Error)
-      toast({
-        title: 'Error al cargar zonas',
-        description: 'Ocurrio un problema al conectar con Supabase. Intenta nuevamente.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsLoading(false)
-    }
-  }, [toast])
+  // Helper para contar mesas por zona
+  const getTableCount = (zoneId: string) => {
+    return tables.filter(t => t.zone_id === zoneId).length
+  }
 
-  useEffect(() => {
-    void loadZones()
-  }, [loadZones])
+  // Sort zones alphabetically
+  const sortedZones = [...zones].sort((a, b) => 
+    a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })
+  )
 
   const openCreateModal = () => {
     setFormMode('create')
@@ -87,7 +78,7 @@ export function ZonesManagement() {
     setShowForm(true)
   }
 
-  const openEditModal = (zone: Zone) => {
+  const openEditModal = (zone: ZoneWithStats) => {
     setFormMode('edit')
     setFormState({ id: zone.id, name: zone.name })
     setShowForm(true)
@@ -134,7 +125,7 @@ export function ZonesManagement() {
 
       setShowForm(false)
       setFormState({ name: '' })
-      await loadZones()
+      // Zones auto-refresh via hook
     } catch (error) {
       toast({
         title: 'No se pudo guardar la zona',
@@ -146,7 +137,7 @@ export function ZonesManagement() {
     }
   }
 
-  const openDeleteModal = (zone: Zone) => {
+  const openDeleteModal = (zone: ZoneWithStats) => {
     setZoneToDelete(zone)
     setShowDelete(true)
   }
@@ -166,7 +157,7 @@ export function ZonesManagement() {
       })
       setShowDelete(false)
       setZoneToDelete(null)
-      await loadZones()
+      // Zones auto-refresh via hook
     } catch (error) {
       toast({
         title: 'No se pudo eliminar la zona',
@@ -220,18 +211,18 @@ export function ZonesManagement() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {zones.map((zone) => (
+                {sortedZones.map((zone) => (
                   <TableRow key={zone.id}>
                     <TableCell className="font-medium">
                       {zone.name}
-                      {(zone.table_count ?? 0) === 0 && (
+                      {getTableCount(zone.id) === 0 && (
                         <Badge variant="secondary" className="ml-2">
                           Sin mesas
                         </Badge>
                       )}
                     </TableCell>
                     <TableCell className="hidden sm:table-cell">
-                      {zone.table_count ?? 0}
+                      {getTableCount(zone.id)}
                     </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-2">

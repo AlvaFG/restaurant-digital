@@ -1,4 +1,11 @@
-﻿import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
+﻿/**
+ * @deprecated Este archivo está deprecado y solo debe usarse en tests.
+ * Los datos reales deben obtenerse de Supabase usando los servicios en lib/services/
+ * 
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ */
+
+import { TABLE_STATE, TABLE_STATE_COLORS, TABLE_STATE_LABELS, type TableState } from "./table-states"
 import type { ModifierGroup, CartItemModifier } from "@/app/(public)/qr/_types/modifiers"
 
 export interface Zone {

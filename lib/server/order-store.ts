@@ -1,3 +1,11 @@
+/**
+ * @deprecated Este archivo está deprecado y será eliminado.
+ * Usar en su lugar: lib/services/orders-service.ts
+ * 
+ * Este store usa archivos JSON locales en vez de Supabase.
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ */
+
 import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
@@ -42,7 +50,14 @@ const DEFAULT_TAX_RATE = 0.21
 const DEFAULT_TAX_CODE = "iva"
 const DEFAULT_TAX_NAME = "IVA"
 
-const ALLOWED_TABLE_STATES = new Set([TABLE_STATE.FREE, TABLE_STATE.OCCUPIED, TABLE_STATE.ORDER_IN_PROGRESS])
+// Actualizado para incluir todos los estados válidos de tabla
+const ALLOWED_TABLE_STATES = new Set([
+  TABLE_STATE.FREE,
+  TABLE_STATE.OCCUPIED,
+  TABLE_STATE.ORDER_IN_PROGRESS,
+  'cuenta_solicitada' as const,
+  'pago_confirmado' as const
+])
 
 export class OrderStoreError extends Error {
   readonly code: string

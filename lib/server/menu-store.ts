@@ -1,3 +1,11 @@
+/**
+ * @deprecated Este archivo está deprecado y será eliminado.
+ * Usar en su lugar: lib/services/menu-service.ts
+ * 
+ * Este store usa archivos JSON locales y mock-data en vez de Supabase.
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ */
+
 import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"

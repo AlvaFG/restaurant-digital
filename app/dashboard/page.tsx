@@ -51,21 +51,13 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true)
 
   useEffect(() => {
-    console.log('🔍 Dashboard useEffect ejecutado', { 
-      hasUser: !!user, 
-      tenantId: user?.tenant_id 
-    })
-    
     // Cargar métricas reales desde la API
     const loadMetrics = async () => {
       try {
         if (!user?.tenant_id) {
-          console.error('❌ No se encontró tenant_id en user')
           setIsLoading(false)
           return
         }
-
-        console.log('📊 Cargando métricas para tenant:', user.tenant_id)
         
         const response = await fetch(`/api/dashboard/metrics?tenantId=${user.tenant_id}`)
         
@@ -96,8 +88,7 @@ export default function DashboardPage() {
           })
         }
       } catch (error) {
-        console.error('❌ Error loading metrics:', error)
-        // En caso de error, usar datos mock
+        // En caso de error, usar datos vacíos
         setMetrics({
           totalOrders: 0,
           activeOrders: 0,
@@ -116,7 +107,6 @@ export default function DashboardPage() {
           topDishes: [{ name: 'Sin datos', orders: 0 }],
         })
       } finally {
-        console.log('✅ Finalizando loadMetrics, isLoading → false')
         setIsLoading(false)
       }
     }
@@ -127,8 +117,6 @@ export default function DashboardPage() {
       // Actualizar cada 30 segundos
       const interval = setInterval(loadMetrics, 30000)
       return () => clearInterval(interval)
-    } else {
-      console.log('⚠️ Usuario no disponible aún, esperando...')
     }
   }, [user])
 
@@ -140,15 +128,12 @@ export default function DashboardPage() {
   const _ticketGrowth = "+5%"
 
   if (isLoading) {
-    console.log('⏳ Dashboard en estado de carga...')
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin" />
       </div>
     )
   }
-
-  console.log('✅ Renderizando Dashboard completo')
   
   return (
     <ProtectedRoute>

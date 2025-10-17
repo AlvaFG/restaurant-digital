@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo, useState } from "react"
 import { Search, CreditCard } from "lucide-react"
 
 import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
@@ -15,8 +15,8 @@ import { Label } from "@/components/ui/label"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group"
-import { fetchTables } from "@/lib/table-service"
-import type { Table } from "@/lib/mock-data"
+import { useTables } from "@/hooks/use-tables"
+import type { Database } from "@/lib/supabase/database.types"
 import {
   ORDER_STATUS_BADGE_VARIANT,
   ORDER_STATUS_GROUPS,
@@ -26,6 +26,8 @@ import {
   type OrdersPanelOrder,
 } from "@/lib/order-service"
 import type { OrderStatus, PaymentStatus } from "@/lib/server/order-types"
+
+type Table = Database['public']['Tables']['tables']['Row']
 
 const STATUS_SEQUENCE: OrderStatus[] = ["abierto", "preparando", "listo", "entregado", "cerrado"]
 const ITEMS_PREVIEW_LIMIT = 3
@@ -52,28 +54,11 @@ function formatRelativeTime(date: Date): string {
 }
 
 function useTablesIndex() {
-  const [tablesById, setTablesById] = useState<Map<string, Table>>(new Map())
-
-  useEffect(() => {
-    let isCancelled = false
-
-    const load = async () => {
-      try {
-        const response = await fetchTables()
-        if (!isCancelled) {
-          setTablesById(new Map(response.data.map((table) => [table.id, table])))
-        }
-      } catch (error) {
-        console.warn("[OrdersPanel] No se pudieron cargar las mesas", error)
-      }
-    }
-
-    void load()
-
-    return () => {
-      isCancelled = true
-    }
-  }, [])
+  const { tables } = useTables()
+  
+  const tablesById = useMemo(() => {
+    return new Map(tables.map((table) => [table.id, table]))
+  }, [tables])
 
   return tablesById
 }

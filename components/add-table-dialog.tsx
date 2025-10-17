@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useMemo } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -21,8 +21,8 @@ import {
 } from "@/components/ui/select"
 import { Plus } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import { fetchZones } from "@/lib/zones-service"
-import type { Zone } from "@/lib/mock-data"
+import { useTables } from "@/hooks/use-tables"
+import { useZones } from "@/hooks/use-zones"
 import { logger } from "@/lib/logger"
 
 interface AddTableDialogProps {
@@ -43,39 +43,19 @@ interface FormErrors {
 
 export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableDialogProps) {
   const { toast } = useToast()
+  const { createTable } = useTables()
+  const { zones, loading: loadingZones, error: zonesError } = useZones()
+  
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [zones, setZones] = useState<Zone[]>([])
-  const [loadingZones, setLoadingZones] = useState(false)
   const [formData, setFormData] = useState<FormData>({ number: '', zone_id: '' })
   const [errors, setErrors] = useState<FormErrors>({})
 
-  useEffect(() => {
-    if (!open) {
-      return
-    }
-
-    const loadZones = async () => {
-      try {
-        setLoadingZones(true)
-        const data = await fetchZones()
-        const enabledZones = data.filter((zone) => zone.active !== false)
-        setZones(
-          enabledZones.sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' })),
-        )
-      } catch (error) {
-        logger.error('No se pudieron cargar las zonas disponibles', error as Error)
-        toast({
-          title: 'No se pudieron cargar las zonas',
-          description: 'OcurriA3 un problema al conectar con Supabase. IntentA nuevamente.',
-          variant: 'destructive',
-        })
-      } finally {
-        setLoadingZones(false)
-      }
-    }
-
-    void loadZones()
-  }, [open, toast])
+  // Filter and sort active zones
+  const activeZones = useMemo(() => {
+    return zones
+      .filter((zone) => zone.active !== false)
+      .sort((a, b) => a.name.localeCompare(b.name, 'es', { sensitivity: 'base' }))
+  }, [zones])
 
   const validateForm = () => {
     const newErrors: FormErrors = {}
@@ -102,24 +82,14 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
     setIsSubmitting(true)
 
     try {
-      const response = await fetch('/api/tables', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          number: formData.number.trim(),
-          zone_id: formData.zone_id,
-        }),
+      await createTable({
+        number: formData.number.trim(),
+        zoneId: formData.zone_id,
       })
-
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.error ?? 'No se pudo crear la mesa')
-      }
 
       toast({
         title: 'Mesa registrada',
-        description: `La mesa ${formData.number.trim()} se creA3 correctamente.`,
+        description: `La mesa ${formData.number.trim()} se creó correctamente.`,
       })
 
       setFormData({ number: '', zone_id: '' })
@@ -130,7 +100,7 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
       logger.error('Error al crear mesa', error as Error)
       toast({
         title: 'No se pudo crear la mesa',
-        description: error instanceof Error ? error.message : 'IntentA nuevamente mAs tarde.',
+        description: error instanceof Error ? error.message : 'Intenta nuevamente más tarde.',
         variant: 'destructive',
       })
     } finally {
@@ -207,12 +177,16 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
                     <div className="p-2 text-center text-sm text-muted-foreground">
                       Cargando zonas...
                     </div>
-                  ) : zones.length === 0 ? (
+                  ) : zonesError ? (
+                    <div className="p-2 text-center text-sm text-destructive">
+                      Error al cargar zonas
+                    </div>
+                  ) : activeZones.length === 0 ? (
                     <div className="p-2 text-center text-sm text-muted-foreground">
-                      No hay zonas creadas. CreA una antes de agregar mesas.
+                      No hay zonas creadas. Crea una antes de agregar mesas.
                     </div>
                   ) : (
-                    zones.map((zone) => (
+                    activeZones.map((zone) => (
                       <SelectItem key={zone.id} value={zone.id}>
                         {zone.name}
                       </SelectItem>
@@ -235,7 +209,7 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
             >
               Cancelar
             </Button>
-            <Button type="submit" disabled={isSubmitting || zones.length === 0}>
+            <Button type="submit" disabled={isSubmitting || activeZones.length === 0}>
               {isSubmitting ? 'Guardando...' : 'Guardar mesa'}
             </Button>
           </DialogFooter>

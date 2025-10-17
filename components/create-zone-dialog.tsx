@@ -13,7 +13,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { useToast } from "@/hooks/use-toast"
-import { createZone } from '@/lib/zones-service'
+import { useZones } from '@/hooks/use-zones'
 
 interface CreateZoneDialogProps {
   open: boolean
@@ -23,6 +23,7 @@ interface CreateZoneDialogProps {
 
 export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZoneDialogProps) {
   const { toast } = useToast()
+  const { createZone } = useZones()
   const [name, setName] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 

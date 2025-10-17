@@ -3,9 +3,10 @@
  * 
  * Sistema de logging estructurado para toda la aplicación.
  * Proporciona niveles de log, contexto y formateo consistente.
+ * Integración opcional con Logtail para producción.
  * 
  * @module logger
- * @version 1.0.0
+ * @version 2.0.0
  */
 
 export type LogLevel = 'debug' | 'info' | 'warn' | 'error';
@@ -51,6 +52,18 @@ const DEFAULT_CONFIG: LoggerConfig = {
   timestamps: true,
   pretty: process.env.NODE_ENV !== 'production',
 };
+
+// ✅ Logtail integration (optional - only if installed)
+let logtailClient: any = null;
+try {
+  if (process.env.LOGTAIL_SOURCE_TOKEN && typeof window === 'undefined') {
+    // Only load on server-side if token is present
+    const { Logtail } = require('@logtail/node');
+    logtailClient = new Logtail(process.env.LOGTAIL_SOURCE_TOKEN);
+  }
+} catch (e) {
+  // Logtail not installed - that's okay, will use console only
+}
 
 /**
  * Logger class
@@ -139,22 +152,55 @@ class Logger {
       return;
     }
 
-    const output = this.format(entry);
+    // ✅ Console output (always in development, selective in production)
+    if (process.env.NODE_ENV !== 'production' || entry.level === 'error') {
+      const output = this.format(entry);
+      switch (entry.level) {
+        case 'debug':
+          console.debug(output);
+          break;
+        case 'info':
+          console.info(output);
+          break;
+        case 'warn':
+          console.warn(output);
+          break;
+        case 'error':
+          console.error(output);
+          break;
+      }
+    }
 
-    // Use appropriate console method
-    switch (entry.level) {
-      case 'debug':
-        console.debug(output);
-        break;
-      case 'info':
-        console.info(output);
-        break;
-      case 'warn':
-        console.warn(output);
-        break;
-      case 'error':
-        console.error(output);
-        break;
+    // ✅ Logtail output (only in production if configured)
+    if (logtailClient && process.env.NODE_ENV === 'production') {
+      const logData: Record<string, unknown> = {
+        message: entry.message,
+        level: entry.level,
+        timestamp: entry.timestamp,
+      };
+
+      if (this.config.moduleName) {
+        logData.module = this.config.moduleName;
+      }
+
+      if (entry.context) {
+        Object.assign(logData, entry.context);
+      }
+
+      if (entry.error) {
+        logData.error = {
+          name: entry.error.name,
+          message: entry.error.message,
+          stack: entry.error.stack,
+        };
+      }
+
+      try {
+        logtailClient[entry.level](logData);
+      } catch (e) {
+        // Fallback to console if Logtail fails
+        console.error('[Logger] Failed to send to Logtail:', e);
+      }
     }
   }
 
@@ -218,6 +264,27 @@ export const logger = new Logger();
  */
 export function createLogger(moduleName: string): Logger {
   return logger.module(moduleName);
+}
+
+/**
+ * Flush logs to remote service (Logtail)
+ * Call this before app shutdown to ensure all logs are sent
+ */
+export async function flushLogs(): Promise<void> {
+  if (logtailClient && typeof logtailClient.flush === 'function') {
+    try {
+      await logtailClient.flush();
+    } catch (e) {
+      console.error('[Logger] Failed to flush logs:', e);
+    }
+  }
+}
+
+// ✅ Auto-flush on process exit (server-side only)
+if (typeof process !== 'undefined' && logtailClient) {
+  process.on('beforeExit', async () => {
+    await flushLogs();
+  });
 }
 
 /**

@@ -1,0 +1,215 @@
+/**
+ * useZones Hook - Supabase Integration with React Query
+ * 
+ * Hook para gestionar zonas desde componentes React con caché y optimistic updates
+ */
+
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useAuth } from '@/contexts/auth-context'
+import {
+  getZones as getZonesService,
+  getZoneById as getZoneByIdService,
+  createZone as createZoneService,
+  updateZone as updateZoneService,
+  deleteZone as deleteZoneService,
+  hardDeleteZone as hardDeleteZoneService,
+  getZonesWithStats as getZonesWithStatsService,
+} from '@/lib/services/zones-service'
+
+export function useZones(includeInactive = false) {
+  const { tenant } = useAuth()
+  const queryClient = useQueryClient()
+
+  const queryKey = ['zones', tenant?.id, includeInactive]
+
+  const {
+    data: zones = [],
+    isLoading: loading,
+    error,
+  } = useQuery({
+    queryKey,
+    queryFn: async () => {
+      if (!tenant?.id) return []
+      const { data, error: fetchError } = await getZonesService(tenant.id, includeInactive)
+      if (fetchError) throw fetchError
+      return data || []
+    },
+    enabled: !!tenant?.id,
+  })
+
+  const createZoneMutation = useMutation({
+    mutationFn: async (input: {
+      name: string
+      description?: string
+      sortOrder?: number
+    }) => {
+      if (!tenant?.id) throw new Error('No tenant ID available')
+      const { data, error: createError } = await createZoneService(input, tenant.id)
+      if (createError) throw createError
+      return data
+    },
+    onMutate: async (newZone) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousZones = queryClient.getQueryData(queryKey)
+      
+      queryClient.setQueryData(queryKey, (old: any[] = []) => [
+        ...old,
+        { ...newZone, id: 'temp-' + Date.now(), createdAt: new Date().toISOString(), active: true },
+      ])
+      
+      return { previousZones }
+    },
+    onError: (err, newZone, context) => {
+      queryClient.setQueryData(queryKey, context?.previousZones)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+
+  const updateZoneMutation = useMutation({
+    mutationFn: async ({
+      zoneId,
+      updates,
+    }: {
+      zoneId: string
+      updates: {
+        name?: string
+        description?: string
+        sortOrder?: number
+        active?: boolean
+      }
+    }) => {
+      if (!tenant?.id) throw new Error('No tenant ID available')
+      const { data, error: updateError } = await updateZoneService(zoneId, updates, tenant.id)
+      if (updateError) throw updateError
+      return data
+    },
+    onMutate: async ({ zoneId, updates }) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousZones = queryClient.getQueryData(queryKey)
+      
+      queryClient.setQueryData(queryKey, (old: any[] = []) =>
+        old.map((zone) => (zone.id === zoneId ? { ...zone, ...updates } : zone))
+      )
+      
+      return { previousZones }
+    },
+    onError: (err, variables, context) => {
+      queryClient.setQueryData(queryKey, context?.previousZones)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+
+  const deleteZoneMutation = useMutation({
+    mutationFn: async (zoneId: string) => {
+      if (!tenant?.id) throw new Error('No tenant ID available')
+      const { data, error: deleteError } = await deleteZoneService(zoneId, tenant.id)
+      if (deleteError) throw deleteError
+      return data
+    },
+    onMutate: async (zoneId) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousZones = queryClient.getQueryData(queryKey)
+      
+      queryClient.setQueryData(queryKey, (old: any[] = []) =>
+        old.map((zone) => (zone.id === zoneId ? { ...zone, active: false } : zone))
+      )
+      
+      return { previousZones }
+    },
+    onError: (err, zoneId, context) => {
+      queryClient.setQueryData(queryKey, context?.previousZones)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+
+  const hardDeleteMutation = useMutation({
+    mutationFn: async (zoneId: string) => {
+      if (!tenant?.id) throw new Error('No tenant ID available')
+      const { error: deleteError } = await hardDeleteZoneService(zoneId, tenant.id)
+      if (deleteError) throw deleteError
+    },
+    onMutate: async (zoneId) => {
+      await queryClient.cancelQueries({ queryKey })
+      const previousZones = queryClient.getQueryData(queryKey)
+      
+      queryClient.setQueryData(queryKey, (old: any[] = []) =>
+        old.filter((zone) => zone.id !== zoneId)
+      )
+      
+      return { previousZones }
+    },
+    onError: (err, zoneId, context) => {
+      queryClient.setQueryData(queryKey, context?.previousZones)
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey })
+    },
+  })
+
+  return {
+    zones,
+    loading,
+    error: error as Error | null,
+    createZone: (input: Parameters<typeof createZoneMutation.mutateAsync>[0]) =>
+      createZoneMutation.mutateAsync(input),
+    updateZone: (zoneId: string, updates: any) =>
+      updateZoneMutation.mutateAsync({ zoneId, updates }),
+    deleteZone: (zoneId: string) => deleteZoneMutation.mutateAsync(zoneId),
+    hardDelete: (zoneId: string) => hardDeleteMutation.mutateAsync(zoneId),
+    refresh: () => queryClient.invalidateQueries({ queryKey }),
+  }
+}
+
+export function useZone(zoneId?: string) {
+  const { tenant } = useAuth()
+
+  const { data: zone = null, isLoading: loading, error } = useQuery({
+    queryKey: ['zone', tenant?.id, zoneId],
+    queryFn: async () => {
+      if (!tenant?.id || !zoneId) return null
+      const { data, error: fetchError } = await getZoneByIdService(zoneId, tenant.id)
+      if (fetchError) throw fetchError
+      return data
+    },
+    enabled: !!(tenant?.id && zoneId),
+  })
+
+  return {
+    zone,
+    loading,
+    error: error as Error | null,
+    refresh: () => {
+      // Query will automatically refetch
+    },
+  }
+}
+
+export function useZonesWithStats() {
+  const { tenant } = useAuth()
+
+  const { data: zones = [], isLoading: loading, error } = useQuery({
+    queryKey: ['zones', 'with-stats', tenant?.id],
+    queryFn: async () => {
+      if (!tenant?.id) return []
+      const { data, error: fetchError } = await getZonesWithStatsService(tenant.id)
+      if (fetchError) throw fetchError
+      return data || []
+    },
+    enabled: !!tenant?.id,
+  })
+
+  return {
+    zones,
+    loading,
+    error: error as Error | null,
+    refresh: () => {
+      // Query will automatically refetch
+    },
+  }
+}

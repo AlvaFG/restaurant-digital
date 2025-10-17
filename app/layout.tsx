@@ -3,7 +3,9 @@ import type { Metadata } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
+import { QueryProvider } from "@/contexts/query-provider"
 import { ThemeProvider } from "@/components/theme-provider"
+import { ErrorBoundary } from "@/components/error-boundary"
 import { Suspense } from "react"
 import "./globals.css"
 
@@ -51,11 +53,15 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning>
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable}`}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <Suspense fallback={null}>
-            <AuthProvider>{children}</AuthProvider>
-          </Suspense>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <QueryProvider>
+            <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+              <Suspense fallback={null}>
+                <AuthProvider>{children}</AuthProvider>
+              </Suspense>
+            </ThemeProvider>
+          </QueryProvider>
+        </ErrorBoundary>
         <Analytics />
       </body>
     </html>

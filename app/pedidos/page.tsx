@@ -1,12 +1,22 @@
 "use client"
 
+import dynamic from "next/dynamic"
 import { RefreshCw } from "lucide-react"
 import { OrdersPanelProvider, useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { OrderForm } from "@/components/order-form"
-import { OrdersPanel } from "@/components/orders-panel"
+import { LoadingSpinner } from "@/components/loading-spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Button } from "@/components/ui/button"
+
+const OrderForm = dynamic(
+  () => import("@/components/order-form").then(mod => ({ default: mod.OrderForm })),
+  { loading: () => <div className="flex h-[400px] items-center justify-center"><LoadingSpinner /></div> }
+)
+
+const OrdersPanel = dynamic(
+  () => import("@/components/orders-panel").then(mod => ({ default: mod.OrdersPanel })),
+  { loading: () => <div className="flex h-[400px] items-center justify-center"><LoadingSpinner /></div> }
+)
 
 function PedidosContent() {
   const { refetch, isRefreshing, isLoading } = useOrdersPanelContext()

@@ -1,6 +1,5 @@
 ﻿import { NextResponse } from "next/server"
-import { getCurrentUser } from "@/lib/supabase/server"
-import { getZoneById, updateZone, deleteZone } from "@/lib/server/zones-store"
+import { getCurrentUser, createServerClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
 
@@ -32,9 +31,17 @@ export async function GET(
     }
 
     const zoneId = context.params.id
-    const zone = await getZoneById(zoneId, tenantId)
+    
+    const supabase = createServerClient()
+    
+    const { data: zone, error } = await supabase
+      .from('zones')
+      .select('*')
+      .eq('id', zoneId)
+      .eq('tenant_id', tenantId)
+      .single()
 
-    if (!zone) {
+    if (error || !zone) {
       return NextResponse.json({ error: 'Zona no encontrada' }, { status: 404 })
     }
 
@@ -86,7 +93,19 @@ export async function PATCH(
       return NextResponse.json({ error: 'No se enviaron cambios validos' }, { status: 400 })
     }
 
-    const zone = await updateZone(zoneId, tenantId, updates)
+    const supabase = createServerClient()
+    
+    const { data: zone, error } = await supabase
+      .from('zones')
+      .update(updates)
+      .eq('id', zoneId)
+      .eq('tenant_id', tenantId)
+      .select()
+      .single()
+
+    if (error) {
+      throw error
+    }
 
     logger.info('Zona actualizada', { zoneId, tenantId, fields: Object.keys(updates) })
 
@@ -114,7 +133,19 @@ export async function DELETE(
     }
 
     const zoneId = context.params.id
-    await deleteZone(zoneId, tenantId)
+    
+    const supabase = createServerClient()
+    
+    // Soft delete: marcar como inactiva
+    const { error } = await supabase
+      .from('zones')
+      .update({ active: false })
+      .eq('id', zoneId)
+      .eq('tenant_id', tenantId)
+
+    if (error) {
+      throw error
+    }
 
     logger.info('Zona eliminada', { zoneId, tenantId })
 

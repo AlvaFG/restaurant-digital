@@ -4,12 +4,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { Stage, Layer, Rect, Circle, Text, Group } from "react-konva"
 import type Konva from "konva"
 import type { Table, TableMapLayout } from "@/lib/mock-data"
-import { MOCK_TABLE_LAYOUT, MOCK_TABLES } from "@/lib/mock-data"
 import { deserializeTable, deserializeTableLayout, getReadyTables } from "@/lib/socket-client-utils"
 import { TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
-import { fetchLayout, persistLayout } from "@/lib/table-service"
+import { useTables } from "@/hooks/use-tables"
+import { useTableLayout } from "@/hooks/use-table-layout"
 import { useAuth } from "@/contexts/auth-context"
 import { useSocket } from "@/hooks/use-socket"
+import { useToast } from "@/hooks/use-toast"
 import type { SocketEventPayload } from "@/lib/socket"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -58,7 +59,12 @@ function generateNodeId() {
 export function TableMap({ onTableClick, editable = false }: TableMapProps) {
   const { user } = useAuth()
   const { on, off, lastReadyPayload } = useSocket()
+  const { toast } = useToast()
   const stageRef = useRef<Konva.Stage>(null)
+  
+  // Hooks para datos
+  const { tables: supabaseTables, loading: tablesLoading } = useTables()
+  const { layout: savedLayout, saveLayout: saveLayoutService, isLoading: layoutLoading } = useTableLayout({ createDefaultIfMissing: false })
 
   const [tables, setTables] = useState<Table[]>([])
   const [layout, setLayout] = useState<TableMapLayout | null>(null)
@@ -93,48 +99,61 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
     [tables, usedTableIds],
   )
 
+  // Cargar datos desde hooks cuando estén disponibles
   useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
+    if (tablesLoading || layoutLoading) {
       setIsLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const response = await fetchLayout()
-        if (cancelled) return
-
-        const nextLayout = cloneLayout(response.layout)
-        const nextTables = cloneTables(response.tables)
-
-        setLayout(nextLayout)
-        setTables(nextTables)
-        setBaseline({ layout: nextLayout, tables: nextTables })
-        setHasUnsavedChanges(false)
-        setSelectedNodeId(null)
-      } catch (error) {
-        console.error("[TableMap] Failed to fetch layout", error)
-        if (!cancelled) {
-          setErrorMessage("No se pudo cargar el layout remoto. Se usan valores por defecto.")
-          const fallbackLayout = cloneLayout(MOCK_TABLE_LAYOUT)
-          const fallbackTables = cloneTables(MOCK_TABLES)
-          setLayout(fallbackLayout)
-          setTables(fallbackTables)
-          setBaseline({ layout: fallbackLayout, tables: fallbackTables })
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
+      return
+    }
+    
+    // Convertir tablas de Supabase a formato legacy (compatible)
+    const tablesData: Table[] = supabaseTables.map(t => ({
+      id: t.id,
+      number: t.number,
+      zone_id: t.zone_id || undefined,
+      zone: t.zone_id || undefined,
+      status: t.status as Table["status"],
+      seats: t.capacity,
+      covers: {
+        current: 0,
+        total: 0,
+        sessions: 0,
+        lastUpdatedAt: null,
+        lastSessionAt: null
+      },
+      qrcodeUrl: t.qrcode_url || undefined,
+      qrToken: t.qr_token || undefined,
+      qrTokenExpiry: t.qr_expires_at ? new Date(t.qr_expires_at) : undefined
+    }))
+    
+    setTables(tablesData)
+    
+    if (savedLayout) {
+      setLayout(savedLayout)
+      setBaseline({ layout: cloneLayout(savedLayout), tables: cloneTables(tablesData) })
+      setHasUnsavedChanges(false)
+    } else if (tablesData.length > 0) {
+      // Crear layout por defecto simple si no hay guardado
+      const defaultLayout: TableMapLayout = {
+        zones: [],
+        nodes: tablesData.map((table, index) => ({
+          id: `node-${table.id}`,
+          tableId: table.id,
+          x: 50 + (index % 6) * 100,
+          y: 50 + Math.floor(index / 6) * 80,
+          width: 80,
+          height: 60,
+          shape: "rectangle" as const,
+          zone: table.zone as string || "Sin Zona"
+        }))
       }
+      setLayout(defaultLayout)
+      setBaseline({ layout: cloneLayout(defaultLayout), tables: cloneTables(tablesData) })
     }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    
+    setIsLoading(false)
+    setErrorMessage(null)
+  }, [supabaseTables, savedLayout, tablesLoading, layoutLoading])
 
   useEffect(() => {
     const snapshot = getReadyTables(lastReadyPayload)
@@ -321,21 +340,36 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
     setErrorMessage(null)
 
     try {
-      await persistLayout(layout, tables)
-      const newBaseline: LayoutSnapshot = {
-        layout: cloneLayout(layout),
-        tables: cloneTables(tables),
+      // Guardar usando el servicio de layouts
+      const success = await saveLayoutService(layout)
+      
+      if (success) {
+        const newBaseline: LayoutSnapshot = {
+          layout: cloneLayout(layout),
+          tables: cloneTables(tables),
+        }
+        setBaseline(newBaseline)
+        setHasUnsavedChanges(false)
+        setIsEditing(false)
+        toast({
+          title: "Layout guardado",
+          description: "El layout se guardó correctamente en Supabase",
+        })
+      } else {
+        throw new Error("Save failed")
       }
-      setBaseline(newBaseline)
-      setHasUnsavedChanges(false)
-      setIsEditing(false)
     } catch (error) {
       console.error("[TableMap] Failed to persist layout", error)
       setErrorMessage("No se pudo guardar el layout. Intenta nuevamente.")
+      toast({
+        title: "Error al guardar",
+        description: "No se pudo guardar el layout. Intenta nuevamente.",
+        variant: "destructive",
+      })
     } finally {
       setIsSaving(false)
     }
-  }, [layout, tables])
+  }, [layout, tables, saveLayoutService, toast])
 
   if (isLoading || !layout) {
     return (
@@ -560,7 +594,7 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
                     onChange={(event) => {
                       const parsed = Number(event.target.value)
                       if (Number.isNaN(parsed)) return
-                      updateTable(selectedTable.id, { number: Math.max(1, parsed) })
+                      updateTable(selectedTable.id, { number: String(Math.max(1, parsed)) })
                     }}
                   />
                 </div>

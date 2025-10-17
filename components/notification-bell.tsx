@@ -14,95 +14,77 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { deserializeAlert, getReadyAlerts, getReadyTables } from "@/lib/socket-client-utils"
 import { useSocket } from "@/hooks/use-socket"
-import { AlertService, MOCK_ALERTS, MOCK_TABLES, type Alert } from "@/lib/mock-data"
+import { useAlerts } from "@/hooks/use-alerts"
+import { useTables } from "@/hooks/use-tables"
 import type { SocketEventPayload } from "@/lib/socket"
 import { Bell } from "lucide-react"
 import Link from "next/link"
 
 type TableMeta = { number?: number }
 
-function cloneAlerts(source: Alert[]): Alert[] {
-  return source.map((alert) => ({ ...alert, createdAt: new Date(alert.createdAt) }))
-}
-
 export function NotificationBell() {
-  const { on, off, emit, state, lastReadyPayload, isConnected, isReconnecting } = useSocket()
-  const [alerts, setAlerts] = useState<Alert[]>(() => {
-    const snapshot = getReadyAlerts(lastReadyPayload)
-    return snapshot ?? cloneAlerts(MOCK_ALERTS)
-  })
+  const { on, off, emit, isConnected, isReconnecting } = useSocket()
+  
+  // Use useAlerts hook with activeOnly option
+  const { 
+    activeAlerts,
+    acknowledgeAlert: acknowledgeAlertMutation,
+    refresh
+  } = useAlerts({ activeOnly: true })
+  
+  // Use useTables hook for table lookups
+  const { tables } = useTables()
 
-  const readyAlerts = useMemo(() => getReadyAlerts(lastReadyPayload), [lastReadyPayload])
-  const readyTables = useMemo(() => getReadyTables(lastReadyPayload), [lastReadyPayload])
+  const readyTables = useMemo(() => getReadyTables(undefined), [])
 
   const tablesIndex = useMemo(() => {
     const lookup = new Map<string, TableMeta>()
+    
+    // Priority 1: Use socket data if available
     readyTables?.tables.forEach((table) => {
-      lookup.set(table.id, { number: table.number })
+      lookup.set(table.id, { number: Number(table.number) })
     })
+    
+    // Priority 2: Use useTables data
     if (lookup.size === 0) {
-      for (const table of MOCK_TABLES) {
-        lookup.set(table.id, { number: table.number })
-      }
+      tables.forEach((table) => {
+        lookup.set(table.id, { number: Number(table.number) })
+      })
     }
+    
     return lookup
-  }, [readyTables])
+  }, [readyTables, tables])
 
+  // Socket integration for real-time updates
   useEffect(() => {
-    if (!state.isReady || !readyAlerts) {
-      return
-    }
-    setAlerts(readyAlerts)
-  }, [readyAlerts, state.isReady])
-
-  useEffect(() => {
-    const handleReady = (payload: SocketEventPayload<"socket.ready">) => {
-      const snapshot = getReadyAlerts(payload)
-      if (snapshot) {
-        setAlerts(snapshot)
-      }
-    }
-
     const handleCreated = (payload: SocketEventPayload<"alert.created">) => {
-      const alert = deserializeAlert(payload.alert)
-      setAlerts((previous) => [alert, ...previous])
-    }
-
-    const handleUpdated = (payload: SocketEventPayload<"alert.updated">) => {
-      setAlerts((previous) =>
-        previous.map((alert) =>
-          alert.id === payload.alertId ? { ...alert, acknowledged: payload.acknowledged } : alert,
-        ),
-      )
+      refresh()
     }
 
     const handleAcknowledged = (payload: SocketEventPayload<"alert.acknowledged">) => {
-      setAlerts((previous) => previous.filter((alert) => alert.id !== payload.alertId))
+      refresh()
     }
 
-    on("socket.ready", handleReady)
     on("alert.created", handleCreated)
-    on("alert.updated", handleUpdated)
     on("alert.acknowledged", handleAcknowledged)
 
     return () => {
-      off("socket.ready", handleReady)
       off("alert.created", handleCreated)
-      off("alert.updated", handleUpdated)
       off("alert.acknowledged", handleAcknowledged)
     }
-  }, [off, on])
+  }, [off, on, refresh])
 
   const handleAcknowledge = async (alertId: string) => {
     try {
-      await AlertService.acknowledgeAlert(alertId)
+      await acknowledgeAlertMutation(alertId)
       emit("alert.acknowledged", { alertId, acknowledged: true })
     } catch (error) {
       console.error("[notification-bell] Error acknowledging alert", error)
     }
   }
 
-  const getTimeAgo = (date: Date) => {
+  const getTimeAgo = (dateString: string) => {
+    const date = new Date(dateString)
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
     if (minutes < 1) return "Ahora"
     if (minutes < 60) return minutes.toString() + "m"
@@ -112,7 +94,6 @@ export function NotificationBell() {
     return days.toString() + "d"
   }
 
-  const activeAlerts = alerts.filter((alert) => !alert.acknowledged)
   const recentAlerts = activeAlerts.slice(0, 5)
 
   return (
@@ -150,14 +131,14 @@ export function NotificationBell() {
           <div className="p-4 text-center text-muted-foreground">No hay alertas activas</div>
         ) : (
           <>
-            {recentAlerts.map((alert) => {
-              const tableMeta = tablesIndex.get(alert.tableId)
-              const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + alert.tableId
+            {recentAlerts.map((alert: any) => {
+              const tableMeta = tablesIndex.get(alert.table_id || alert.tableId)
+              const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + (alert.table_id || alert.tableId)
               return (
                 <DropdownMenuItem key={alert.id} className="flex flex-col items-start gap-1 p-3">
                   <div className="flex w-full items-center justify-between text-sm font-medium">
                     <span>{label}</span>
-                    <span className="text-xs text-muted-foreground">{getTimeAgo(alert.createdAt)}</span>
+                    <span className="text-xs text-muted-foreground">{getTimeAgo(alert.created_at || alert.createdAt)}</span>
                   </div>
                   <span className="text-sm text-muted-foreground">{alert.message}</span>
                   <button

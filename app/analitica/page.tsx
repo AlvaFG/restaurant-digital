@@ -1,5 +1,19 @@
+"use client"
+
+import dynamic from "next/dynamic"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { AnalyticsDashboard } from "@/components/analytics-dashboard"
+import { LoadingSpinner } from "@/components/loading-spinner"
+
+const AnalyticsDashboard = dynamic(
+  () => import("@/components/analytics-dashboard").then(mod => ({ default: mod.AnalyticsDashboard })),
+  { 
+    loading: () => (
+      <div className="flex h-[400px] items-center justify-center rounded-lg border">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+)
 
 export default function AnaliticaPage() {
   return (

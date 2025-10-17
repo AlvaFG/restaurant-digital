@@ -63,7 +63,6 @@ export default function MenuPage() {
       title: "Editar item",
       description: `Funcionalidad en desarrollo: ${item.name}`,
     })
-    console.log('Editar item:', item)
   }
 
   const handleDeleteItem = (item: MenuItem) => {
@@ -72,7 +71,6 @@ export default function MenuPage() {
       description: `Funcionalidad en desarrollo: ${item.name}`,
       variant: "destructive",
     })
-    console.log('Eliminar item:', item)
   }
 
   const handleAddItem = () => {
@@ -80,7 +78,6 @@ export default function MenuPage() {
       title: "Agregar item",
       description: "Funcionalidad en desarrollo",
     })
-    console.log('Agregar nuevo item')
   }
 
   const handleAddCategory = () => {
@@ -88,7 +85,6 @@ export default function MenuPage() {
       title: "Nueva categoría",
       description: "Funcionalidad en desarrollo",
     })
-    console.log('Agregar nueva categoría')
   }
 
   const filteredItems = selectedCategory

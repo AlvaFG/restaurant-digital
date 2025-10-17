@@ -1,3 +1,11 @@
+/**
+ * @deprecated Este archivo está deprecado y será eliminado.
+ * Usar en su lugar: lib/services/tables-service.ts
+ * 
+ * Este store usa archivos JSON locales y mock-data en vez de Supabase.
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ */
+
 import { promises as fs } from "node:fs"
 import { access } from "node:fs/promises"
 import { constants as fsConstants } from "node:fs"
@@ -6,6 +14,7 @@ import { createLogger } from "@/lib/logger"
 import { createServerClient } from "@/lib/supabase/server"
 import type { Database } from "@/lib/supabase/database.types"
 import { randomBytes } from "crypto"
+import { transformSupabaseTable } from "@/lib/type-guards"
 
 import {
   MOCK_TABLES,
@@ -389,25 +398,8 @@ export async function listTables(): Promise<Table[]> {
     
     logger.info('Mesas obtenidas desde Supabase', { count: tables.length })
     
-    // Convertir datos de Supabase al formato Table
-    return tables.map((t: SupabaseTableRow) => ({
-      id: t.id,
-      number: String(t.number), // Asegurar que sea string
-      zone_id: t.zone_id ?? undefined,
-      zone: t.zone ?? undefined,
-      status: t.status ?? 'libre',
-      seats: t.capacity ?? 4,
-      covers: {
-        current: 0,
-        total: 0,
-        sessions: 0,
-        lastUpdatedAt: null,
-        lastSessionAt: null,
-      },
-      qrcodeUrl: t.qrcode_url ?? '',
-      qrToken: t.qr_token ?? '',
-      qrTokenExpiry: t.qr_expires_at ? new Date(t.qr_expires_at) : undefined,
-    }))
+    // Convertir datos de Supabase al formato Table usando type guards
+    return tables.map((t: SupabaseTableRow) => transformSupabaseTable(t))
   } catch (error) {
     logger.error('Error inesperado al listar mesas', error as Error)
     logger.info('Usando fallback a store JSON')
@@ -757,24 +749,8 @@ export async function createTable(data: {
     tenantId: data.tenantId,
   })
 
-  // Transformar al formato Table
-  const table: Table = {
-    id: tableData.id,
-    number: tableData.number,
-    zone: tableData.zone || undefined,
-    seats: tableData.capacity,
-    status: tableData.status as TableState,
-    qrcodeUrl: getQrUrl(tableData.id),
-    qrToken: tableData.qr_token || undefined,
-    qrTokenExpiry: tableData.qr_expires_at ? new Date(tableData.qr_expires_at) : undefined,
-    covers: {
-      current: 0,
-      total: 0,
-      sessions: 0,
-      lastUpdatedAt: null,
-      lastSessionAt: null,
-    },
-  }
+  // Transformar al formato Table usando type guard
+  const table: Table = transformSupabaseTable(tableData as any)
 
   // Emitir evento de actualización
   void emitTableLayoutEvent()

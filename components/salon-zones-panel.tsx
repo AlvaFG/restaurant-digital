@@ -1,18 +1,16 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useMemo } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { LoadingSpinner } from "@/components/loading-spinner"
-import { fetchLayout } from "@/lib/table-service"
-import {
-  MOCK_TABLE_LAYOUT,
-  MOCK_TABLES,
-  type Table,
-  type TableMapLayout,
-} from "@/lib/mock-data"
+import { useTables } from "@/hooks/use-tables"
+import { useTableLayout } from "@/hooks/use-table-layout"
+import type { Database } from "@/lib/supabase/database.types"
+
+type Table = Database['public']['Tables']['tables']['Row']
 
 interface ZoneSummary {
   id: string
@@ -24,44 +22,8 @@ interface ZoneSummary {
 }
 
 export function SalonZonesPanel() {
-  const [layout, setLayout] = useState<TableMapLayout | null>(null)
-  const [tables, setTables] = useState<Table[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [errorMessage, setErrorMessage] = useState<string | null>(null)
-
-  useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
-      setIsLoading(true)
-      setErrorMessage(null)
-
-      try {
-        const response = await fetchLayout()
-        if (cancelled) return
-
-        setLayout(structuredClone(response.layout))
-        setTables(structuredClone(response.tables))
-      } catch (error) {
-        console.error("[SalonZonesPanel] Failed to fetch layout", error)
-        if (!cancelled) {
-          setLayout(structuredClone(MOCK_TABLE_LAYOUT))
-          setTables(structuredClone(MOCK_TABLES))
-          setErrorMessage("No se pudo sincronizar el layout. Se muestran datos locales.")
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
-    }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+  const { tables, loading: tablesLoading } = useTables()
+  const { layout, isLoading: layoutLoading } = useTableLayout()
 
   const zoneSummaries = useMemo<ZoneSummary[]>(() => {
     if (!layout) return []
@@ -70,9 +32,9 @@ export function SalonZonesPanel() {
       const nodes = layout.nodes.filter((node) => node.zone === zone.id)
       const zoneTables = nodes
         .map((node) => tables.find((table) => table.id === node.tableId))
-        .filter((table): table is Table => Boolean(table))
+        .filter((table) => Boolean(table)) as Table[]
 
-      const seatCount = zoneTables.reduce((total, table) => total + (table.seats ?? 0), 0)
+      const seatCount = zoneTables.reduce((total, table) => total + (table?.capacity ?? 0), 0)
 
       return {
         id: zone.id,
@@ -85,7 +47,7 @@ export function SalonZonesPanel() {
     })
   }, [layout, tables])
 
-  if (isLoading) {
+  if (layoutLoading || tablesLoading) {
     return (
       <div className="flex h-64 items-center justify-center rounded-lg border">
         <LoadingSpinner />
@@ -99,8 +61,6 @@ export function SalonZonesPanel() {
 
   return (
     <div className="space-y-4">
-      {errorMessage ? <p className="text-sm text-destructive">{errorMessage}</p> : null}
-
       <ScrollArea className="max-h-[32rem] pr-4">
         <div className="grid gap-4 md:grid-cols-2">
           {zoneSummaries.map((zone) => (

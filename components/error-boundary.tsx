@@ -4,6 +4,9 @@ import { Component, type ReactNode, type ErrorInfo } from "react"
 import { AlertTriangle, RefreshCw } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger('error-boundary')
 
 interface Props {
   children: ReactNode
@@ -13,6 +16,7 @@ interface Props {
 interface State {
   hasError: boolean
   error?: Error
+  errorInfo?: ErrorInfo
 }
 
 export class ErrorBoundary extends Component<Props, State> {
@@ -26,7 +30,28 @@ export class ErrorBoundary extends Component<Props, State> {
   }
 
   componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error("[v0] Error caught by boundary:", error, errorInfo)
+    // ✅ Log estructurado
+    logger.error('React error boundary caught error', error, {
+      componentStack: errorInfo.componentStack,
+      route: typeof window !== 'undefined' ? window.location.pathname : 'unknown',
+    })
+
+    // ✅ Enviar a Sentry si está disponible
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      const Sentry = (window as any).Sentry
+      Sentry.withScope((scope: any) => {
+        scope.setContext('react', {
+          componentStack: errorInfo.componentStack,
+        })
+        scope.setContext('location', {
+          pathname: window.location.pathname,
+          search: window.location.search,
+        })
+        Sentry.captureException(error)
+      })
+    }
+
+    this.setState({ errorInfo })
   }
 
   render() {
@@ -42,14 +67,31 @@ export class ErrorBoundary extends Component<Props, State> {
               <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-destructive/10">
                 <AlertTriangle className="h-6 w-6 text-destructive" />
               </div>
-              <CardTitle>Algo saliÃ³ mal</CardTitle>
-              <CardDescription>Ha ocurrido un error inesperado. Por favor, intenta recargar la pÃ¡gina.</CardDescription>
+              <CardTitle>Algo salió mal</CardTitle>
+              <CardDescription>
+                Ha ocurrido un error inesperado. Nuestro equipo ha sido notificado automáticamente.
+              </CardDescription>
             </CardHeader>
-            <CardContent className="text-center">
-              <Button onClick={() => window.location.reload()} className="w-full">
+            <CardContent className="text-center space-y-2">
+              <Button 
+                onClick={() => window.location.reload()} 
+                className="w-full"
+              >
                 <RefreshCw className="mr-2 h-4 w-4" />
-                Recargar pÃ¡gina
+                Recargar página
               </Button>
+              
+              {process.env.NODE_ENV === 'development' && this.state.error && (
+                <details className="mt-4 text-left">
+                  <summary className="cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                    Ver detalles técnicos
+                  </summary>
+                  <pre className="mt-2 text-xs bg-muted p-2 rounded overflow-auto max-h-40">
+                    {this.state.error.toString()}
+                    {this.state.errorInfo?.componentStack}
+                  </pre>
+                </details>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import Link from "next/link"
 import { useParams } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -9,46 +9,32 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { TABLE_STATE_COLORS, TABLE_STATE_LABELS } from "@/lib/table-states"
-import type { Table } from "@/lib/mock-data"
-import { fetchTable } from "@/lib/table-service"
+import { useTables } from "@/hooks/use-tables"
+import type { Database } from "@/lib/supabase/database.types"
+import { getZoneName } from "@/lib/type-guards"
 import { ArrowLeft, Users, MapPin } from "lucide-react"
+
+type Table = Database['public']['Tables']['tables']['Row']
 
 export default function TableDetailPage() {
   const params = useParams()
   const tableId = params.id as string
-  const [table, setTable] = useState<Table | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const { tables, loading, error: tablesError } = useTables()
   const [error, setError] = useState<string | null>(null)
 
+  const table = useMemo(() => {
+    return tables.find(t => t.id === tableId) || null
+  }, [tables, tableId])
+
   useEffect(() => {
-    let cancelled = false
-
-    const load = async () => {
-      setIsLoading(true)
+    if (!loading && !table && tables.length > 0) {
+      setError("No encontramos la mesa solicitada.")
+    } else if (tablesError) {
+      setError("No se pudo cargar la mesa. Intenta nuevamente.")
+    } else {
       setError(null)
-      try {
-        const result = await fetchTable(tableId)
-        if (!cancelled) {
-          setTable(result)
-        }
-      } catch (loadError) {
-        console.error("[TableDetail] Failed to fetch table", loadError)
-        if (!cancelled) {
-          setError("No se pudo cargar la mesa. Intenta nuevamente.")
-        }
-      } finally {
-        if (!cancelled) {
-          setIsLoading(false)
-        }
-      }
     }
-
-    void load()
-
-    return () => {
-      cancelled = true
-    }
-  }, [tableId])
+  }, [loading, table, tables.length, tablesError])
 
   const renderHeader = () => (
     <div className="flex items-center gap-4">
@@ -72,7 +58,7 @@ export default function TableDetailPage() {
       <div className="space-y-6">
         {renderHeader()}
 
-        {isLoading ? (
+        {loading ? (
           <div className="flex h-64 items-center justify-center">
             <LoadingSpinner />
           </div>
@@ -89,8 +75,8 @@ export default function TableDetailPage() {
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between">
                   <span className="font-medium">Estado:</span>
-                  <Badge style={{ backgroundColor: TABLE_STATE_COLORS[table.status], color: "white" }}>
-                    {TABLE_STATE_LABELS[table.status]}
+                  <Badge style={{ backgroundColor: TABLE_STATE_COLORS[table.status as keyof typeof TABLE_STATE_COLORS], color: "white" }}>
+                    {TABLE_STATE_LABELS[table.status as keyof typeof TABLE_STATE_LABELS]}
                   </Badge>
                 </div>
 
@@ -98,7 +84,7 @@ export default function TableDetailPage() {
                   <span className="font-medium">Zona:</span>
                   <div className="flex items-center gap-2">
                     <MapPin className="h-4 w-4 text-muted-foreground" />
-                    <span>{table.zone || "Sin zona"}</span>
+                    <span>{getZoneName(table as any) || "Sin zona"}</span>
                   </div>
                 </div>
 
@@ -106,7 +92,7 @@ export default function TableDetailPage() {
                   <span className="font-medium">Capacidad:</span>
                   <div className="flex items-center gap-2">
                     <Users className="h-4 w-4 text-muted-foreground" />
-                    <span>{table.seats || "No especificado"} asientos</span>
+                    <span>{table.capacity || "No especificado"} asientos</span>
                   </div>
                 </div>
               </CardContent>

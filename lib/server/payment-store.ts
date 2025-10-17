@@ -1,5 +1,10 @@
 /**
- * Payment Store - Persistencia de pagos digitales
+ * @deprecated Este archivo está deprecado y será eliminado.
+ * Usar en su lugar: lib/services/payments-service.ts
+ * 
+ * Ver docs/LEGACY_DEPRECATION.md para más información.
+ * 
+ * Payment Store - Persistencia de pagos digitales (LEGACY)
  * 
  * Maneja operaciones CRUD sobre payments
  * Integra con WebSocket para eventos en tiempo real

@@ -22,29 +22,54 @@ vi.mock('@/lib/logger', () => ({
   }),
 }));
 
-// Mock the table-store
-vi.mock('../table-store', () => ({
-  getTableById: vi.fn((tableId: string) => {
+// Mock Supabase client
+vi.mock('@/lib/supabase/client', () => ({
+  createBrowserClient: vi.fn(() => ({
+    auth: {
+      getUser: vi.fn(() => Promise.resolve({
+        data: {
+          user: {
+            id: 'test-user-id',
+            user_metadata: {
+              tenant_id: 'test-tenant-id',
+            },
+          },
+        },
+        error: null,
+      })),
+    },
+  })),
+}));
+
+// Mock the tables-service
+vi.mock('@/lib/services/tables-service', () => ({
+  getTableById: vi.fn((tableId: string, tenantId: string) => {
     // Mock table data
     const tableNumber = parseInt(tableId.split('-')[1] || '1', 10);
-    if (tableId === 'nonexistent') return null;
+    if (tableId === 'nonexistent') {
+      return Promise.resolve({ data: null, error: new Error('Table not found') });
+    }
     
     return Promise.resolve({
-      id: tableId,
-      number: tableNumber,
-      zone: 'main',
-      status: 'free',
-      seats: 4,
-      covers: {
-        current: 0,
-        total: 0,
-        sessions: 0,
-        lastUpdatedAt: null,
-        lastSessionAt: null,
+      data: {
+        id: tableId,
+        number: tableNumber.toString(),
+        capacity: 4,
+        zone_id: 'main',
+        status: 'libre',
+        tenant_id: tenantId,
+        metadata: null,
+        position: null,
+        qr_token: null,
+        qr_expires_at: null,
+        qrcode_url: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
       },
+      error: null,
     });
   }),
-  updateTableQR: vi.fn(() => Promise.resolve()),
+  updateTable: vi.fn(() => Promise.resolve({ data: {}, error: null })),
 }));
 
 import {
