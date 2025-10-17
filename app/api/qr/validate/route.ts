@@ -6,7 +6,8 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createSession, validateSessionByToken } from '@/lib/server/session-manager';
-import { getTableById } from '@/lib/server/table-store';
+import { validateToken, getTokenMetadata } from '@/lib/server/qr-service';
+import { createServerClient, getCurrentUser } from '@/lib/supabase/server';
 import { logger } from '@/lib/logger';
 import { SessionValidationErrorCode } from '@/lib/server/session-types';
 import { logRequest, logResponse, validarBody } from '@/lib/api-helpers';
@@ -80,12 +81,20 @@ export async function POST(request: NextRequest) {
 
     if (existingValidation.valid && existingValidation.session) {
       const session = existingValidation.session;
-      const table = await getTableById(session.tableId);
+      
+      // Get table from Supabase
+      const supabase = createServerClient()
+      const { data: table, error: tableError } = await supabase
+        .from('tables')
+        .select('id, number, zone_id, capacity')
+        .eq('id', session.tableId)
+        .single()
 
-      if (!table) {
+      if (tableError || !table) {
         logger.warn('Sesión encontrada pero mesa faltante', { 
           sessionId: session.id, 
-          tableId: session.tableId 
+          tableId: session.tableId,
+          error: tableError
         });
         
         const duration = Date.now() - startTime
@@ -125,9 +134,9 @@ export async function POST(request: NextRequest) {
           },
           table: {
             id: table.id,
-            number: table.number,
-            zone: table.zone,
-            seats: table.seats,
+            number: Number(table.number),
+            zone: table.zone_id || 'main',
+            seats: table.capacity || 4,
           },
         },
       });
@@ -139,22 +148,23 @@ export async function POST(request: NextRequest) {
 
       logger.info('Creando nueva sesión desde QR', { ip })
       
-      const session = await createSession({
-        token,
-        ipAddress: ip,
-        userAgent,
-        metadata: {
-          firstScanAt: new Date().toISOString(),
-        },
-      });
-
-      // Obtener información de la mesa
-      const table = await getTableById(session.tableId);
-
-      if (!table) {
-        logger.error('Sesión creada pero mesa no encontrada', undefined, {
-          sessionId: session.id,
-          tableId: session.tableId,
+      // Primero, decodificar el token para obtener el tableId
+      const tokenMetadata = getTokenMetadata(token)
+      if (!tokenMetadata || !tokenMetadata.tableId) {
+        throw new Error('Invalid token: missing tableId')
+      }
+      
+      // Buscar la mesa en Supabase para obtener el tenant_id
+      const supabase = createServerClient()
+      const { data: tableData, error: fetchTableError } = await supabase
+        .from('tables')
+        .select('id, number, zone_id, capacity, tenant_id')
+        .eq('id', tokenMetadata.tableId)
+        .single()
+      
+      if (fetchTableError || !tableData) {
+        logger.error('Mesa no encontrada para token QR', fetchTableError || new Error('Table not found'), {
+          tableId: tokenMetadata.tableId,
         });
         
         const duration = Date.now() - startTime
@@ -165,6 +175,22 @@ export async function POST(request: NextRequest) {
           { status: 404 }
         );
       }
+      
+      const tenantId = tableData.tenant_id
+      if (!tenantId) {
+        throw new Error('Table has no tenant_id')
+      }
+      
+      // Ahora crear la sesión con el tenantId
+      const session = await createSession({
+        token,
+        tenantId,
+        ipAddress: ip,
+        userAgent,
+        metadata: {
+          firstScanAt: new Date().toISOString(),
+        },
+      });
 
       const duration = Date.now() - startTime
       logResponse('POST', '/api/qr/validate', 200, duration)
@@ -195,10 +221,10 @@ export async function POST(request: NextRequest) {
             orderIds: session.orderIds,
           },
           table: {
-            id: table.id,
-            number: table.number,
-            zone: table.zone,
-            seats: table.seats,
+            id: tableData.id,
+            number: Number(tableData.number),
+            zone: tableData.zone_id || 'main',
+            seats: tableData.capacity || 4,
           },
         },
       });

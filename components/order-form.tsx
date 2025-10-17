@@ -33,7 +33,7 @@ interface OrderItem {
 }
 
 export function OrderForm() {
-  const { tables, loading: tablesLoading, error: tablesError } = useTables()
+  const { tables, loading: tablesLoading, error: tablesError, refresh: refreshTables } = useTables()
   const { items: menuItems, loading: menuItemsLoading } = useMenuItems()
   const { categories, loading: categoriesLoading } = useMenuCategories()
   const { createOrder } = useOrders()
@@ -46,8 +46,9 @@ export function OrderForm() {
   const { refetch } = useOrdersPanelContext()
   const { toast } = useToast()
 
+  // Mostrar todas las mesas, sin importar su estado
   const availableTables = useMemo(
-    () => tables.filter((table) => table.status === TABLE_STATE.FREE || table.status === TABLE_STATE.OCCUPIED),
+    () => tables,
     [tables],
   )
 
@@ -124,22 +125,35 @@ export function OrderForm() {
         source: "staff" as const,
       }
 
+      // Obtener información de la mesa antes de crear el pedido
+      const selectedTable = tables.find((table) => table.id === selectedTableId)
+      const tableNumber = selectedTable?.number
+      const previousTableStatus = selectedTable?.status
+
       logger.info('Creando pedido desde formulario', { 
         tableId: selectedTableId,
+        tableNumber,
+        previousTableStatus,
         itemsCount: orderItems.length,
         total: calculateTotal()
       })
 
       await createOrder(payload)
 
-      const tableNumber = tables.find((table) => table.id === selectedTableId)?.number
-      const description = tableNumber
+      // Mensaje mejorado según el estado anterior de la mesa
+      let description = tableNumber
         ? `Pedido creado para la mesa ${tableNumber}`
         : "Pedido creado correctamente"
+      
+      if (previousTableStatus === TABLE_STATE.FREE) {
+        description += `. Mesa cambió de estado a "${TABLE_STATE_LABELS.pedido_en_curso}"`
+      }
 
       logger.info('Pedido creado exitosamente', {
         tableId: selectedTableId,
-        tableNumber
+        tableNumber,
+        previousTableStatus,
+        newStatus: previousTableStatus === TABLE_STATE.FREE ? TABLE_STATE.ORDER_IN_PROGRESS : previousTableStatus
       })
 
       toast({
@@ -150,6 +164,9 @@ export function OrderForm() {
       setSelectedTableId("")
       setOrderItems([])
 
+      // Refrescar tanto los pedidos como las mesas para mostrar el cambio de estado
+      await refreshTables()
+      
       if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DISABLE_SOCKET === "1") {
         await refetch({ silent: false })
       }

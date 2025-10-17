@@ -11,8 +11,7 @@
 import QRCode from 'qrcode';
 import jwt from 'jsonwebtoken';
 import { createLogger } from '@/lib/logger';
-import { getTableById, updateTable } from '@/lib/services/tables-service';
-import { createBrowserClient } from '@/lib/supabase/client';
+import { createServerClient } from '@/lib/supabase/server';
 import type {
   QRTokenPayload,
   QRGenerationOptions,
@@ -25,21 +24,6 @@ import type {
 import { QRValidationErrorCode } from './qr-types';
 
 const logger = createLogger('qr-service');
-
-/**
- * Get tenant ID from Supabase session
- * Required for tables service calls
- */
-async function getTenantId(): Promise<string> {
-  const supabase = createBrowserClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user?.user_metadata?.tenant_id) {
-    throw new Error('No tenant ID found in session');
-  }
-  
-  return user.user_metadata.tenant_id;
-}
 
 // JWT Configuration
 const getJWTSecret = () => process.env.QR_JWT_SECRET || process.env.JWT_SECRET || 'default-secret-change-in-production';
@@ -70,27 +54,41 @@ const DEFAULT_QR_OPTIONS: Required<Omit<QRGenerationOptions, 'color'>> & {
  * Generate QR code for a table
  * 
  * @param tableId - Table identifier
+ * @param tenantId - Tenant identifier
  * @param options - QR generation options
  * @returns Generated QR code data
  * 
  * @example
  * ```typescript
- * const qr = await generateQR('table-1')
+ * const qr = await generateQR('table-1', 'tenant-1')
  * console.log(qr.accessUrl) // https://restaurant.com/qr/table-1?token=eyJ...
  * ```
  */
 export async function generateQR(
   tableId: string,
+  tenantId: string,
   options: QRGenerationOptions = {}
 ): Promise<GeneratedQRCode> {
   logger.info(`[generateQR] Generating QR for table ${tableId}`);
 
   try {
-    // Get table data
-    const tenantId = await getTenantId();
-    const { data: table, error: tableError } = await getTableById(tableId, tenantId);
+    // Get table data using server client
+    const supabase = createServerClient()
+    const { data: table, error: tableError } = await supabase
+      .from('tables')
+      .select(`
+        *,
+        zone:zones (
+          id,
+          name
+        )
+      `)
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId)
+      .single()
     
     if (tableError || !table) {
+      logger.error(`[generateQR] Table not found: ${tableId}`, tableError || new Error('Table not found'), { tableId, tenantId });
       throw new Error(`Table not found: ${tableId}`);
     }
 
@@ -98,8 +96,8 @@ export async function generateQR(
     const token = createToken(table.id, Number(table.number), table.zone_id || 'main');
     const decoded = jwt.decode(token) as QRTokenPayload;
 
-    // Build access URL - direct to table page with token
-    const accessUrl = `${APP_URL}/qr/${tableId}?token=${token}`;
+    // Build access URL - points to validation page which will redirect to table page after validation
+    const accessUrl = `${APP_URL}/qr/validate?token=${token}`;
 
     // Merge options with defaults
     const qrOptions = {
@@ -145,7 +143,7 @@ export async function generateQR(
       generatedAt: new Date(),
       scanCount: 0,
       lastScannedAt: null,
-    });
+    }, tenantId);
 
     logger.info(`[generateQR] QR generated successfully for table ${tableId}`);
     return result;
@@ -162,10 +160,12 @@ export async function generateQR(
  * Generate QR codes for multiple tables (batch)
  * 
  * @param request - Batch generation request
+ * @param tenantId - Tenant identifier
  * @returns Batch generation results
  */
 export async function generateBatch(
-  request: BatchQRGenerationRequest
+  request: BatchQRGenerationRequest,
+  tenantId: string
 ): Promise<BatchQRGenerationResult> {
   logger.info(`[generateBatch] Generating QRs for ${request.tableIds.length} tables`);
 
@@ -174,7 +174,7 @@ export async function generateBatch(
 
   for (const tableId of request.tableIds) {
     try {
-      const qr = await generateQR(tableId, request.options);
+      const qr = await generateQR(tableId, tenantId, request.options);
       success.push(qr);
     } catch (error) {
       failed.push({
@@ -206,17 +206,18 @@ export async function generateBatch(
  * Validate QR token and return table data
  * 
  * @param token - JWT token from QR scan
+ * @param tenantId - Tenant identifier
  * @returns Validation result with table data
  * 
  * @example
  * ```typescript
- * const result = await validateToken(token)
+ * const result = await validateToken(token, tenantId)
  * if (result.valid) {
  *   console.log('Table:', result.tableData)
  * }
  * ```
  */
-export async function validateToken(token: string): Promise<QRValidationResult> {
+export async function validateToken(token: string, tenantId: string): Promise<QRValidationResult> {
   logger.info(`[validateToken] Validating token`);
 
   try {
@@ -236,8 +237,19 @@ export async function validateToken(token: string): Promise<QRValidationResult> 
     }
 
     // Get table data
-    const tenantId = await getTenantId();
-    const { data: table, error: tableError } = await getTableById(decoded.tableId, tenantId);
+    const supabase = createServerClient()
+    const { data: table, error: tableError } = await supabase
+      .from('tables')
+      .select(`
+        *,
+        zone:zones (
+          id,
+          name
+        )
+      `)
+      .eq('id', decoded.tableId)
+      .eq('tenant_id', tenantId)
+      .single()
 
     if (tableError || !table) {
       logger.warn(`[validateToken] Table not found: ${decoded.tableId}`);
@@ -249,7 +261,7 @@ export async function validateToken(token: string): Promise<QRValidationResult> 
     }
 
     // Update scan count
-    await incrementScanCount(decoded.tableId);
+    await incrementScanCount(decoded.tableId, tenantId);
 
     logger.info(`[validateToken] Token valid for table ${decoded.tableId}`);
     return {
@@ -300,13 +312,14 @@ export async function validateToken(token: string): Promise<QRValidationResult> 
  * Refresh QR token if expired or about to expire
  * 
  * @param tableId - Table identifier
+ * @param tenantId - Tenant identifier
  * @returns New QR code data
  */
-export async function refreshToken(tableId: string): Promise<GeneratedQRCode> {
+export async function refreshToken(tableId: string, tenantId: string): Promise<GeneratedQRCode> {
   logger.info(`[refreshToken] Refreshing token for table ${tableId}`);
   
   // Generate new QR (this will create a new token)
-  return generateQR(tableId);
+  return generateQR(tableId, tenantId);
 }
 
 /**
@@ -373,24 +386,23 @@ function createToken(tableId: string, tableNumber: number, zone: string): string
  */
 async function updateTableQRMetadata(
   tableId: string,
-  metadata: QRMetadata
+  metadata: QRMetadata,
+  tenantId: string
 ): Promise<void> {
   try {
-    const tenantId = await getTenantId();
-    
-    const { error } = await updateTable(
-      tableId,
-      {
-        qrToken: metadata.token,
-        qrExpiresAt: metadata.expiresAt.toISOString(),
-        // Store additional metadata in the metadata field
+    const supabase = createServerClient()
+    const { error } = await supabase
+      .from('tables')
+      .update({
+        qr_token: metadata.token,
+        qr_expires_at: metadata.expiresAt.toISOString(),
         metadata: {
           qr_generated_at: metadata.generatedAt.toISOString(),
           scan_count: metadata.scanCount || 0,
         },
-      },
-      tenantId
-    );
+      })
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId);
 
     if (error) {
       throw error;
@@ -409,12 +421,16 @@ async function updateTableQRMetadata(
 /**
  * Increment scan count for table
  */
-async function incrementScanCount(tableId: string): Promise<void> {
+async function incrementScanCount(tableId: string, tenantId: string): Promise<void> {
   try {
-    const tenantId = await getTenantId();
-    
     // Get current table to read scan_count from metadata
-    const { data: table, error: getError } = await getTableById(tableId, tenantId);
+    const supabase = createServerClient()
+    const { data: table, error: getError } = await supabase
+      .from('tables')
+      .select('metadata')
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId)
+      .single()
     
     if (getError || !table) {
       logger.warn(`[incrementScanCount] Table not found: ${tableId}`);
@@ -425,17 +441,17 @@ async function incrementScanCount(tableId: string): Promise<void> {
     const currentMetadata = (table.metadata as Record<string, any>) || {};
     const scanCount = (currentMetadata.scan_count || 0) + 1;
 
-    const { error: updateError } = await updateTable(
-      tableId,
-      {
+    const { error: updateError } = await supabase
+      .from('tables')
+      .update({
         metadata: {
           ...currentMetadata,
           scan_count: scanCount,
           last_scanned_at: new Date().toISOString(),
         },
-      },
-      tenantId
-    );
+      })
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId);
 
     if (updateError) {
       throw updateError;
@@ -456,8 +472,8 @@ async function incrementScanCount(tableId: string): Promise<void> {
 // ============================================================================
 
 /** @deprecated Use generateQR instead */
-export async function generateQRCode(tableId: string) {
-  const result = await generateQR(tableId);
+export async function generateQRCode(tableId: string, tenantId: string) {
+  const result = await generateQR(tableId, tenantId);
   // Return in legacy format
   return {
     qrCode: result.qrCodeDataURL,
@@ -494,8 +510,8 @@ export function validateQRToken(token: string) {
 }
 
 /** @deprecated Use refreshToken instead */
-export async function refreshQRToken(tableId: string): Promise<string> {
-  const result = await refreshToken(tableId);
+export async function refreshQRToken(tableId: string, tenantId: string): Promise<string> {
+  const result = await refreshToken(tableId, tenantId);
   return result.token;
 }
 

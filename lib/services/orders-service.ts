@@ -54,11 +54,53 @@ export interface CreateOrderInput {
 
 /**
  * Crea una nueva orden en Supabase
+ * Si la orden está asociada a una mesa y la mesa está en estado 'libre',
+ * actualiza automáticamente el estado de la mesa a 'pedido_en_curso'
  */
 export async function createOrder(input: CreateOrderInput, tenantId: string) {
   const supabase = createBrowserClient()
 
   try {
+    // 0. Si hay una mesa asociada, verificar y actualizar su estado si es necesario
+    if (input.tableId) {
+      // Obtener el estado actual de la mesa
+      const { data: tableData, error: tableError } = await supabase
+        .from('tables')
+        .select('id, status, number')
+        .eq('id', input.tableId)
+        .eq('tenant_id', tenantId)
+        .single()
+
+      if (tableError) {
+        logger.warn('No se pudo obtener información de la mesa', { tableId: input.tableId, error: tableError })
+      } else if (tableData) {
+        // Si la mesa está libre, actualizarla a 'pedido_en_curso'
+        if (tableData.status === 'libre') {
+          const { error: updateError } = await supabase
+            .from('tables')
+            .update({ status: 'pedido_en_curso' })
+            .eq('id', input.tableId)
+            .eq('tenant_id', tenantId)
+
+          if (updateError) {
+            logger.error('Error al actualizar estado de mesa', updateError as Error, { 
+              tableId: input.tableId,
+              previousStatus: 'libre',
+              newStatus: 'pedido_en_curso'
+            })
+            // No lanzar error, continuar con la creación del pedido
+          } else {
+            logger.info('Estado de mesa actualizado automáticamente', { 
+              tableId: input.tableId,
+              tableNumber: tableData.number,
+              previousStatus: 'libre',
+              newStatus: 'pedido_en_curso'
+            })
+          }
+        }
+      }
+    }
+
     // 1. Obtener información de los items del menú
     const menuItemIds = input.items.map(item => item.menuItemId)
     const { data: menuItems, error: menuError } = await supabase

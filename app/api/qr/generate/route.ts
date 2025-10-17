@@ -15,6 +15,7 @@ import type { QRGenerationOptions, BatchQRGenerationRequest } from '@/lib/server
 import { logRequest, logResponse, validarBody } from '@/lib/api-helpers';
 import { MENSAJES } from '@/lib/i18n/mensajes';
 import { ValidationError } from '@/lib/errors';
+import { getCurrentUser } from '@/lib/supabase/server';
 
 const logger = createLogger('api:qr:generate');
 
@@ -32,6 +33,17 @@ export async function POST(request: NextRequest) {
   
   try {
     logRequest('POST', '/api/qr/generate')
+    
+    // Get authenticated user and tenant ID
+    const user = await getCurrentUser()
+    if (!user) {
+      throw new ValidationError('Unauthorized: No user session')
+    }
+    
+    const tenantId = user.user_metadata?.tenant_id
+    if (!tenantId) {
+      throw new ValidationError('No tenant ID found in user session')
+    }
     
     const body = await validarBody<{
       tableId: string;
@@ -62,8 +74,8 @@ export async function POST(request: NextRequest) {
     }
 
     // Generate QR
-    logger.info('Generando QR para mesa', { tableId });
-    const qrCode = await generateQR(tableId, options);
+    logger.info('Generando QR para mesa', { tableId, tenantId });
+    const qrCode = await generateQR(tableId, tenantId, options);
 
     const duration = Date.now() - startTime
     logResponse('POST', '/api/qr/generate', 200, duration)
@@ -123,6 +135,17 @@ export async function PUT(request: NextRequest) {
   try {
     logRequest('PUT', '/api/qr/generate/batch')
     
+    // Get authenticated user and tenant ID
+    const user = await getCurrentUser()
+    if (!user) {
+      throw new ValidationError('Unauthorized: No user session')
+    }
+    
+    const tenantId = user.user_metadata?.tenant_id
+    if (!tenantId) {
+      throw new ValidationError('No tenant ID found in user session')
+    }
+    
     const body = await validarBody<{
       tableIds: string[];
       options?: QRGenerationOptions;
@@ -147,12 +170,12 @@ export async function PUT(request: NextRequest) {
     }
 
     // Generate batch
-    logger.info('Generando QRs en lote', { count: tableIds.length });
+    logger.info('Generando QRs en lote', { count: tableIds.length, tenantId });
     const request_data: BatchQRGenerationRequest = {
       tableIds,
       options,
     };
-    const result = await generateBatch(request_data);
+    const result = await generateBatch(request_data, tenantId);
 
     const duration = Date.now() - startTime
     logResponse('PUT', '/api/qr/generate/batch', 200, duration)

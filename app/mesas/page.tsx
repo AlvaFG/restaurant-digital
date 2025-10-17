@@ -4,14 +4,14 @@ import { useRef, useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { TableList, type TableListRef } from "@/components/table-list"
 import { AddTableDialog } from "@/components/add-table-dialog"
-import { CreateZoneDialog } from "@/components/create-zone-dialog"
+import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
 import { Button } from "@/components/ui/button"
-import { RefreshCw, Plus, MapPinned } from "lucide-react"
+import { RefreshCw, Plus, Settings2 } from "lucide-react"
 
 export default function MesasPage() {
   const tableListRef = useRef<TableListRef>(null)
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showZoneDialog, setShowZoneDialog] = useState(false)
+  const [showZonesManager, setShowZonesManager] = useState(false)
 
   const handleRefresh = () => {
     tableListRef.current?.reload()
@@ -21,7 +21,7 @@ export default function MesasPage() {
     tableListRef.current?.reload()
   }
 
-  const handleZoneCreated = () => {
+  const handleZonesUpdated = () => {
     tableListRef.current?.reload()
   }
 
@@ -40,9 +40,9 @@ export default function MesasPage() {
               <RefreshCw className="mr-2 h-4 w-4" />
               Actualizar
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowZoneDialog(true)}>
-              <MapPinned className="mr-2 h-4 w-4" />
-              Crear zona
+            <Button variant="outline" size="sm" onClick={() => setShowZonesManager(true)}>
+              <Settings2 className="mr-2 h-4 w-4" />
+              Editar zonas
             </Button>
             <Button size="sm" onClick={() => setShowAddDialog(true)}>
               <Plus className="mr-2 h-4 w-4" />
@@ -59,13 +59,12 @@ export default function MesasPage() {
           onTableCreated={handleTableCreated}
         />
 
-        <CreateZoneDialog
-          open={showZoneDialog}
-          onOpenChange={setShowZoneDialog}
-          onZoneCreated={handleZoneCreated}
+        <ZonesManagerDialog
+          open={showZonesManager}
+          onOpenChange={setShowZonesManager}
+          onZonesUpdated={handleZonesUpdated}
         />
       </div>
     </DashboardLayout>
   )
 }
-

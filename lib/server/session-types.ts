@@ -93,6 +93,9 @@ export interface SessionCreateRequest {
   /** JWT token from QR scan */
   token: string;
   
+  /** Tenant ID for multi-tenancy support */
+  tenantId: string;
+  
   /** Client IP address */
   ipAddress?: string;
   

@@ -18,13 +18,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import {
   Dialog,
   DialogContent,
   DialogDescription,
@@ -43,7 +36,8 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 import { LoadingSpinner } from "@/components/loading-spinner"
-import { Gift, RotateCcw, Eye, Users, MapPin, Trash2 } from "lucide-react"
+import { ZoneFilter } from "@/components/zone-filter"
+import { Gift, RotateCcw, Eye, Users, MapPin, Trash2, QrCode } from "lucide-react"
 import { logger } from "@/lib/logger"
 import { useToast } from "@/hooks/use-toast"
 
@@ -60,11 +54,12 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
   const { zones, loading: zonesLoading } = useZones()
   
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
-  const [selectedZoneFilter, setSelectedZoneFilter] = useState<string>("all")
+  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([]) // Cambiado a array para selección múltiple
   const [showInviteDialog, setShowInviteDialog] = useState(false)
   const [showResetDialog, setShowResetDialog] = useState(false)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
   const [isProcessingAction, setIsProcessingAction] = useState(false)
+  const [isDownloadingQR, setIsDownloadingQR] = useState<string | null>(null) // ID de la mesa cuyo QR se está descargando
 
   const isLoading = tablesLoading || zonesLoading
   const error = tablesError ? tablesError.message : null
@@ -73,6 +68,17 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
     () => tables.find((table) => table.id === selectedTableId) ?? null,
     [tables, selectedTableId],
   )
+
+  // Contar mesas por zona para el contador
+  const tableCountByZone = useMemo(() => {
+    const counts: Record<string, number> = {}
+    tables.forEach(table => {
+      if (table.zone_id) {
+        counts[table.zone_id] = (counts[table.zone_id] || 0) + 1
+      }
+    })
+    return counts
+  }, [tables])
 
   // Helper function to get zone name from a table
   const getZoneName = useCallback((table: Table | any): string => {
@@ -89,16 +95,15 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
     return 'Sin zona'
   }, [zones])
 
-  // Filter tables by zone
+  // Filter tables by multiple selected zones
   const filteredTables = useMemo(() => {
-    if (selectedZoneFilter === 'all') {
+    // Si no hay zonas seleccionadas, mostrar todas
+    if (selectedZoneIds.length === 0) {
       return tables
     }
-    if (selectedZoneFilter === 'none') {
-      return tables.filter(t => !t.zone_id)
-    }
-    return tables.filter(t => t.zone_id === selectedZoneFilter)
-  }, [tables, selectedZoneFilter])
+    // Filtrar por las zonas seleccionadas
+    return tables.filter(t => t.zone_id && selectedZoneIds.includes(t.zone_id))
+  }, [tables, selectedZoneIds])
 
   // Group tables by zone
   const tablesByZone = useMemo(() => {
@@ -245,33 +250,181 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
     }
   }
 
+  // Función auxiliar para obtener los datos del QR (token + URL)
+  const getQRData = async (tableId: string, tableNumber: string | number) => {
+    logger.info('Obteniendo datos QR para mesa', { 
+      tableId,
+      tableNumber,
+      userId: user?.id
+    })
+
+    // Llamar a la API para generar el QR
+    const response = await fetch('/api/qr/generate', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        tableId,
+        options: {
+          size: 512,
+          errorCorrectionLevel: 'M',
+        }
+      }),
+    })
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}))
+      logger.error('Error en respuesta de API QR', new Error(`API error: ${response.status}`), { 
+        status: response.status, 
+        statusText: response.statusText,
+        errorData 
+      })
+      throw new Error(errorData.error || 'Error al generar el código QR')
+    }
+
+    const result = await response.json()
+    logger.info('Respuesta de API QR recibida', { 
+      success: result.success, 
+      hasData: !!result.data,
+      hasQrCodeDataURL: !!result.data?.qrCodeDataURL,
+      hasAccessUrl: !!result.data?.accessUrl
+    })
+    
+    if (!result.success || !result.data) {
+      logger.error('Respuesta inválida del servidor', new Error('Invalid server response'), { result })
+      throw new Error('Respuesta inválida del servidor')
+    }
+
+    return result.data
+  }
+
+  const handleDownloadQR = async (tableId: string, tableNumber: string | number, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevenir que se abra el dialog de detalles
+    
+    setIsDownloadingQR(tableId)
+    try {
+      const qrData = await getQRData(tableId, tableNumber)
+      
+      if (!qrData.qrCodeDataURL) {
+        throw new Error('No se recibió el código QR')
+      }
+
+      // Convertir data URL a blob para mejor compatibilidad
+      const base64Data = qrData.qrCodeDataURL.split(',')[1]
+      const byteCharacters = atob(base64Data)
+      const byteNumbers = new Array(byteCharacters.length)
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i)
+      }
+      const byteArray = new Uint8Array(byteNumbers)
+      const blob = new Blob([byteArray], { type: 'image/png' })
+      
+      // Crear URL temporal del blob
+      const blobUrl = window.URL.createObjectURL(blob)
+      
+      // Descargar la imagen
+      const link = document.createElement('a')
+      link.href = blobUrl
+      link.download = `mesa-${tableNumber}-qr.png`
+      document.body.appendChild(link)
+      link.click()
+      
+      // Limpiar
+      setTimeout(() => {
+        document.body.removeChild(link)
+        window.URL.revokeObjectURL(blobUrl)
+      }, 100)
+
+      logger.info('QR descargado exitosamente', {
+        tableId,
+        tableNumber
+      })
+
+      toast({
+        title: "QR descargado",
+        description: `El código QR de la mesa ${tableNumber} se descargó correctamente.`,
+      })
+
+    } catch (error) {
+      logger.error('Error al descargar QR', error as Error, {
+        tableId,
+        tableNumber
+      })
+      
+      toast({
+        title: "Error al descargar QR",
+        description: error instanceof Error ? error.message : "No se pudo descargar el código QR. Intenta nuevamente.",
+        variant: "destructive",
+      })
+    } finally {
+      setIsDownloadingQR(null)
+    }
+  }
+
+  const handleOpenClientView = async (tableId: string, tableNumber: string | number, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevenir que se abra el dialog de detalles
+    
+    try {
+      logger.info('Abriendo vista del cliente para mesa', { 
+        tableId,
+        tableNumber,
+        userId: user?.id
+      })
+
+      // Obtener los datos del QR (incluye el token y la URL)
+      const qrData = await getQRData(tableId, tableNumber)
+      
+      if (!qrData.accessUrl) {
+        throw new Error('No se pudo generar la URL de acceso')
+      }
+
+      // Abrir la URL del cliente en una nueva pestaña
+      logger.info('Abriendo URL del cliente', { 
+        accessUrl: qrData.accessUrl,
+        tableId,
+        tableNumber
+      })
+      
+      window.open(qrData.accessUrl, '_blank')
+
+      toast({
+        title: "Vista del cliente abierta",
+        description: `Se abrió la vista del cliente para la mesa ${tableNumber}.`,
+      })
+
+    } catch (error) {
+      logger.error('Error al abrir vista del cliente', error as Error, {
+        tableId,
+        tableNumber
+      })
+      
+      toast({
+        title: "Error al abrir vista del cliente",
+        description: error instanceof Error ? error.message : "No se pudo abrir la vista del cliente. Intenta nuevamente.",
+        variant: "destructive",
+      })
+    }
+  }
+
   const getStatusBadgeVariant = (status: string) => TABLE_STATE_BADGE_VARIANT[status as keyof typeof TABLE_STATE_BADGE_VARIANT] ?? "outline"
 
   return (
     <div className="space-y-6">
-      {/* Filter by zone */}
-      {!isLoading && !error && zones.length > 0 && (
-        <div className="flex items-center gap-4">
-          <label htmlFor="zone-filter" className="text-sm font-medium">
-            Filtrar por zona:
-          </label>
-          <Select value={selectedZoneFilter} onValueChange={setSelectedZoneFilter}>
-            <SelectTrigger id="zone-filter" className="w-[200px]">
-              <SelectValue placeholder="Todas las zonas" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas las zonas</SelectItem>
-              <SelectItem value="none">Sin zona</SelectItem>
-              {zones.map((zone) => (
-                <SelectItem key={zone.id} value={zone.id}>
-                  {zone.name} ({(zone as any).table_count || tables.filter(t => t.zone_id === zone.id).length})
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-          <span className="text-sm text-muted-foreground">
-            Mostrando {filteredTables.length} de {tables.length} mesas
-          </span>
+      {/* Filter by zone - Nuevo componente con selección múltiple */}
+      {!isLoading && !error && (
+        <ZoneFilter
+          zones={zones}
+          selectedZones={selectedZoneIds}
+          onZonesChange={setSelectedZoneIds}
+          tableCountByZone={tableCountByZone}
+        />
+      )}
+      
+      {/* Mostrar contador de mesas filtradas */}
+      {!isLoading && !error && selectedZoneIds.length > 0 && (
+        <div className="text-sm text-muted-foreground">
+          Mostrando {filteredTables.length} de {tables.length} mesas
         </div>
       )}
       
@@ -309,9 +462,35 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
                           {getZoneName(table)}
                         </div>
                         {table.capacity ? (
-                          <div className="flex items-center gap-2">
-                            <Users className="h-4 w-4" />
-                            {table.capacity} asientos
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <Users className="h-4 w-4" />
+                              {table.capacity} asientos
+                            </div>
+                            <div className="flex gap-1">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleDownloadQR(table.id, table.number, e)}
+                                disabled={isDownloadingQR === table.id}
+                                className="dark:border-zinc-600 dark:hover:bg-zinc-800"
+                                title="Descargar código QR"
+                              >
+                                <QrCode className="h-4 w-4" />
+                                {isDownloadingQR === table.id && (
+                                  <span className="ml-2 text-xs">Descargando...</span>
+                                )}
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={(e) => handleOpenClientView(table.id, table.number, e)}
+                                className="dark:border-zinc-600 dark:hover:bg-zinc-800"
+                                title="Ver como cliente"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </Button>
+                            </div>
                           </div>
                         ) : null}
 

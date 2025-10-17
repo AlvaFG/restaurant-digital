@@ -47,8 +47,8 @@ const logger = createLogger('session-manager');
 export async function createSession(request: SessionCreateRequest): Promise<QRSession> {
   logger.info('[createSession] Creating session');
 
-  // Validate QR token
-  const tokenValidation = await validateQRToken(request.token);
+  // Validate QR token with tenantId
+  const tokenValidation = await validateQRToken(request.token, request.tenantId);
   if (!tokenValidation.valid) {
     throw new Error(`Invalid QR token: ${tokenValidation.error}`);
   }
