@@ -8,6 +8,7 @@ import { useMenuItems, useMenuCategories } from "@/hooks/use-menu"
 import { useOrders } from "@/hooks/use-orders"
 import type { Database } from "@/lib/supabase/database.types"
 import { TABLE_STATE, TABLE_STATE_LABELS } from "@/lib/table-states"
+import { TableBusinessRules } from '@/lib/business-rules/table-rules'
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -114,6 +115,43 @@ export function OrderForm() {
       return
     }
 
+    // VALIDAR REGLAS DE NEGOCIO ANTES DE ENVIAR
+    const selectedTable = tables.find((table) => table.id === selectedTableId)
+    
+    if (!selectedTable) {
+      toast({
+        title: "Error",
+        description: "Mesa no encontrada",
+        variant: "destructive",
+      })
+      return
+    }
+
+    // Validar con reglas de negocio
+    const validation = TableBusinessRules.validateOrderCreation(
+      selectedTable,
+      null, // El usuario se obtiene en el servicio
+      {
+        partySize: orderItems.reduce((sum, item) => sum + item.quantity, 0),
+        source: 'staff'
+      }
+    )
+
+    if (!validation.valid) {
+      logger.warn('Validación de reglas de negocio falló', {
+        code: validation.code,
+        error: validation.error,
+        tableId: selectedTableId
+      })
+      
+      toast({
+        title: "No se puede crear el pedido",
+        description: validation.error || "Validación fallida",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsSubmitting(true)
     try {
       const payload = {
@@ -125,8 +163,6 @@ export function OrderForm() {
         source: "staff" as const,
       }
 
-      // Obtener información de la mesa antes de crear el pedido
-      const selectedTable = tables.find((table) => table.id === selectedTableId)
       const tableNumber = selectedTable?.number
       const previousTableStatus = selectedTable?.status
 
@@ -138,22 +174,27 @@ export function OrderForm() {
         total: calculateTotal()
       })
 
-      await createOrder(payload)
+      const result = await createOrder(payload)
 
       // Mensaje mejorado según el estado anterior de la mesa
       let description = tableNumber
         ? `Pedido creado para la mesa ${tableNumber}`
         : "Pedido creado correctamente"
       
-      if (previousTableStatus === TABLE_STATE.FREE) {
+      // Verificar si el resultado incluye información de cambio de estado
+      if (result && typeof result === 'object' && '_table_status_changed' in result) {
+        const resultData = result as any
+        if (resultData._table_status_changed) {
+          description += `. Mesa cambió de estado a "${resultData._new_table_status}"`
+        }
+      } else if (previousTableStatus === TABLE_STATE.FREE) {
         description += `. Mesa cambió de estado a "${TABLE_STATE_LABELS.pedido_en_curso}"`
       }
 
       logger.info('Pedido creado exitosamente', {
         tableId: selectedTableId,
         tableNumber,
-        previousTableStatus,
-        newStatus: previousTableStatus === TABLE_STATE.FREE ? TABLE_STATE.ORDER_IN_PROGRESS : previousTableStatus
+        previousTableStatus
       })
 
       toast({

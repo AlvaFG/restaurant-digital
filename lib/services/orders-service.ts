@@ -8,6 +8,8 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
+import { TableBusinessRules } from '@/lib/business-rules/table-rules'
+import { logTableStatusChange } from '@/lib/services/audit-service'
 
 const logger = createLogger('orders-service')
 
@@ -53,55 +55,65 @@ export interface CreateOrderInput {
 }
 
 /**
- * Crea una nueva orden en Supabase
- * Si la orden está asociada a una mesa y la mesa está en estado 'libre',
- * actualiza automáticamente el estado de la mesa a 'pedido_en_curso'
+ * Crea una nueva orden en Supabase usando transacción atómica
+ * Integra validaciones de reglas de negocio y auditoría automática
  */
 export async function createOrder(input: CreateOrderInput, tenantId: string) {
   const supabase = createBrowserClient()
 
   try {
-    // 0. Si hay una mesa asociada, verificar y actualizar su estado si es necesario
-    if (input.tableId) {
-      // Obtener el estado actual de la mesa
-      const { data: tableData, error: tableError } = await supabase
-        .from('tables')
-        .select('id, status, number')
-        .eq('id', input.tableId)
-        .eq('tenant_id', tenantId)
-        .single()
-
-      if (tableError) {
-        logger.warn('No se pudo obtener información de la mesa', { tableId: input.tableId, error: tableError })
-      } else if (tableData) {
-        // Si la mesa está libre, actualizarla a 'pedido_en_curso'
-        if (tableData.status === 'libre') {
-          const { error: updateError } = await supabase
-            .from('tables')
-            .update({ status: 'pedido_en_curso' })
-            .eq('id', input.tableId)
-            .eq('tenant_id', tenantId)
-
-          if (updateError) {
-            logger.error('Error al actualizar estado de mesa', updateError as Error, { 
-              tableId: input.tableId,
-              previousStatus: 'libre',
-              newStatus: 'pedido_en_curso'
-            })
-            // No lanzar error, continuar con la creación del pedido
-          } else {
-            logger.info('Estado de mesa actualizado automáticamente', { 
-              tableId: input.tableId,
-              tableNumber: tableData.number,
-              previousStatus: 'libre',
-              newStatus: 'pedido_en_curso'
-            })
-          }
-        }
-      }
+    // 0. Validaciones iniciales
+    if (!input.tableId) {
+      throw new Error('Se requiere una mesa para crear el pedido')
     }
 
-    // 1. Obtener información de los items del menú
+    if (!input.items || input.items.length === 0) {
+      throw new Error('Se requiere al menos un item para crear el pedido')
+    }
+
+    // 1. Obtener datos de la mesa y usuario
+    const { data: tableData, error: tableError } = await supabase
+      .from('tables')
+      .select('*')
+      .eq('id', input.tableId)
+      .eq('tenant_id', tenantId)
+      .single()
+
+    if (tableError || !tableData) {
+      throw new Error('Mesa no encontrada')
+    }
+
+    const { data: { user } } = await supabase.auth.getUser()
+    let userData = null
+    if (user?.id) {
+      const { data } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', user.id)
+        .single()
+      userData = data
+    }
+
+    // 2. VALIDAR REGLAS DE NEGOCIO
+    const validation = TableBusinessRules.validateOrderCreation(
+      tableData,
+      userData,
+      {
+        partySize: input.items.length,
+        source: input.source
+      }
+    )
+
+    if (!validation.valid) {
+      logger.warn('Validación de reglas de negocio falló', {
+        code: validation.code,
+        error: validation.error,
+        tableId: input.tableId
+      })
+      throw new Error(validation.error || 'Validación de pedido falló')
+    }
+
+    // 3. Obtener información de los items del menú
     const menuItemIds = input.items.map(item => item.menuItemId)
     const { data: menuItems, error: menuError } = await supabase
       .from('menu_items')
@@ -114,10 +126,10 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
       throw new Error('No se encontraron items del menú')
     }
 
-    // 2. Calcular totales
+    // 4. Calcular totales
     const menuItemsMap = new Map(menuItems.map(item => [item.id, item]))
     let subtotalCents = 0
-    const orderItems: OrderItemInsert[] = []
+    const orderItemsArray: any[] = []
 
     for (const item of input.items) {
       const menuItem = menuItemsMap.get(item.menuItemId)
@@ -129,7 +141,7 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
 
       subtotalCents += totalPrice
 
-      orderItems.push({
+      orderItemsArray.push({
         menu_item_id: item.menuItemId,
         name: menuItem.name,
         quantity: item.quantity,
@@ -138,18 +150,12 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
         notes: item.notes || null,
         modifiers: item.modifiers || null,
         discount: item.discount || null,
-      } as OrderItemInsert)
+      })
     }
 
-    // 3. Aplicar descuentos
+    // 5. Aplicar descuentos
     let discountTotalCents = 0
-    const orderDiscounts: Array<{
-      type: 'percentage' | 'fixed'
-      value: number
-      amount_cents: number
-      code?: string
-      reason?: string
-    }> = []
+    const orderDiscounts: any[] = []
 
     for (const discount of input.discounts || []) {
       let discountAmount = 0
@@ -160,19 +166,17 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
       }
       discountTotalCents += discountAmount
       orderDiscounts.push({
-        ...discount,
+        type: discount.type,
+        value: discount.value,
         amount_cents: discountAmount,
+        code: discount.code,
+        reason: discount.reason
       })
     }
 
-    // 4. Aplicar impuestos
+    // 6. Aplicar impuestos
     let taxTotalCents = 0
-    const orderTaxes: Array<{
-      code: string
-      name: string
-      rate?: number
-      amount_cents: number
-    }> = []
+    const orderTaxes: any[] = []
 
     for (const tax of input.taxes || []) {
       const taxAmount = tax.amountCents || Math.round((subtotalCents - discountTotalCents) * (tax.rate || 0))
@@ -185,24 +189,69 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
       })
     }
 
-    // 5. Calcular total final
+    // 7. Calcular total final
     const totalCents = subtotalCents - discountTotalCents + taxTotalCents + (input.tipCents || 0) + (input.serviceChargeCents || 0)
 
-    // 6. Generar número de orden
-    const { count } = await supabase
-      .from('orders')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', tenantId)
+    // 8. VALIDAR LÍMITES DE PEDIDO
+    const limitsValidation = TableBusinessRules.validateOrderLimits(
+      input.items.length,
+      totalCents
+    )
 
-    const orderNumber = `ORD-${String((count || 0) + 1).padStart(6, '0')}`
+    if (!limitsValidation.valid) {
+      throw new Error(limitsValidation.error || 'Límites de pedido excedidos')
+    }
 
-    // 7. Crear orden
-    const { data: order, error: orderError } = await supabase
-      .from('orders')
-      .insert({
+    // 9. LLAMAR A FUNCIÓN RPC DE TRANSACCIÓN ATÓMICA
+    const { data: rpcResult, error: rpcError } = await supabase.rpc(
+      'create_order_with_table_update' as any,
+      {
+        p_tenant_id: tenantId,
+        p_table_id: input.tableId,
+        p_order_data: {
+          status: 'abierto',
+          payment_status: 'pendiente',
+          source: input.source || 'staff',
+          subtotal_cents: subtotalCents,
+          discount_total_cents: discountTotalCents,
+          tax_total_cents: taxTotalCents,
+          tip_cents: input.tipCents || 0,
+          service_charge_cents: input.serviceChargeCents || 0,
+          total_cents: totalCents,
+          notes: input.notes,
+          customer_data: input.customerData
+        },
+        p_order_items: orderItemsArray,
+        p_discounts: orderDiscounts,
+        p_taxes: orderTaxes,
+        p_user_id: user?.id || null
+      }
+    ) as any
+
+    if (rpcError) {
+      logger.error('Error en transacción atómica', rpcError as Error)
+      throw rpcError
+    }
+
+    if (!rpcResult) {
+      throw new Error('Error al crear pedido: respuesta vacía de RPC')
+    }
+
+    logger.info('Pedido creado con transacción atómica', {
+      orderId: rpcResult.order_id,
+      orderNumber: rpcResult.order_number,
+      tableStatusChanged: rpcResult.table_status_changed,
+      previousStatus: rpcResult.previous_table_status,
+      newStatus: rpcResult.new_table_status
+    })
+
+    // 10. Retornar resultado con estructura compatible
+    return {
+      data: {
+        id: rpcResult.order_id,
+        order_number: rpcResult.order_number,
+        table_id: input.tableId,
         tenant_id: tenantId,
-        table_id: input.tableId || null,
-        order_number: orderNumber,
         status: 'abierto',
         payment_status: 'pendiente',
         source: input.source || 'staff',
@@ -214,58 +263,18 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
         total_cents: totalCents,
         notes: input.notes || null,
         customer_data: input.customerData || null,
-      } as OrderInsert)
-      .select()
-      .single()
-
-    if (orderError) throw orderError
-    if (!order) throw new Error('Error al crear la orden')
-
-    // 8. Crear items de la orden
-    const itemsWithOrderId = orderItems.map(item => ({
-      ...item,
-      order_id: order.id,
-    }))
-
-    const { error: itemsError } = await supabase
-      .from('order_items')
-      .insert(itemsWithOrderId)
-
-    if (itemsError) throw itemsError
-
-    // 9. Crear descuentos si existen
-    if (orderDiscounts.length > 0) {
-      const discountsWithOrderId = orderDiscounts.map(discount => ({
-        order_id: order.id,
-        ...discount,
-      }))
-
-      const { error: discountsError } = await supabase
-        .from('order_discounts')
-        .insert(discountsWithOrderId)
-
-      if (discountsError) throw discountsError
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+        // Información adicional del cambio de estado
+        _table_status_changed: rpcResult.table_status_changed,
+        _previous_table_status: rpcResult.previous_table_status,
+        _new_table_status: rpcResult.new_table_status
+      },
+      error: null
     }
 
-    // 10. Crear impuestos si existen
-    if (orderTaxes.length > 0) {
-      const taxesWithOrderId = orderTaxes.map(tax => ({
-        order_id: order.id,
-        ...tax,
-      }))
-
-      const { error: taxesError } = await supabase
-        .from('order_taxes')
-        .insert(taxesWithOrderId)
-
-      if (taxesError) throw taxesError
-    }
-
-    logger.info('Orden creada exitosamente', { orderId: order.id, orderNumber })
-
-    return { data: order, error: null }
   } catch (error) {
-    logger.error('Error al crear orden', error as Error)
+    logger.error('Error al crear orden con transacción atómica', error as Error)
     return { data: null, error: error as Error }
   }
 }
