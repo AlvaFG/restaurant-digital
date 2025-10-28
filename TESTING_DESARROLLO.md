@@ -181,3 +181,108 @@ El proyecto está **completamente funcional** con Supabase:
 **Tester:** GitHub Copilot  
 **Duración del test:** ~5 minutos  
 **Ambiente:** localhost:3000 (desarrollo)
+
+---
+
+## 🔧 ACTUALIZACIÓN: Fix de Schema Aplicado
+
+### Fecha: 2024-10-28 (Hora 19:30)
+
+### ✅ Correcciones Implementadas
+
+**Archivo modificado**: `app/api/dashboard/metrics/route.ts`  
+**Commit**: `9bae72a` - "fix(dashboard): Corregir schema queries - usar total_cents y metadata"
+
+**Cambios realizados**:
+
+1. **Interface Order actualizada**:
+   ```typescript
+   // ❌ ANTES:
+   interface Order {
+     total: number;
+     guests: number;
+     status: string;
+   }
+   
+   // ✅ DESPUÉS:
+   interface Order {
+     total_cents: number;
+     payment_status: string;
+     metadata: { guests?: number; covers?: number; } | null;
+   }
+   ```
+
+2. **Query de ventas corregida**:
+   ```typescript
+   // ❌ ANTES:
+   .select('total')
+   .eq('status', 'paid')
+   
+   // ✅ DESPUÉS:
+   .select('total_cents, metadata')
+   .eq('payment_status', 'approved')
+   ```
+
+3. **Conversión de centavos a moneda**:
+   ```typescript
+   // ❌ ANTES:
+   const dailySales = orders.reduce((sum, o) => sum + (o.total || 0), 0)
+   
+   // ✅ DESPUÉS:
+   const dailySales = orders.reduce((sum, o) => 
+     sum + ((o.total_cents || 0) / 100), 0  // Divide por 100 para convertir centavos
+   )
+   ```
+
+4. **Extracción de guests desde metadata**:
+   ```typescript
+   // ❌ ANTES:
+   const totalCovers = orders.reduce((sum, o) => sum + (o.guests || 0), 0)
+   
+   // ✅ DESPUÉS:
+   const totalCovers = orders.reduce((sum, o) => {
+     const meta = o.metadata as any;
+     return sum + (meta?.guests || meta?.covers || 0);  // Extrae desde JSON
+   }, 0)
+   ```
+
+5. **Comparación de ventas de ayer** (también corregida):
+   ```typescript
+   // Mismo patrón aplicado a la query de yesterday
+   const salesYesterday = yesterdayOrders.reduce((sum, o) => 
+     sum + ((o.total_cents || 0) / 100), 0
+   )
+   ```
+
+### 📊 Resultado
+
+- ✅ **Build exitoso**: `npm run build` - 0 errores de compilación
+- ✅ **Type checking**: Sin errores de TypeScript
+- ✅ **Commit realizado**: Hash `9bae72a`
+- ✅ **Errores resueltos**:
+  - ❌ ~~"column orders.total does not exist"~~ → ✅ Ahora usa `total_cents`
+  - ❌ ~~"column orders.guests does not exist"~~ → ✅ Ahora usa `metadata.guests`
+
+### 📝 Patrón de Schema Documentado
+
+El esquema de la tabla `orders` en Supabase PostgreSQL usa:
+
+| Campo | Tipo | Descripción |
+|-------|------|-------------|
+| `total_cents` | integer | Monto total en centavos (dividir por 100 para display) |
+| `payment_status` | string | Estado del pago: 'pending', 'approved', 'rejected' |
+| `metadata` | JSONB | Datos adicionales: guests, covers, notas, etc. |
+
+**⚠️ IMPORTANTE**: No existe columna `total` ni columna `guests` en la tabla orders.
+
+### 🎯 Estado Final
+
+**DASHBOARD CORREGIDO ✅**
+
+Todos los errores de schema identificados durante el testing han sido corregidos. El dashboard ahora:
+- ✅ Consulta las columnas correctas (`total_cents`, `metadata`)
+- ✅ Convierte centavos a moneda para display
+- ✅ Extrae datos de guests desde metadata JSON
+- ✅ Usa el filtro correcto de payment_status
+
+**Próximo paso**: Validación funcional con servidor en ejecución y creación de órdenes de prueba.
