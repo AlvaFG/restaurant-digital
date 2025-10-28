@@ -4,8 +4,11 @@ import { manejarError, respuestaExitosa } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 
 interface Order {
-  total?: number
-  guests?: number
+  total_cents?: number
+  metadata?: {
+    guests?: number
+    covers?: number
+  } | null
 }
 
 interface Table {
@@ -39,16 +42,20 @@ export async function GET(request: Request) {
     // 1. Ventas del día - Sumar total de pedidos PAGADOS de hoy
     const { data: ordersToday, error: ordersError } = await supabase
       .from('orders')
-      .select('total')
+      .select('total_cents, metadata')
       .eq('tenant_id', tenantId)
-      .eq('status', 'paid') // Solo pedidos pagados
+      .eq('payment_status', 'approved') // Pedidos pagados/aprobados
       .gte('created_at', todayISO)
 
     if (ordersError) {
       logger.error('Error al obtener pedidos del día', ordersError as Error)
     }
 
-    const dailySales = (ordersToday as Order[] | null)?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
+    // Convertir centavos a unidades monetarias y sumar
+    const dailySales = (ordersToday as Order[] | null)?.reduce(
+      (sum, order) => sum + ((order.total_cents || 0) / 100), 
+      0
+    ) || 0
     const totalOrdersToday = ordersToday?.length || 0
 
     // 2. Ticket Promedio - Promedio de ventas por pedido pagado de hoy
@@ -71,16 +78,20 @@ export async function GET(request: Request) {
     // 4. Cubiertos del día - Contar personas en pedidos pagados de hoy
     const { data: ordersWithCovers, error: coversError } = await supabase
       .from('orders')
-      .select('guests')
+      .select('metadata')
       .eq('tenant_id', tenantId)
-      .eq('status', 'paid')
+      .eq('payment_status', 'approved')
       .gte('created_at', todayISO)
 
     if (coversError) {
       logger.error('Error al obtener cubiertos', coversError as Error)
     }
 
-    const totalCovers = (ordersWithCovers as Order[] | null)?.reduce((sum, order) => sum + (order.guests || 0), 0) || 0
+    // Extraer guests/covers de metadata
+    const totalCovers = (ordersWithCovers as Order[] | null)?.reduce((sum, order) => {
+      const guests = (order.metadata as any)?.guests || (order.metadata as any)?.covers || 0
+      return sum + guests
+    }, 0) || 0
 
     // 5. Pedidos activos - Pedidos que NO están pagados o cancelados
     const { data: activeOrders, error: activeError } = await supabase
@@ -164,22 +175,25 @@ export async function GET(request: Request) {
 
     const { data: ordersYesterday, error: _yesterdayError } = await supabase
       .from('orders')
-      .select('total')
+      .select('total_cents')
       .eq('tenant_id', tenantId)
-      .eq('status', 'paid')
+      .eq('payment_status', 'approved')
       .gte('created_at', yesterdayISO)
       .lt('created_at', todayISO)
 
-    const salesYesterday = (ordersYesterday as Order[] | null)?.reduce((sum, order) => sum + (order.total || 0), 0) || 0
+    const salesYesterday = (ordersYesterday as Order[] | null)?.reduce(
+      (sum, order) => sum + ((order.total_cents || 0) / 100), 
+      0
+    ) || 0
     const salesGrowth = salesYesterday > 0 
-      ? `${Math.round(((dailySales - salesYesterday) / salesYesterday) * 100)}%`
+      ? `${Math.round(((dailySales - salesYesterday) / salesYesterday) * 100) > 0 ? '+' : ''}${Math.round(((dailySales - salesYesterday) / salesYesterday) * 100)}%`
       : '+0%'
 
     const avgTicketYesterday = ordersYesterday?.length 
       ? salesYesterday / ordersYesterday.length 
       : 0
     const ticketGrowth = avgTicketYesterday > 0
-      ? `${Math.round(((averageTicket - avgTicketYesterday) / avgTicketYesterday) * 100)}%`
+      ? `${Math.round(((averageTicket - avgTicketYesterday) / avgTicketYesterday) * 100) > 0 ? '+' : ''}${Math.round(((averageTicket - avgTicketYesterday) / avgTicketYesterday) * 100)}%`
       : '+0%'
 
     const metrics = {
