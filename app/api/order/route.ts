@@ -2,24 +2,29 @@ import { NextResponse } from "next/server"
 import { z } from "zod"
 
 import {
-  createOrder,
-  getOrderStoreMetadata,
-  getOrdersSummary,
-  listOrders,
-  OrderStoreError,
-  type ListOrdersOptions,
-  type OrdersSummary,
-} from "@/lib/server/order-store"
+  createOrder as createOrderService,
+  getOrders as getOrdersService,
+  getOrdersSummary as getOrdersSummaryService,
+  type CreateOrderInput,
+} from "@/lib/services/orders-service"
 import {
   ORDER_STATUS,
   PAYMENT_STATUS,
   type OrderStatus,
   type PaymentStatus,
-  type StoredOrder,
 } from "@/lib/server/order-types"
 import { logRequest, logResponse } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
+import { getCurrentUser } from '@/lib/supabase/server'
+import type { User } from "@supabase/supabase-js"
+
+/**
+ * Extract tenantId from Supabase Auth User
+ */
+function getTenantIdFromUser(user: User): string | null {
+  return user.user_metadata?.tenant_id || null
+}
 
 const discountSchema = z
   .object({
@@ -155,43 +160,36 @@ const ordersQuerySchema = z
 
 type OrdersQuery = z.infer<typeof ordersQuerySchema>
 
-type OrdersIndexMetadata = {
-  store: Awaited<ReturnType<typeof getOrderStoreMetadata>>
-  summary: OrdersSummary
-}
-
-interface SerializedOrder {
-  id: string
-  tableId: string
-  items: StoredOrder["items"]
-  subtotal: number
-  total: number
-  status: StoredOrder["status"]
-  paymentStatus: StoredOrder["paymentStatus"]
-  createdAt: string
-  updatedAt: string
-  discounts: StoredOrder["discounts"]
-  taxes: StoredOrder["taxes"]
-  tipCents: number
-  serviceChargeCents: number
-  discountTotalCents: number
-  taxTotalCents: number
-  payment?: StoredOrder["payment"]
-  notes?: string
-  source?: StoredOrder["source"]
-  customer?: StoredOrder["customer"]
-  metadata?: StoredOrder["metadata"]
-}
-
 export type CreateOrderRequest = z.infer<typeof createOrderSchema>
+
 export interface CreateOrderResponse {
-  data: Awaited<ReturnType<typeof createOrder>>
-  metadata: Awaited<ReturnType<typeof getOrderStoreMetadata>>
+  data: {
+    id: string
+    tableId?: string
+    status: string
+    paymentStatus: string
+    subtotalCents: number
+    totalCents: number
+    createdAt: string
+  }
 }
 
 export interface OrdersIndexResponse {
-  data: SerializedOrder[]
-  metadata: OrdersIndexMetadata
+  data: Array<{
+    id: string
+    tableId?: string
+    status: string
+    paymentStatus: string
+    subtotalCents: number
+    totalCents: number
+    createdAt: string
+    updatedAt: string
+  }>
+  metadata: {
+    count: number
+    totalOrders?: number
+    totalRevenue?: number
+  }
 }
 
 function sanitizeParam(value: string | null) {
@@ -201,20 +199,6 @@ function sanitizeParam(value: string | null) {
 
   const trimmed = value.trim()
   return trimmed.length > 0 ? trimmed : undefined
-}
-
-function serializeOrder(order: StoredOrder): SerializedOrder {
-  return {
-    ...order,
-    items: order.items.map((item) => ({ ...item })),
-    discounts: order.discounts.map((discount) => ({ ...discount })),
-    taxes: order.taxes.map((tax) => ({ ...tax })),
-    payment: order.payment ? { ...order.payment } : undefined,
-    customer: order.customer ? { ...order.customer } : undefined,
-    metadata: order.metadata ? { ...order.metadata } : undefined,
-    createdAt: order.createdAt.toISOString(),
-    updatedAt: order.updatedAt.toISOString(),
-  }
 }
 
 function buildOrdersQuery(url: URL): { parsed: OrdersQuery | null; error?: z.ZodError<OrdersQuery> } {
@@ -247,8 +231,26 @@ export async function GET(request: Request) {
   const startTime = Date.now()
   
   try {
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
     const url = new URL(request.url)
-    logRequest('GET', '/api/order', { query: url.search })
+    logRequest('GET', '/api/order', { query: url.search, tenantId })
     
     const { parsed, error } = buildOrdersQuery(url)
 
@@ -258,7 +260,8 @@ export async function GET(request: Request) {
 
       logger.warn('Parámetros de query inválidos', {
         error: message,
-        path: issue?.path
+        path: issue?.path,
+        tenantId
       })
 
       return NextResponse.json(
@@ -273,38 +276,48 @@ export async function GET(request: Request) {
       )
     }
 
-    const listOptions: ListOrdersOptions = {
-      status: parsed.status as OrderStatus[] | undefined,
-      paymentStatus: parsed.paymentStatus as PaymentStatus | undefined,
+    const filters = {
       tableId: parsed.tableId,
-      search: parsed.search,
+      status: parsed.status?.[0], // Toma solo el primer status si hay array
+      paymentStatus: parsed.paymentStatus,
       limit: parsed.limit,
-      sort: parsed.sort,
     }
 
-    const summaryFilters: ListOrdersOptions = { ...listOptions, limit: undefined }
+    logger.debug('Obteniendo pedidos desde Supabase', { filters, tenantId })
 
-    logger.debug('Obteniendo pedidos', { filters: listOptions })
-
-    const [orders, storeMetadata, summary] = await Promise.all([
-      listOrders(listOptions),
-      getOrderStoreMetadata(),
-      getOrdersSummary(summaryFilters),
+    const [ordersResult, summaryResult] = await Promise.all([
+      getOrdersService(tenantId, filters),
+      getOrdersSummaryService(tenantId, {}),
     ])
+
+    if (ordersResult.error) {
+      throw new Error(`Error obteniendo órdenes: ${ordersResult.error}`)
+    }
 
     const duration = Date.now() - startTime
     logResponse('GET', '/api/order', 200, duration)
     
-    logger.info('Pedidos obtenidos', {
-      count: orders.length,
+    logger.info('Pedidos obtenidos desde Supabase', {
+      count: ordersResult.data?.length || 0,
+      tenantId,
       duration: `${duration}ms`
     })
 
     return NextResponse.json<OrdersIndexResponse>({
-      data: orders.map(serializeOrder),
+      data: (ordersResult.data || []).map((order) => ({
+        id: order.id,
+        tableId: order.table_id || undefined,
+        status: order.status,
+        paymentStatus: order.payment_status,
+        subtotalCents: order.subtotal_cents || 0,
+        totalCents: order.total_cents,
+        createdAt: order.created_at || new Date().toISOString(),
+        updatedAt: order.updated_at || new Date().toISOString(),
+      })),
       metadata: {
-        store: storeMetadata,
-        summary,
+        count: ordersResult.data?.length || 0,
+        totalOrders: summaryResult.data?.total,
+        totalRevenue: summaryResult.data?.totalRevenue,
       },
     })
   } catch (error) {
@@ -325,7 +338,25 @@ export async function POST(request: Request) {
   let rawBody: unknown
 
   try {
-    logRequest('POST', '/api/order')
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
+    logRequest('POST', '/api/order', { tenantId })
     
     rawBody = await request.json()
   } catch {
@@ -360,56 +391,86 @@ export async function POST(request: Request) {
   }
 
   try {
-    logger.info('Creando pedido', { 
+    // Obtener tenant_id nuevamente (para el scope correcto)
+    const user = await getCurrentUser()
+    const tenantId = getTenantIdFromUser(user!)
+
+    if (!tenantId) {
+      throw new Error('Tenant ID no disponible')
+    }
+
+    logger.info('Creando pedido en Supabase', { 
       tableId: parsed.data.tableId,
-      itemsCount: parsed.data.items.length 
+      itemsCount: parsed.data.items.length,
+      tenantId
     })
 
-    const order = await createOrder(parsed.data)
-    const metadata = await getOrderStoreMetadata()
+    // Convertir el formato del esquema al formato del servicio
+    const orderInput: CreateOrderInput = {
+      tableId: parsed.data.tableId,
+      items: parsed.data.items.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        notes: item.note,
+        modifiers: item.modifiers?.map(m => ({
+          name: m.name,
+          priceCents: m.priceCents
+        })),
+        discount: item.discount,
+      })),
+      discounts: parsed.data.discounts,
+      taxes: parsed.data.taxes?.map(t => ({
+        code: t.code,
+        name: t.name || t.code,
+        rate: t.rate,
+        amountCents: t.amountCents,
+      })),
+      tipCents: parsed.data.tipCents,
+      serviceChargeCents: parsed.data.serviceChargeCents,
+      notes: parsed.data.notes,
+      customerData: parsed.data.customer,
+      source: (parsed.data.source === 'pos' || parsed.data.source === 'integracion') 
+        ? 'staff' 
+        : parsed.data.source,
+    }
+
+    const { data: order, error: createError } = await createOrderService(orderInput, tenantId)
+
+    if (createError || !order) {
+      logger.error('Error al crear pedido en Supabase', new Error(`Create failed: ${createError}`), {
+        tenantId,
+        tableId: parsed.data.tableId
+      })
+      throw new Error('Error al crear pedido')
+    }
 
     const duration = Date.now() - startTime
     logResponse('POST', '/api/order', 201, duration)
     
-    logger.info('Pedido creado exitosamente', { 
+    logger.info('Pedido creado exitosamente en Supabase', { 
       orderId: order.id, 
-      tableId: order.tableId, 
-      total: order.total,
+      tableId: order.table_id, 
+      total: order.total_cents,
+      tenantId,
       duration: `${duration}ms`
     })
 
     return NextResponse.json<CreateOrderResponse>(
       {
-        data: order,
-        metadata,
+        data: {
+          id: order.id,
+          tableId: order.table_id || undefined,
+          status: order.status,
+          paymentStatus: order.payment_status,
+          subtotalCents: order.subtotal_cents || 0,
+          totalCents: order.total_cents,
+          createdAt: order.created_at || new Date().toISOString(),
+        },
       },
       { status: 201 },
     )
   } catch (error) {
     const duration = Date.now() - startTime
-    
-    if (error instanceof OrderStoreError) {
-      logResponse('POST', '/api/order', error.status, duration)
-      
-      logger.warn('Pedido rechazado', {
-        code: error.code,
-        status: error.status,
-        meta: error.meta,
-        duration: `${duration}ms`
-      })
-
-      return NextResponse.json(
-        {
-          error: {
-            code: error.code,
-            message: error.message,
-            details: error.meta,
-          },
-        },
-        { status: error.status },
-      )
-    }
-
     logResponse('POST', '/api/order', 500, duration)
     logger.error('Error inesperado al crear pedido', error as Error)
     

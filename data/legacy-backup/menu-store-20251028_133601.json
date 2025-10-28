@@ -1,0 +1,395 @@
+{
+  "categories": [
+    {
+      "id": "1",
+      "name": "Entradas",
+      "sort": 1
+    },
+    {
+      "id": "2",
+      "name": "Platos Principales",
+      "sort": 2
+    },
+    {
+      "id": "3",
+      "name": "Postres",
+      "sort": 3
+    },
+    {
+      "id": "4",
+      "name": "Bebidas",
+      "sort": 4
+    }
+  ],
+  "items": [
+    {
+      "id": "1",
+      "categoryId": "1",
+      "name": "Empanadas",
+      "description": "Empanadas caseras (x6)",
+      "priceCents": 1800,
+      "available": true,
+      "allergens": [
+        {
+          "code": "gluten",
+          "contains": true
+        },
+        {
+          "code": "huevo",
+          "contains": true
+        }
+      ]
+    },
+    {
+      "id": "2",
+      "categoryId": "1",
+      "name": "Provoleta",
+      "description": "Provoleta a la parrilla",
+      "priceCents": 1500,
+      "available": true,
+      "allergens": [
+        {
+          "code": "lacteos",
+          "contains": true
+        }
+      ]
+    },
+    {
+      "id": "3",
+      "categoryId": "2",
+      "name": "Milanesa con papas",
+      "description": "Milanesa napolitana con papas fritas",
+      "priceCents": 2500,
+      "available": true,
+      "allergens": [
+        {
+          "code": "gluten",
+          "contains": true
+        },
+        {
+          "code": "huevo",
+          "contains": true
+        },
+        {
+          "code": "lacteos",
+          "contains": true
+        }
+      ],
+      "modifierGroups": [
+        {
+          "id": "milanesa-type",
+          "name": "Tipo de milanesa",
+          "required": true,
+          "minSelection": 1,
+          "maxSelection": 1,
+          "options": [
+            {
+              "id": "napolitana",
+              "name": "Napolitana",
+              "priceCents": 0,
+              "available": true,
+              "description": "Con jamón, queso y salsa"
+            },
+            {
+              "id": "simple",
+              "name": "Simple",
+              "priceCents": -300,
+              "available": true,
+              "description": "Sin cobertura"
+            },
+            {
+              "id": "caballo",
+              "name": "A caballo",
+              "priceCents": 200,
+              "available": true,
+              "description": "Con huevo frito"
+            }
+          ]
+        },
+        {
+          "id": "side-options",
+          "name": "Acompañamiento",
+          "required": false,
+          "minSelection": 0,
+          "maxSelection": 2,
+          "description": "Elige hasta 2 acompañamientos adicionales",
+          "options": [
+            {
+              "id": "ensalada",
+              "name": "Ensalada mixta",
+              "priceCents": 400,
+              "available": true
+            },
+            {
+              "id": "pure",
+              "name": "Puré de papas",
+              "priceCents": 300,
+              "available": true
+            },
+            {
+              "id": "arroz",
+              "name": "Arroz",
+              "priceCents": 300,
+              "available": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "4",
+      "categoryId": "2",
+      "name": "Bife de chorizo",
+      "description": "Bife de chorizo 400g",
+      "priceCents": 3500,
+      "available": true,
+      "allergens": [],
+      "modifierGroups": [
+        {
+          "id": "meat-cooking",
+          "name": "Punto de cocción",
+          "required": true,
+          "minSelection": 1,
+          "maxSelection": 1,
+          "description": "Elige cómo prefieres tu carne",
+          "options": [
+            {
+              "id": "rare",
+              "name": "Jugoso",
+              "priceCents": 0,
+              "available": true,
+              "description": "Rojo en el centro"
+            },
+            {
+              "id": "medium",
+              "name": "A punto",
+              "priceCents": 0,
+              "available": true,
+              "description": "Rosado en el centro"
+            },
+            {
+              "id": "well",
+              "name": "Bien cocido",
+              "priceCents": 0,
+              "available": true,
+              "description": "Sin rosado"
+            }
+          ]
+        },
+        {
+          "id": "meat-extras",
+          "name": "Extras",
+          "required": false,
+          "minSelection": 0,
+          "maxSelection": 3,
+          "description": "Agrega tus favoritos",
+          "options": [
+            {
+              "id": "chimichurri",
+              "name": "Chimichurri",
+              "priceCents": 100,
+              "available": true
+            },
+            {
+              "id": "morrones",
+              "name": "Morrones asados",
+              "priceCents": 200,
+              "available": true
+            },
+            {
+              "id": "champignones",
+              "name": "Champiñones",
+              "priceCents": 300,
+              "available": true
+            },
+            {
+              "id": "queso-azul",
+              "name": "Salsa de queso azul",
+              "priceCents": 400,
+              "available": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "5",
+      "categoryId": "2",
+      "name": "Pasta con salsa",
+      "description": "Fideos con salsa bolognesa",
+      "priceCents": 2200,
+      "available": true,
+      "allergens": [
+        {
+          "code": "gluten",
+          "contains": true
+        },
+        {
+          "code": "soja",
+          "contains": false,
+          "traces": true
+        }
+      ]
+    },
+    {
+      "id": "6",
+      "categoryId": "3",
+      "name": "Flan casero",
+      "description": "Flan con dulce de leche",
+      "priceCents": 800,
+      "available": true,
+      "allergens": [
+        {
+          "code": "lacteos",
+          "contains": true
+        },
+        {
+          "code": "huevo",
+          "contains": true
+        }
+      ]
+    },
+    {
+      "id": "7",
+      "categoryId": "3",
+      "name": "Tiramisu",
+      "description": "Tiramisu italiano",
+      "priceCents": 1200,
+      "available": true,
+      "allergens": [
+        {
+          "code": "gluten",
+          "contains": true
+        },
+        {
+          "code": "lacteos",
+          "contains": true
+        },
+        {
+          "code": "huevo",
+          "contains": true
+        }
+      ]
+    },
+    {
+      "id": "8",
+      "categoryId": "4",
+      "name": "Coca Cola",
+      "description": "Coca Cola 500ml",
+      "priceCents": 600,
+      "available": true,
+      "allergens": [],
+      "modifierGroups": [
+        {
+          "id": "drink-size",
+          "name": "Tamaño",
+          "required": true,
+          "minSelection": 1,
+          "maxSelection": 1,
+          "options": [
+            {
+              "id": "small",
+              "name": "Chica (250ml)",
+              "priceCents": -200,
+              "available": true
+            },
+            {
+              "id": "medium",
+              "name": "Mediana (500ml)",
+              "priceCents": 0,
+              "available": true
+            },
+            {
+              "id": "large",
+              "name": "Grande (1L)",
+              "priceCents": 300,
+              "available": true
+            }
+          ]
+        },
+        {
+          "id": "drink-temperature",
+          "name": "Temperatura",
+          "required": false,
+          "minSelection": 0,
+          "maxSelection": 1,
+          "options": [
+            {
+              "id": "cold",
+              "name": "Bien fría",
+              "priceCents": 0,
+              "available": true
+            },
+            {
+              "id": "no-ice",
+              "name": "Sin hielo",
+              "priceCents": 0,
+              "available": true
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "9",
+      "categoryId": "4",
+      "name": "Vino tinto",
+      "description": "Vino tinto de la casa",
+      "priceCents": 2800,
+      "available": true,
+      "allergens": [
+        {
+          "code": "sulfitos",
+          "contains": true
+        }
+      ]
+    }
+  ],
+  "allergens": [
+    {
+      "code": "gluten",
+      "name": "Gluten",
+      "description": "Cereales que contienen gluten (trigo, cebada, centeno)."
+    },
+    {
+      "code": "lacteos",
+      "name": "Lácteos",
+      "description": "Leche y derivados como queso o crema."
+    },
+    {
+      "code": "huevo",
+      "name": "Huevo",
+      "description": "Huevos y productos derivados."
+    },
+    {
+      "code": "frutos_secos",
+      "name": "Frutos secos",
+      "description": "Nueces, almendras y otros frutos secos."
+    },
+    {
+      "code": "soja",
+      "name": "Soja",
+      "description": "Soja y productos basados en soja."
+    },
+    {
+      "code": "pescado",
+      "name": "Pescado",
+      "description": "Pescados y derivados."
+    },
+    {
+      "code": "mariscos",
+      "name": "Mariscos",
+      "description": "Crustáceos y moluscos."
+    },
+    {
+      "code": "sulfitos",
+      "name": "Sulfitos",
+      "description": "Aditivos conservantes a base de sulfito."
+    }
+  ],
+  "metadata": {
+    "currency": "ARS",
+    "version": 1,
+    "updatedAt": "2025-10-17T00:16:31.769Z"
+  }
+}

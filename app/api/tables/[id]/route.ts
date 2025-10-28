@@ -1,12 +1,10 @@
 import { NextResponse } from "next/server"
 
 import {
-  getStoreMetadata,
-  getTableById,
-  listTableHistory,
-  updateTableMetadata,
-  deleteTable,
-} from "@/lib/server/table-store"
+  getTableById as getTableByIdService,
+  updateTable as updateTableService,
+  deleteTable as deleteTableService,
+} from "@/lib/services/tables-service"
 import { logRequest, logResponse, obtenerIdDeParams, validarBody } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -42,30 +40,41 @@ export async function GET(
     const tableId = obtenerIdDeParams(context.params)
     logRequest('GET', `/api/tables/${tableId}`)
     
-    const table = await getTableById(tableId)
-    
-    if (!table) {
-      logger.warn('Mesa no encontrada', { tableId })
-      return notFound()
+    // Obtener usuario para tenant_id
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    const [metadata, history] = await Promise.all([
-      getStoreMetadata(),
-      listTableHistory(tableId),
-    ])
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Usuario sin tenant' }, { status: 403 })
+    }
+
+    // Obtener mesa desde Supabase
+    const { data: table, error } = await getTableByIdService(tableId, tenantId)
+    
+    if (error || !table) {
+      logger.warn('Mesa no encontrada', { tableId, tenantId })
+      return notFound()
+    }
 
     const _duration = Date.now() - startTime
     logResponse('GET', `/api/tables/${tableId}`, 200, _duration)
     
-    logger.info('Mesa obtenida', { 
+    logger.info('Mesa obtenida desde Supabase', { 
       tableId,
+      tenantId,
       duration: `${_duration}ms`
     })
 
     return NextResponse.json({
       data: table,
-      history,
-      metadata,
+      metadata: {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        source: 'supabase'
+      },
     })
   } catch (error) {
     const duration = Date.now() - startTime
@@ -92,24 +101,60 @@ export async function PATCH(
     const tableId = obtenerIdDeParams(context.params)
     logRequest('PATCH', `/api/tables/${tableId}`)
     
+    // Obtener usuario para tenant_id
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
+    }
+
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json({ error: 'Usuario sin tenant' }, { status: 403 })
+    }
+
     const payload = await validarBody<{
       number?: string
-      seats?: number
-      zone?: string
+      capacity?: number
+      zone_id?: string
+      zoneId?: string
+      status?: string
     }>(request)
 
-    logger.info('Actualizando metadata de mesa', { 
-      tableId, 
+    logger.info('Actualizando mesa', { 
+      tableId,
+      tenantId,
       updates: Object.keys(payload) 
     })
 
-    const updated = await updateTableMetadata(tableId, payload)
+    // Normalizar zoneId vs zone_id
+    const updates = {
+      number: payload.number,
+      capacity: payload.capacity,
+      zoneId: payload.zone_id || payload.zoneId,
+      status: payload.status,
+    }
+
+    // Remover undefined
+    Object.keys(updates).forEach(key => 
+      updates[key as keyof typeof updates] === undefined && delete updates[key as keyof typeof updates]
+    )
+
+    const { data: updated, error } = await updateTableService(tableId, updates, tenantId)
+
+    if (error || !updated) {
+      if (error?.message?.includes('not found')) {
+        logger.warn('Mesa no encontrada al actualizar', { tableId, tenantId })
+        return notFound()
+      }
+      throw error || new Error('No se pudo actualizar la mesa')
+    }
 
     const duration = Date.now() - startTime
     logResponse('PATCH', `/api/tables/${tableId}`, 200, duration)
     
-    logger.info('Mesa actualizada', { 
+    logger.info('Mesa actualizada en Supabase', { 
       tableId,
+      tenantId,
       duration: `${duration}ms`
     })
 
@@ -117,12 +162,6 @@ export async function PATCH(
   } catch (error) {
     const _duration2 = Date.now() - startTime
     
-    if (error instanceof Error && error.message === "Table not found") {
-      logResponse('PATCH', `/api/tables/${context.params.id}`, 404, _duration2)
-      logger.warn('Mesa no encontrada al actualizar', { tableId: context.params.id })
-      return notFound()
-    }
-
     logResponse('PATCH', `/api/tables/${context.params.id}`, 500, _duration2)
     logger.error('Error al actualizar mesa', error as Error, { 
       tableId: context.params.id 
@@ -175,8 +214,24 @@ export async function DELETE(
       userId: user.id,
     })
 
-    // Eliminar la mesa
-    await deleteTable(tableId, tenantId)
+    // Eliminar la mesa usando el servicio de Supabase
+    const { error: deleteError } = await deleteTableService(tableId, tenantId)
+
+    if (deleteError) {
+      const duration = Date.now() - startTime
+      logResponse('DELETE', `/api/tables/${tableId}`, 500, duration)
+      
+      logger.error('Error al eliminar mesa desde Supabase', new Error(`Delete failed: ${deleteError}`), { 
+        tableId,
+        tenantId,
+        errorDetail: deleteError 
+      })
+      
+      return NextResponse.json(
+        { error: deleteError },
+        { status: 500 }
+      )
+    }
 
     const duration = Date.now() - startTime
     logResponse('DELETE', `/api/tables/${tableId}`, 200, duration)

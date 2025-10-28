@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server"
 
 import {
-  getStoreMetadata,
-  listTables,
-  createTable,
-} from "@/lib/server/table-store"
+  getTables,
+  createTable as createTableService,
+} from "@/lib/services/tables-service"
 import { logRequest, logResponse } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -32,22 +31,46 @@ export async function GET() {
   try {
     logRequest('GET', '/api/tables')
     
-    const [tables, metadata] = await Promise.all([
-      listTables(),
-      getStoreMetadata(),
-    ])
+    // Obtener usuario actual para tenant_id
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
+    // Obtener mesas desde Supabase
+    const { data: tables, error } = await getTables(tenantId)
+
+    if (error) {
+      throw error
+    }
 
     const duration = Date.now() - startTime
     logResponse('GET', '/api/tables', 200, duration)
     
-    logger.info('Mesas obtenidas', { 
-      count: tables.length,
+    logger.info('Mesas obtenidas desde Supabase', { 
+      count: tables?.length || 0,
+      tenantId,
       duration: `${duration}ms`
     })
 
     return NextResponse.json({
-      data: tables,
-      metadata,
+      data: tables || [],
+      metadata: {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        source: 'supabase'
+      },
     })
   } catch (error) {
     const duration = Date.now() - startTime
@@ -66,12 +89,24 @@ export async function HEAD() {
   try {
     logger.debug('Obteniendo metadata de mesas')
     
-    const metadata = await getStoreMetadata()
+    const user = await getCurrentUser()
+    if (!user) {
+      return new NextResponse(null, { status: 401 })
+    }
+
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return new NextResponse(null, { status: 403 })
+    }
+
+    const { data: tables } = await getTables(tenantId)
     
     return new NextResponse(null, {
       headers: {
-        "x-table-store-version": String(metadata.version),
-        "x-table-store-updated-at": metadata.updatedAt,
+        "x-table-store-version": "1",
+        "x-table-store-updated-at": new Date().toISOString(),
+        "x-table-count": String(tables?.length || 0),
+        "x-data-source": "supabase",
       },
     })
   } catch (error) {
@@ -130,17 +165,21 @@ export async function POST(request: Request) {
       )
     }
 
-    // Crear mesa
-    const table = await createTable({
+    // Crear mesa en Supabase
+    const { data: table, error: createError } = await createTableService({
       number: number.trim(),
-      zone_id,
-      tenantId,
-    })
+      zoneId: zone_id,
+      capacity: 4, // Valor por defecto
+    }, tenantId)
+
+    if (createError || !table) {
+      throw createError || new Error('No se pudo crear la mesa')
+    }
 
     const duration = Date.now() - startTime
     logResponse('POST', '/api/tables', 201, duration)
 
-    logger.info('Mesa creada exitosamente', {
+    logger.info('Mesa creada exitosamente en Supabase', {
       tableId: table.id,
       number: table.number,
       tenantId,

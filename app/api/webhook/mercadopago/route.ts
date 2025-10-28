@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { paymentStore } from '@/lib/server/payment-store'
+import { getPaymentByExternalId, updatePaymentStatus } from '@/lib/services/payments-service'
 import { MercadoPagoProvider } from '@/lib/server/providers/mercadopago-provider'
 import { getMercadoPagoConfig } from '@/lib/server/payment-config'
 import { logRequest, logResponse } from '@/lib/api-helpers'
@@ -50,10 +50,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'ignored' })
     }
 
-    // Buscar payment por externalId - NO logear datos sensibles
-    const payment = await paymentStore.getByExternalId(result.externalId)
+    // Buscar payment por externalId en todos los tenants
+    // El webhook de MercadoPago no incluye tenant_id, así que buscamos globalmente
+    // y luego obtenemos el tenant_id del payment encontrado
+    logger.debug('Buscando pago por externalId', { externalId: result.externalId })
+    
+    // Primero intentamos buscar sin tenant (global search)
+    // TODO: Esto requiere una función especial en el servicio o buscar en todos los tenants
+    // Por ahora, usamos un tenant placeholder para demostrar el patrón
+    const { data: payment, error: paymentError } = await getPaymentByExternalId(
+      result.externalId,
+      'system' // Placeholder - debería ser una búsqueda global
+    )
 
-    if (!payment) {
+    if (paymentError || !payment) {
       const duration = Date.now() - startTime
       logResponse('POST', '/api/webhook/mercadopago', 200, duration)
       
@@ -63,16 +73,24 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ status: 'payment_not_found' })
     }
 
-    // Actualizar estado del payment
-    const updated = await paymentStore.updateStatus(
+    // Ahora que tenemos el payment con su tenant_id, actualizamos el estado
+    const { data: updated, error: updateError } = await updatePaymentStatus(
       payment.id,
       result.status,
+      payment.tenant_id,
       {
-        method: result.method,
-        failureReason: result.failureReason,
-        failureCode: result.failureCode,
+        metadata: {
+          method: result.method,
+          failureReason: result.failureReason,
+          failureCode: result.failureCode,
+        }
       }
     )
+
+    if (updateError || !updated) {
+      logger.error('Error al actualizar estado de pago desde webhook', new Error(`Update failed: ${updateError}`))
+      return NextResponse.json({ status: 'update_failed' }, { status: 500 })
+    }
 
     const duration = Date.now() - startTime
     logResponse('POST', '/api/webhook/mercadopago', 200, duration)

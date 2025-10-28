@@ -1,57 +1,55 @@
 ﻿import { NextResponse } from "next/server"
 
-import type { Table } from "@/lib/mock-data"
 import {
-  MAX_COVERS,
-  getStoreMetadata,
-  getTableById,
-  setTableCurrentCovers,
-} from "@/lib/server/table-store"
+  getTableById as getTableByIdService,
+  updateTable as updateTableService,
+} from "@/lib/services/tables-service"
 import { logRequest, logResponse, obtenerIdDeParams } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
 import { ValidationError, NotFoundError } from '@/lib/errors'
+import { getCurrentUser } from '@/lib/supabase/server'
+import type { User } from "@supabase/supabase-js"
 
-function serializeTable(table: Table) {
-  return {
-    id: table.id,
-    number: table.number,
-    zone: table.zone ?? null,
-    seats: table.seats ?? null,
-    status: table.status,
-    covers: {
-      current: table.covers.current,
-      total: table.covers.total,
-      sessions: table.covers.sessions,
-      lastUpdatedAt: table.covers.lastUpdatedAt ?? null,
-      lastSessionAt: table.covers.lastSessionAt ?? null,
-    },
-  }
-}
+const MAX_COVERS = 20
 
-function buildMetadata(metadata: Awaited<ReturnType<typeof getStoreMetadata>>) {
-  return {
-    version: metadata.version,
-    updatedAt: metadata.updatedAt,
-    totals: metadata.coverTotals,
-    limits: {
-      maxCurrent: MAX_COVERS,
-    },
-  }
+/**
+ * Extract tenantId from Supabase Auth User
+ */
+function getTenantIdFromUser(user: User): string | null {
+  return user.user_metadata?.tenant_id || null
 }
 
 export async function PATCH(request: Request, context: { params: { id: string } }) {
   const startTime = Date.now()
   
   try {
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
     const tableId = obtenerIdDeParams(context.params)
-    logRequest('PATCH', `/api/tables/${tableId}/covers`)
+    logRequest('PATCH', `/api/tables/${tableId}/covers`, { tenantId })
 
     let payload: unknown
     try {
       payload = await request.json()
     } catch {
-      logger.warn('Cuerpo de solicitud inválido (no JSON)', { tableId })
+      logger.warn('Cuerpo de solicitud inválido (no JSON)', { tableId, tenantId })
       throw new ValidationError("El cuerpo de la solicitud no es un JSON válido")
     }
 
@@ -68,7 +66,8 @@ export async function PATCH(request: Request, context: { params: { id: string } 
       currentRaw > MAX_COVERS
     ) {
       logger.warn('Valor de cubiertos inválido', { 
-        tableId, 
+        tableId,
+        tenantId,
         receivedValue: currentRaw,
         maxAllowed: MAX_COVERS 
       })
@@ -77,15 +76,26 @@ export async function PATCH(request: Request, context: { params: { id: string } 
 
     logger.info('Actualizando cubiertos de mesa', { 
       tableId,
+      tenantId,
       newCovers: currentRaw
     })
 
-    const table = await setTableCurrentCovers(tableId, currentRaw)
-    const storeMetadata = await getStoreMetadata()
+    // Actualizar metadata de la mesa con los covers
+    const { data: updated, error } = await updateTableService(
+      tableId,
+      {
+        metadata: {
+          covers: {
+            current: currentRaw,
+            updatedAt: new Date().toISOString(),
+          }
+        }
+      },
+      tenantId
+    )
 
-    const body = {
-      data: serializeTable(table),
-      metadata: buildMetadata(storeMetadata),
+    if (error || !updated) {
+      throw new Error('Error al actualizar cubiertos')
     }
 
     const duration = Date.now() - startTime
@@ -93,14 +103,20 @@ export async function PATCH(request: Request, context: { params: { id: string } 
     
     logger.info('Cubiertos actualizados exitosamente', { 
       tableId,
+      tenantId,
       covers: currentRaw,
       duration: `${duration}ms`
     })
 
-    return NextResponse.json(body, {
-      headers: {
-        "x-table-store-version": String(storeMetadata.version),
-        "x-table-store-updated-at": storeMetadata.updatedAt,
+    return NextResponse.json({
+      data: {
+        id: updated.id,
+        number: updated.number,
+        covers: currentRaw,
+      },
+      metadata: {
+        version: 1,
+        updatedAt: new Date().toISOString(),
       },
     })
   } catch (error) {
@@ -132,50 +148,70 @@ export async function GET(_request: Request, context: { params: { id: string } }
   const startTime = Date.now()
   
   try {
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
     const tableId = obtenerIdDeParams(context.params)
-    logRequest('GET', `/api/tables/${tableId}/covers`)
+    logRequest('GET', `/api/tables/${tableId}/covers`, { tenantId })
 
-    const [table, storeMetadata] = await Promise.all([
-      getTableById(tableId),
-      getStoreMetadata(),
-    ])
+    logger.info('Consultando información de cubiertos', { tableId, tenantId })
 
-    if (!table) {
-      logger.warn('Mesa no encontrada al obtener cubiertos', { tableId })
-      throw new NotFoundError(MENSAJES.ERRORES.MESA_NO_ENCONTRADA)
+    const { data: table, error } = await getTableByIdService(tableId, tenantId)
+
+    if (error || !table) {
+      const duration = Date.now() - startTime
+      logResponse('GET', `/api/tables/${tableId}/covers`, 404, duration)
+      logger.warn('Mesa no encontrada al consultar cubiertos', { tableId, tenantId })
+      return NextResponse.json({ error: { message: MENSAJES.ERRORES.MESA_NO_ENCONTRADA } }, { status: 404 })
     }
 
-    const body = {
-      data: serializeTable(table),
-      metadata: buildMetadata(storeMetadata),
-    }
+    // Extraer covers de metadata (si existe)
+    const covers = (table.metadata as { covers?: { current?: number } })?.covers?.current ?? 0
 
     const duration = Date.now() - startTime
     logResponse('GET', `/api/tables/${tableId}/covers`, 200, duration)
     
-    logger.info('Cubiertos obtenidos', { 
+    logger.info('Información de cubiertos recuperada exitosamente', { 
       tableId,
-      currentCovers: table.covers.current,
+      tenantId,
+      covers,
       duration: `${duration}ms`
     })
 
-    return NextResponse.json(body, {
-      headers: {
-        "x-table-store-version": String(storeMetadata.version),
-        "x-table-store-updated-at": storeMetadata.updatedAt,
+    return NextResponse.json({
+      data: {
+        id: table.id,
+        number: table.number,
+        covers,
+      },
+      metadata: {
+        version: 1,
+        updatedAt: new Date().toISOString(),
+        limits: {
+          maxCurrent: MAX_COVERS,
+        },
       },
     })
   } catch (error) {
     const duration = Date.now() - startTime
     const tableId = context.params.id
-
-    if (error instanceof NotFoundError) {
-      logResponse('GET', `/api/tables/${tableId}/covers`, 404, duration)
-      return NextResponse.json({ error: { message: error.message } }, { status: 404 })
-    }
-
     logResponse('GET', `/api/tables/${tableId}/covers`, 500, duration)
-    logger.error('Error al obtener cubiertos', error as Error, { tableId })
+    logger.error('Error al recuperar información de cubiertos', error as Error, { tableId })
     
     return NextResponse.json(
       { error: { message: MENSAJES.ERRORES.GENERICO } },

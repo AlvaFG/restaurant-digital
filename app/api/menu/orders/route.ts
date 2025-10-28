@@ -1,10 +1,16 @@
 import { NextResponse } from "next/server"
 import { z } from "zod"
 
-import { OrderService } from "@/lib/mock-data"
-import { getMenuMetadata } from "@/lib/server/menu-store"
+import { createOrder as createOrderService } from "@/lib/services/orders-service"
+import { getCurrentUser } from '@/lib/supabase/server'
+import type { User } from "@supabase/supabase-js"
 
-import { buildMenuHeaders } from "../utils"
+/**
+ * Extract tenantId from Supabase Auth User
+ */
+function getTenantIdFromUser(user: User): string | null {
+  return user.user_metadata?.tenant_id || null
+}
 
 const modifierSchema = z.object({
   groupId: z.string(),
@@ -50,15 +56,54 @@ export async function POST(request: Request) {
   const payload: CreateOrderPayload = parsed.data
 
   try {
-    const order = await OrderService.createOrder(payload.tableId, payload.items)
-    const metadata = await getMenuMetadata()
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
+    // Convertir payload al formato del servicio
+    const orderInput = {
+      tableId: payload.tableId,
+      items: payload.items.map(item => ({
+        menuItemId: item.menuItemId,
+        quantity: item.quantity,
+        notes: item.notes,
+        modifiers: item.modifiers?.map(m => ({
+          name: m.optionName,
+          priceCents: m.priceCents,
+        })),
+      })),
+    }
+
+    const { data: order, error } = await createOrderService(orderInput, tenantId)
+
+    if (error || !order) {
+      throw new Error('Error al crear orden')
+    }
 
     return NextResponse.json(
-      { data: order },
-      {
-        status: 201,
-        headers: buildMenuHeaders(metadata),
+      { 
+        data: {
+          id: order.id,
+          tableId: order.table_id,
+          status: order.status,
+          totalCents: order.total_cents,
+        } 
       },
+      { status: 201 }
     )
   } catch (error) {
     if (error instanceof Error && error.message.startsWith("Menu item not found")) {

@@ -1,33 +1,55 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { paymentStore } from '@/lib/server/payment-store'
-import { listOrders } from '@/lib/server/order-store'
+import { createPayment as createPaymentService, getPayments as getPaymentsService, getPaymentsStats } from '@/lib/services/payments-service'
+import { getOrderById } from '@/lib/services/orders-service'
 import { MercadoPagoProvider } from '@/lib/server/providers/mercadopago-provider'
 import { getMercadoPagoConfig, getPaymentConfig } from '@/lib/server/payment-config'
 import { 
   PaymentError, 
   PAYMENT_ERROR_CODES,
   type CreatePaymentPayload,
-  serializePayment,
 } from '@/lib/server/payment-types'
 import { logRequest, logResponse, validarBody } from '@/lib/api-helpers'
 import { logger } from '@/lib/logger'
 import { MENSAJES } from '@/lib/i18n/mensajes'
+import { getCurrentUser } from '@/lib/supabase/server'
+import type { User } from "@supabase/supabase-js"
 
 /**
- * POST /api/payment
- * Crear nuevo payment para una orden
+ * Extract tenantId from Supabase Auth User
  */
+function getTenantIdFromUser(user: User): string | null {
+  return user.user_metadata?.tenant_id || null
+}
+
 export async function POST(request: NextRequest) {
   const startTime = Date.now()
   
   try {
-    logRequest('POST', '/api/payment')
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
+    logRequest('POST', '/api/payment', { tenantId })
     
     const payload = await validarBody<CreatePaymentPayload>(request)
 
     // Validar payload
     if (!payload.orderId) {
-      logger.warn('orderId faltante en creación de pago')
+      logger.warn('orderId faltante en creación de pago', { tenantId })
       throw new PaymentError(
         'orderId is required',
         PAYMENT_ERROR_CODES.INVALID_PAYLOAD,
@@ -35,13 +57,12 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    // Verificar que orden existe - buscar por search que incluye el ID
-    logger.debug('Verificando existencia de orden', { orderId: payload.orderId })
-    const orders = await listOrders({ search: payload.orderId, limit: 1 })
-    const order = orders.find(o => o.id === payload.orderId)
+    // Verificar que orden existe usando Supabase
+    logger.debug('Verificando existencia de orden', { orderId: payload.orderId, tenantId })
+    const { data: order, error: orderError } = await getOrderById(payload.orderId, tenantId)
     
-    if (!order) {
-      logger.warn('Orden no encontrada para pago', { orderId: payload.orderId })
+    if (orderError || !order) {
+      logger.warn('Orden no encontrada para pago', { orderId: payload.orderId, tenantId })
       throw new PaymentError(
         `Order not found: ${payload.orderId}`,
         PAYMENT_ERROR_CODES.ORDER_NOT_FOUND,
@@ -50,9 +71,13 @@ export async function POST(request: NextRequest) {
     }
 
     // Verificar que orden no tenga payment activo
-    const hasActive = await paymentStore.hasActivePayment(payload.orderId)
-    if (hasActive) {
-      logger.warn('La orden ya tiene un pago activo', { orderId: payload.orderId })
+    const { data: existingPayments } = await getPaymentsService(tenantId, {
+      orderId: payload.orderId,
+      status: 'pending'
+    })
+
+    if (existingPayments && existingPayments.length > 0) {
+      logger.warn('La orden ya tiene un pago activo', { orderId: payload.orderId, tenantId })
       throw new PaymentError(
         'Order already has an active payment',
         PAYMENT_ERROR_CODES.PAYMENT_IN_PROGRESS,
@@ -63,8 +88,9 @@ export async function POST(request: NextRequest) {
     // Crear payment en Mercado Pago
     logger.info('Creando pago en Mercado Pago', { 
       orderId: order.id,
-      amount: order.total,
-      tableId: order.tableId
+      amount: order.total_cents,
+      tableId: order.table_id,
+      tenantId
     })
     
     const config = getMercadoPagoConfig()
@@ -72,30 +98,30 @@ export async function POST(request: NextRequest) {
     const provider = new MercadoPagoProvider(config, paymentConfig.webhookUrl)
 
     const result = await provider.createPayment({
-      amount: order.total,
+      amount: order.total_cents / 100, // Convertir centavos a pesos
       currency: 'ARS',
       orderId: order.id,
-      description: `Pedido #${order.id} - Mesa ${order.tableId}`,
+      description: `Pedido #${order.order_number} - Mesa ${order.table_id}`,
       customerEmail: payload.metadata?.customerEmail,
       customerName: payload.metadata?.customerName,
       returnUrl: payload.returnUrl || paymentConfig.returnUrl,
       failureUrl: payload.failureUrl || paymentConfig.failureUrl,
       metadata: {
-        tableId: order.tableId,
+        tableId: order.table_id || 'unknown',
         ...payload.metadata?.custom,
       },
     })
 
-    // Guardar payment en store
-    const payment = await paymentStore.create({
+    // Guardar payment en Supabase
+    const { data: payment, error: paymentError } = await createPaymentService({
       orderId: order.id,
-      tableId: order.tableId,
+      tableId: order.table_id || undefined,
       provider: 'mercadopago',
-      amount: order.total,
+      amountCents: order.total_cents,
       currency: 'ARS',
       externalId: result.externalId,
       checkoutUrl: result.checkoutUrl,
-      expiresAt: result.expiresAt,
+      expiresAt: result.expiresAt?.toISOString(),
       metadata: {
         customerEmail: payload.metadata?.customerEmail,
         customerName: payload.metadata?.customerName,
@@ -103,7 +129,19 @@ export async function POST(request: NextRequest) {
         returnUrl: payload.returnUrl,
         failureUrl: payload.failureUrl,
       },
-    })
+    }, tenantId)
+
+    if (paymentError || !payment) {
+      logger.error('Error al guardar pago en Supabase', new Error(`Payment save failed: ${paymentError}`), {
+        tenantId,
+        orderId: order.id
+      })
+      throw new PaymentError(
+        'Failed to save payment',
+        PAYMENT_ERROR_CODES.INTERNAL_ERROR,
+        500
+      )
+    }
 
     const duration = Date.now() - startTime
     logResponse('POST', '/api/payment', 201, duration)
@@ -112,8 +150,9 @@ export async function POST(request: NextRequest) {
     logger.info('Pago creado exitosamente', { 
       paymentId: payment.id,
       orderId: order.id,
-      amount: order.total,
+      amount: order.total_cents,
       provider: 'mercadopago',
+      tenantId,
       duration: `${duration}ms`
     })
 
@@ -121,13 +160,13 @@ export async function POST(request: NextRequest) {
       {
         data: {
           paymentId: payment.id,
-          checkoutUrl: payment.checkoutUrl!,
+          checkoutUrl: payment.checkout_url!,
           status: payment.status,
-          expiresAt: payment.expiresAt?.toISOString(),
+          expiresAt: payment.expires_at,
         },
         metadata: {
           provider: payment.provider,
-          createdAt: payment.createdAt.toISOString(),
+          createdAt: payment.created_at,
         },
       },
       { status: 201 }
@@ -173,37 +212,74 @@ export async function GET(request: NextRequest) {
   const startTime = Date.now()
   
   try {
+    // Obtener usuario actual
+    const user = await getCurrentUser()
+    if (!user) {
+      return NextResponse.json(
+        { error: 'No autenticado' },
+        { status: 401 }
+      )
+    }
+
+    // Obtener tenant_id del usuario
+    const tenantId = getTenantIdFromUser(user)
+    if (!tenantId) {
+      return NextResponse.json(
+        { error: 'Usuario sin tenant asignado' },
+        { status: 403 }
+      )
+    }
+
     const { searchParams } = new URL(request.url)
-    logRequest('GET', '/api/payment', Object.fromEntries(searchParams))
+    logRequest('GET', '/api/payment', { ...Object.fromEntries(searchParams), tenantId })
 
     const filters = {
       orderId: searchParams.get('orderId') || undefined,
       tableId: searchParams.get('tableId') || undefined,
-      status: (searchParams.get('status') as unknown) as import('@/lib/server/payment-types').PaymentStatus || undefined,
-      provider: (searchParams.get('provider') as unknown) as import('@/lib/server/payment-types').PaymentProvider || undefined,
-      search: searchParams.get('search') || undefined,
+      status: searchParams.get('status') as 'pending' | 'completed' | 'failed' | 'cancelled' | undefined,
+      provider: searchParams.get('provider') as 'mercadopago' | 'stripe' | 'cash' | undefined,
       limit: parseInt(searchParams.get('limit') || '50', 10),
-      sort: (searchParams.get('sort') || 'newest') as 'newest' | 'oldest',
     }
 
-    logger.debug('Obteniendo lista de pagos', { filters })
+    logger.debug('Obteniendo lista de pagos desde Supabase', { filters, tenantId })
     
-    const payments = await paymentStore.list(filters)
-    const summary = await paymentStore.getSummary()
+    const [paymentsResult, statsResult] = await Promise.all([
+      getPaymentsService(tenantId, filters),
+      getPaymentsStats(tenantId)
+    ])
+
+    if (paymentsResult.error) {
+      throw new Error('Error obteniendo pagos')
+    }
 
     const duration = Date.now() - startTime
     logResponse('GET', '/api/payment', 200, duration)
     
-    logger.info('Pagos obtenidos', { 
-      count: payments.length,
+    logger.info('Pagos obtenidos desde Supabase', { 
+      count: paymentsResult.data?.length || 0,
+      tenantId,
       duration: `${duration}ms`
     })
 
     return NextResponse.json({
-      data: payments.map(serializePayment),
+      data: (paymentsResult.data || []).map(payment => ({
+        id: payment.id,
+        orderId: payment.order_id,
+        tableId: payment.table_id,
+        paymentNumber: payment.payment_number,
+        provider: payment.provider,
+        status: payment.status,
+        method: payment.method,
+        amountCents: payment.amount_cents,
+        currency: payment.currency,
+        externalId: payment.external_id,
+        checkoutUrl: payment.checkout_url,
+        createdAt: payment.created_at,
+        updatedAt: payment.updated_at,
+      })),
       metadata: {
-        total: payments.length,
-        summary,
+        total: paymentsResult.data?.length || 0,
+        stats: statsResult.data,
       },
     })
   } catch (error) {
