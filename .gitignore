@@ -27,3 +27,7 @@ yarn-error.log*
 next-env.d.ts.DS_Store
 .idea/
 *.log
+
+# Legacy JSON stores (deprecated - use Supabase)
+data/*-store.json
+lib/server/legacy/
