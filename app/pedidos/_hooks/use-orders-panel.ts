@@ -14,7 +14,7 @@ import {
   type SerializedOrder,
 } from "@/lib/order-service"
 import type { OrderStatus, PaymentStatus } from "@/lib/server/order-types"
-import type { OrdersSummary } from "@/lib/server/order-store"
+import type { OrdersSummary } from "@/lib/order-service"  // Moved from order-store
 import type { OrderEventPayload, OrderSummaryEventPayload } from "@/lib/socket-events"
 import type { SocketConnectionState } from "@/lib/socket"
 

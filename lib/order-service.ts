@@ -1,10 +1,21 @@
 import { MOCK_ORDERS } from "@/lib/mock-data"
-import type { OrdersSummary } from "@/lib/server/order-store"
+// Legacy imports removed - types now defined locally
+// import type { OrdersSummary } from "@/lib/server/order-store"
 import type { CreateOrderPayload, PaymentStatus, StoredOrder } from "@/lib/server/order-types"
 import type { OrderStatus } from "@/lib/server/order-types"
 import { logger } from './logger'
 import { AppError, ValidationError } from './errors'
 import { MENSAJES } from './i18n/mensajes'
+
+// Type previously from order-store (now local)
+export interface OrdersSummary {
+  total: number
+  byStatus: Record<OrderStatus, number>
+  byPaymentStatus: Record<PaymentStatus, number>
+  oldestOrderAt: Date | null
+  latestOrderAt: Date | null
+  pendingPayment: number
+}
 
 export type OrdersSortOption = "newest" | "oldest"
 

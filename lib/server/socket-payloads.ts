@@ -1,5 +1,5 @@
 import type { Alert, Table, TableMapLayout } from "@/lib/mock-data"
-import type { OrdersSummary } from "@/lib/server/order-store"
+import type { OrdersSummary } from "@/lib/order-service"  // Moved from order-store
 import type { OrdersStoreMetadata, StoredOrder } from "@/lib/server/order-types"
 import type {
   AlertAcknowledgedPayload,

@@ -527,9 +527,10 @@ export class OrderService {
     }
 
     if (typeof window === "undefined") {
-      const { getMenuItemsSnapshot } = await import("@/lib/server/menu-store")
-      const snapshot = await getMenuItemsSnapshot(uniqueIds)
-      return snapshot.items
+      // Legacy code removed - now using Supabase menu-service
+      // const { getMenuItemsSnapshot } = await import("@/lib/server/menu-store")
+      // const snapshot = await getMenuItemsSnapshot(uniqueIds)
+      // return snapshot.items
     }
 
     const fallbackMap = new Map<string, MenuItem>()
