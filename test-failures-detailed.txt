@@ -1,0 +1,3189 @@
+﻿
+[1m[46m RUN [49m[22m [36mv3.2.4 [39m[90mC:/Users/alvar/Downloads/restaurantmanagement[39m
+
+ [31mΓ¥»[39m lib/__tests__/supabase-connection.test.ts [2m([22m[2m1 test[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 8[2mms[22m[39m
+[31m   [31m├ù[31m Supabase Connection[2m > [22mshould connect to Supabase successfully[39m[32m 6[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'json')[39m
+ [31mΓ¥»[39m lib/services/__tests__/users-service.test.ts [2m([22m[2m20 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[32m 35[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Read Operations[2m > [22mshould get all users for tenant[32m 4[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Read Operations[2m > [22mshould get a user by id[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Read Operations[2m > [22mshould check if email is available[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Read Operations[2m > [22mshould get user statistics[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Create Operations[2m > [22mshould create a new user[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Create Operations[2m > [22mshould create user with default active=true[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Create Operations[2m > [22mshould trim and lowercase email on create[32m 0[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Update Operations[2m > [22mshould update user email[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Update Operations[2m > [22mshould update user role[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Update Operations[2m > [22mshould update multiple fields[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Update Operations[2m > [22mshould toggle user active status[32m 0[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Delete Operations[2m > [22mshould soft delete a user[32m 2[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Delete Operations[2m > [22mshould prevent deleting last admin[32m 2[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Validations[2m > [22mshould validate email format on create[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Validations[2m > [22mshould handle duplicate email error[32m 0[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Validations[2m > [22mshould validate role values[32m 0[2mms[22m[39m
+   [32mΓ£ô[39m Users Service - Validations[2m > [22mshould trim whitespace from name[32m 0[2mms[22m[39m
+[31m   [31m├ù[31m Users Service - Edge Cases[2m > [22mshould handle empty tenant id[39m[32m 13[2mms[22m[39m
+[31m     ΓåÆ promise resolved "[]" instead of rejecting[39m
+[31m   [31m├ù[31m Users Service - Edge Cases[2m > [22mshould handle non-existent user id[39m[32m 2[2mms[22m[39m
+[31m     ΓåÆ promise resolved "[]" instead of rejecting[39m
+   [32mΓ£ô[39m Users Service - Edge Cases[2m > [22mshould handle updates with no changes[32m 1[2mms[22m[39m
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Categories[2m > [22m[2mshould create a new category
+[22m[39m[2025-10-31T15:57:30.422Z][menu-service][INFO] Categor├¡a creada {"categoryId":"item-2","name":"Postres"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Categories[2m > [22m[2mshould update a category
+[22m[39m[2025-10-31T15:57:30.436Z][menu-service][INFO] Categor├¡a actualizada {"categoryId":"cat-1"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Items[2m > [22m[2mshould create a new menu item
+[22m[39m[2025-10-31T15:57:30.450Z][menu-service][INFO] Item del men├║ creado {"itemId":"item-2","name":"Bruschetta"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Items[2m > [22m[2mshould update a menu item
+[22m[39m[2025-10-31T15:57:30.452Z][menu-service][INFO] Item del men├║ actualizado {"itemId":"item-1"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Items[2m > [22m[2mshould delete a menu item
+[22m[39m[2025-10-31T15:57:30.453Z][menu-service][INFO] Item del men├║ eliminado {"itemId":"item-1"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Validations[2m > [22m[2mshould create item with minimal data
+[22m[39m[2025-10-31T15:57:30.455Z][menu-service][INFO] Item del men├║ creado {"itemId":"item-2","name":"Item M├¡nimo"}
+
+[90mstdout[2m | lib/services/__tests__/menu-service.test.ts[2m > [22m[2mMenu Service - Validations[2m > [22m[2mshould handle item with optional fields
+[22m[39m[2025-10-31T15:57:30.456Z][menu-service][INFO] Item del men├║ creado {"itemId":"item-2","name":"Item Completo"}
+
+ [31mΓ¥»[39m lib/services/__tests__/menu-service.test.ts [2m([22m[2m14 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 42[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Categories[2m > [22mshould get all menu categories[32m 5[2mms[22m[39m
+[31m   [31m├ù[31m Menu Service - Categories[2m > [22mshould create a new category[39m[32m 14[2mms[22m[39m
+[31m     ΓåÆ expected 'Bruschetta' to be 'Postres' // Object.is equality[39m
+   [32mΓ£ô[39m Menu Service - Categories[2m > [22mshould update a category[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould get all menu items[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould get menu items by category[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould get menu items with search filter[32m 10[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould get a menu item by id[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould create a new menu item[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould update a menu item[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Items[2m > [22mshould delete a menu item[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Full Menu[2m > [22mshould get full menu with categories and items[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Validations[2m > [22mshould handle empty tenant id gracefully[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Validations[2m > [22mshould create item with minimal data[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m Menu Service - Validations[2m > [22mshould handle item with optional fields[32m 1[2mms[22m[39m
+node.exe : [90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > 
+[22m[2mQR Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould generate 
+complete QR code data
+At C:\Program Files\nodejs\npx.ps1:16 char:5
++     & "$basedir/node$exe"  "$basedir/node_modules/npm/bin/npx-cli.js" ...
++     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...te QR code data:St 
+   ring) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould accept custom QR 
+options
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould accept custom QR 
+options
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould set expiration to 24 
+hours from now
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould set expiration to 24 
+hours from now
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould throw error for 
+nonexistent table
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould throw error for 
+nonexistent table
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould generate unique 
+tokens for same table
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateQR[2m > [22m[2mshould generate unique 
+tokens for same table
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mvalidateToken[2m > [22m[2mshould validate correct 
+token and return table data
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mvalidateToken[2m > [22m[2mshould validate correct 
+token and return table data
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mrefreshToken[2m > [22m[2mshould generate new QR 
+for table
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mrefreshToken[2m > [22m[2mshould generate new QR 
+for table
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mrefreshToken[2m > [22m[2mshould generate different 
+tokens on each refresh
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mrefreshToken[2m > [22m[2mshould generate different 
+tokens on each refresh
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgetTokenMetadata[2m > [22m[2mshould extract 
+metadata from valid token
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgetTokenMetadata[2m > [22m[2mshould extract 
+metadata from valid token
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2misTokenExpired[2m > [22m[2mshould return false for 
+valid token
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2misTokenExpired[2m > [22m[2mshould return false for 
+valid token
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould generate QRs for 
+multiple tables
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould handle mixed 
+success and failures
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould apply custom 
+options to all QRs in batch
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould apply custom 
+options to all QRs in batch
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould apply custom 
+options to all QRs in batch
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mgenerateBatch[2m > [22m[2mshould apply custom 
+options to all QRs in batch
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mLegacy API compatibility[2m > [22m[2mshould 
+support generateQRCode legacy function
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mLegacy API compatibility[2m > [22m[2mshould 
+support generateQRCode legacy function
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mLegacy API compatibility[2m > [22m[2mshould 
+support validateQRToken legacy function
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | lib/server/__tests__/qr-service.test.ts[2m > [22m[2mQR 
+Service v2.0[2m > [22m[2mLegacy API compatibility[2m > [22m[2mshould 
+support validateQRToken legacy function
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+ [31mΓ¥»[39m lib/server/__tests__/qr-service.test.ts [2m([22m[2m23 tests[22m[2m | [22m[31m14 failed[39m[2m)[22m[32m 233[2mms[22m[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateQR[2m > [22mshould generate complete QR code data[39m[32m 43[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-1[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateQR[2m > [22mshould accept custom QR options[39m[32m 7[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-2[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateQR[2m > [22mshould set expiration to 24 hours from now[39m[32m 6[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-3[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mgenerateQR[2m > [22mshould throw error for nonexistent table[32m 11[2mms[22m[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateQR[2m > [22mshould generate unique tokens for same table[39m[32m 6[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-4[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mvalidateToken[2m > [22mshould validate correct token and return table data[39m[32m 5[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-5[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mvalidateToken[2m > [22mshould reject expired token[32m 8[2mms[22m[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mvalidateToken[2m > [22mshould reject token with invalid signature[32m 8[2mms[22m[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mvalidateToken[2m > [22mshould reject token with invalid type[32m 3[2mms[22m[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mvalidateToken[2m > [22mshould reject malformed token[32m 1[2mms[22m[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mrefreshToken[2m > [22mshould generate new QR for table[39m[32m 6[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-9[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mrefreshToken[2m > [22mshould generate different tokens on each refresh[39m[32m 5[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-10[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgetTokenMetadata[2m > [22mshould extract metadata from valid token[39m[32m 8[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-11[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mgetTokenMetadata[2m > [22mshould return null for invalid token[32m 0[2mms[22m[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22mgetTokenMetadata[2m > [22mshould extract metadata from expired token (no verification)[32m 2[2mms[22m[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22misTokenExpired[2m > [22mshould return false for valid token[39m[32m 22[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-13[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22misTokenExpired[2m > [22mshould return true for expired token[32m 2[2mms[22m[39m
+   [32mΓ£ô[39m QR Service v2.0[2m > [22misTokenExpired[2m > [22mshould return true for invalid token[32m 0[2mms[22m[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateBatch[2m > [22mshould generate QRs for multiple tables[39m[32m 36[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 3 but got +0[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateBatch[2m > [22mshould handle mixed success and failures[39m[32m 34[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 2 but got +0[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mgenerateBatch[2m > [22mshould apply custom options to all QRs in batch[39m[32m 8[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 2 but got +0[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mLegacy API compatibility[2m > [22mshould support generateQRCode legacy function[39m[32m 4[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-50[39m
+[31m   [31m├ù[31m QR Service v2.0[2m > [22mLegacy API compatibility[2m > [22mshould support validateQRToken legacy function[39m[32m 4[2mms[22m[39m
+[31m     ΓåÆ Table not found: table-51[39m
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mfetchOrders[2m > [22m[2mconstruye la query y normaliza la respuesta
+[22m[39m[2025-10-31T15:57:30.910Z][DEBUG] Obteniendo pedidos {"params":{"status":["abierto","preparando"],"paymentStatus":"pagado","tableId":"7","search":"mesa","limit":20,"sort":"oldest"},"endpoint":"/api/order?status=abierto&status=preparando&paymentStatus=pagado&tableId=7&search=mesa&limit=20&sort=oldest"}
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mGET /api/menu returns catalog with headers
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mfetchOrders[2m > [22m[2mconstruye la query y normaliza la respuesta
+[22m[39m[2025-10-31T15:57:30.914Z][INFO] Pedidos obtenidos exitosamente {"count":1,"duration":"6ms"}
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mfetchOrders[2m > [22m[2musa fallback y registra advertencia si la peticion falla
+[22m[39m[2025-10-31T15:57:30.919Z][DEBUG] Obteniendo pedidos {"params":{},"endpoint":"/api/order"}
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mcreateOrder[2m > [22m[2menvia el payload y normaliza la respuesta
+[22m[39m[2025-10-31T15:57:30.921Z][INFO] Creando pedido {"tableId":"1","itemsCount":1}
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mcreateOrder[2m > [22m[2menvia el payload y normaliza la respuesta
+[22m[39m[2025-10-31T15:57:30.922Z][INFO] Pedido creado exitosamente {"orderId":"order-1","duration":"1ms"}
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mcreateOrder[2m > [22m[2mpropaga errores 4xx con el mensaje del backend
+[22m[39m[2025-10-31T15:57:30.926Z][INFO] Creando pedido {"tableId":"1","itemsCount":1}
+
+[90mstderr[2m | lib/__tests__/order-service.test.ts[2m > 
+[22m[2mcreateOrder[2m > [22m[2mpropaga errores 4xx con el mensaje del backend
+[22m[39m[2025-10-31T15:57:30.927Z][ERROR] Error al crear pedido (4xx) 
+{"status":409,"errorCode":"STOCK_INSUFFICIENT","errorMessage":"Sin stock 
+disponible"}
+
+[90mstdout[2m | lib/__tests__/order-service.test.ts[2m > [22m[2mcreateOrder[2m > [22m[2mlanza un error generico para fallos 5xx o de red
+[22m[39m[2025-10-31T15:57:30.928Z][INFO] Creando pedido {"tableId":"1","itemsCount":1}
+
+ [31mΓ¥»[39m lib/__tests__/order-service.test.ts [2m([22m[2m6 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 42[2mms[22m[39m
+   [32mΓ£ô[39m fetchOrders[2m > [22mconstruye la query y normaliza la respuesta[32m 14[2mms[22m[39m
+   [32mΓ£ô[39m fetchOrders[2m > [22musa fallback y registra advertencia si la peticion falla[32m 2[2mms[22m[39m
+   [32mΓ£ô[39m createOrder[2m > [22menvia el payload y normaliza la respuesta[32m 5[2mms[22m[39m
+   [32mΓ£ô[39m createOrder[2m > [22mpropaga errores 4xx con el mensaje del backend[32m 2[2mms[22m[39m
+[31m   [31m├ù[31m createOrder[2m > [22mlanza un error generico para fallos 5xx o de red[39m[32m 17[2mms[22m[39m
+[31m     ΓåÆ expected OrderServiceError: Ocurri├│ un error inespΓÇª { ΓÇª(2) } to match object { Object (message) }
+(3 matching properties omitted from actual)[39m
+   [32mΓ£ô[39m status badge tokens[2m > [22mdefine variantes consistentes[32m 1[2mms[22m[39m
+[90mstdout[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables API[2m > [22m[2mGET /api/tables returns list with metadata
+[22m[39m[2025-10-31T15:57:31.031Z][INFO] GET /api/tables
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mGET /api/tables returns list with metadata
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+ [31mΓ¥»[39m lib/server/__tests__/session-manager.test.ts [2m([22m[2m18 tests[22m[2m | [22m[31m1 failed[39m[2m)[22m[32m 42[2mms[22m[39m
+[31m   [31m├ù[31m session-manager v2.0.0[2m > [22mcreateSession[2m > [22mshould create session with valid QR token[39m[32m 22[2mms[22m[39m
+[31m     ΓåÆ expected "validateToken" to be called with arguments: [ 'valid-qr-token' ][90m
+
+Received: 
+
+[1m  1st validateToken call:
+
+[22m[2m  [[22m
+[2m    "valid-qr-token",[22m
+[31m+   undefined,[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcreateSession[2m > [22mshould throw error with invalid QR token[32m 3[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcreateSession[2m > [22mshould throw error with expired QR token[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcreateSession[2m > [22mshould throw error when QR token missing table metadata[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mvalidateSession[2m > [22mshould validate existing active session successfully[32m 3[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mvalidateSession[2m > [22mshould fail validation for non-existent session[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mvalidateSession[2m > [22mshould fail validation for expired session[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mvalidateSession[2m > [22mshould fail validation for closed session[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mvalidateSession[2m > [22mshould fail validation when QR token is expired[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mupdateSession[2m > [22mshould update session status with valid transition[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mupdateSession[2m > [22mshould throw error for invalid status transition[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mupdateSession[2m > [22mshould add order ID to session[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mupdateSession[2m > [22mshould extend session when requested[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcloseSession[2m > [22mshould close an active session[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mextendSession[2m > [22mshould extend session expiration[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mgetSessionsByTable[2m > [22mshould return all sessions for a table[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcleanup[2m > [22mshould cleanup expired sessions[32m 1[2mms[22m[39m
+   [32mΓ£ô[39m session-manager v2.0.0[2m > [22mcleanup[2m > [22mshould support dry run mode[32m 0[2mms[22m[39m
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mGET /api/table-layout returns layout and tables
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mGET /api/table-layout returns layout and tables
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPATCH /api/menu/items/:id returns 404 for unknown item
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPATCH /api/menu/items/:id returns 404 for unknown item
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstdout[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables API[2m > [22m[2mPATCH /api/tables/[id]/state updates table status
+[22m[39m[2025-10-31T15:57:31.376Z][INFO] GET /api/tables/1
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mPATCH /api/tables/[id]/state updates table status
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mPATCH /api/tables/[id]/state updates table status
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstdout[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables API[2m > [22m[2mPATCH /api/tables/[id]/state rejects invalid transition
+[22m[39m[2025-10-31T15:57:31.401Z][INFO] PATCH /api/tables/2/state
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mPATCH /api/tables/[id]/state rejects invalid transition
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/tables-api.test.ts[2m > [22m[2mtables 
+API[2m > [22m[2mPATCH /api/tables/[id]/state rejects invalid transition
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+ [31mΓ¥»[39m app/api/__tests__/tables-api.test.ts [2m([22m[2m4 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 1511[2mms[22m[39m
+[31m   [31m├ù[31m tables API[2m > [22mGET /api/tables returns list with metadata[39m[33m 1183[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m tables API[2m > [22mGET /api/table-layout returns layout and tables[39m[32m 92[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m tables API[2m > [22mPATCH /api/tables/[id]/state updates table status[39m[32m 208[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'status')[39m
+[31m   [31m├ù[31m tables API[2m > [22mPATCH /api/tables/[id]/state rejects invalid transition[39m[32m 24[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 409 // Object.is equality[39m
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders returns 404 when item is missing
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders returns 404 when item is missing
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders accepts items with modifiers and notes
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders accepts items with modifiers and notes
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders accepts items without modifiers (backward 
+compatibility)
+[22m[39mMultiple GoTrueClient instances detected in the same browser context. 
+It is not an error, but this should be avoided as it may produce undefined 
+behavior when used concurrently under the same storage key.
+
+[90mstderr[2m | app/api/__tests__/menu-api.test.ts[2m > [22m[2mmenu API[2m 
+> [22m[2mPOST /api/menu/orders accepts items without modifiers (backward 
+compatibility)
+[22m[39mTypeError: Cannot create property 'user' on string 'mock-value'
+    at SupabaseAuthClient._recoverAndRefresh [90m(C:\Users\alvar\Downloads\restau
+rantmanagement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:24
+93:32[90m)[39m
+[90m    at processTicksAndRejections 
+(node:internal/process/task_queues:105:5)[39m
+    at SupabaseAuthClient._initialize [90m(C:\Users\alvar\Downloads\restaurantman
+agement\[39mnode_modules\[4m@supabase[24m\auth-js\src\GoTrueClient.ts:463:7[90
+m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mnode_modules\[4m@s
+upabase[24m\auth-js\src\GoTrueClient.ts:388:16
+
+ [31mΓ¥»[39m app/api/__tests__/menu-api.test.ts [2m([22m[2m7 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 2175[2mms[22m[39m
+[31m   [31m├ù[31m menu API[2m > [22mGET /api/menu returns catalog with headers[39m[33m 1438[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 200 // Object.is equality[39m
+[31m   [31m├ù[31m menu API[2m > [22mPATCH /api/menu/items/:id returns 404 for unknown item[39m[32m 205[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 404 // Object.is equality[39m
+[31m   [31m├ù[31m menu API[2m > [22mPOST /api/menu/orders returns 404 when item is missing[39m[33m 403[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 404 // Object.is equality[39m
+   [32mΓ£ô[39m menu API[2m > [22mPOST /api/menu/orders rejects invalid payload[32m 19[2mms[22m[39m
+[31m   [31m├ù[31m menu API[2m > [22mPOST /api/menu/orders accepts items with modifiers and notes[39m[32m 45[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 201 // Object.is equality[39m
+[31m   [31m├ù[31m menu API[2m > [22mPOST /api/menu/orders accepts items without modifiers (backward compatibility)[39m[32m 41[2mms[22m[39m
+[31m     ΓåÆ expected 401 to be 201 // Object.is equality[39m
+   [32mΓ£ô[39m menu API[2m > [22mPOST /api/menu/orders rejects notes exceeding 200 characters[32m 18[2mms[22m[39m
+[90mstderr[2m | tests/hooks/use-table-layout.test.tsx[2m > 
+[22m[2museTableLayout[2m > [22m[2mshould handle save layout error
+[22m[39m[useTableLayout] Error saving layout: Error: Save failed
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mtests\hooks\use-tab
+le-layout.test.tsx:212:60
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/
+[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mno
+de_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+ [31mΓ¥»[39m tests/integration/tables-zones.test.tsx [2m([22m[2m8 tests[22m[2m | [22m[31m4 failed[39m[2m)[22m[33m 830[2mms[22m[39m
+[31m   [31m├ù[31m Tables + Zones Integration[2m > [22mshould load zones and tables together[39m[32m 133[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 2 but got +0[39m
+   [32mΓ£ô[39m Tables + Zones Integration[2m > [22mshould filter tables by zone[32m 110[2mms[22m[39m
+   [32mΓ£ô[39m Tables + Zones Integration[2m > [22mshould create table and assign to zone[32m 61[2mms[22m[39m
+   [32mΓ£ô[39m Tables + Zones Integration[2m > [22mshould reassign table to different zone[32m 69[2mms[22m[39m
+[31m   [31m├ù[31m Tables + Zones Integration[2m > [22mshould handle zone deletion affecting tables[39m[32m 79[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+[31m   [31m├ù[31m Tables + Zones Integration[2m > [22mshould create zone and immediately assign tables to it[39m[32m 79[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+   [32mΓ£ô[39m Tables + Zones Integration[2m > [22mshould maintain cache consistency when moving tables between zones[32m 186[2mms[22m[39m
+[31m   [31m├ù[31m Tables + Zones Integration[2m > [22mshould handle concurrent zone and table operations[39m[32m 111[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+[90mstderr[2m | app/menu/__tests__/menu-page.test.tsx[2m > 
+[22m[2mMenuPage[2m > [22m[2mrenderiza el placeholder de gesti├│n de men├║
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <MenuPage> component:
+
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:85)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m[2m<OrderForm />[2m > [22m[2mmuestra toast de exito, resetea formulario 
+y respeta spinner
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <OrderForm> component:
+
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:42:125)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m[2m<OrderForm />[2m > [22m[2mmuestra toast destructivo en errores 4xx y 
+conserva datos
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <OrderForm> component:
+
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:42:125)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m[2m<OrderForm />[2m > [22m[2mrefresca el panel cuando los sockets estan 
+deshabilitados
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:37:90)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <OrderForm> component:
+
+    at OrderForm 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\order-form.tsx:42:125)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+ [31mΓ¥»[39m app/pedidos/__tests__/order-form.test.tsx [2m([22m[2m3 tests[22m[2m | [22m[31m3 failed[39m[2m)[22m[32m 78[2mms[22m[39m
+[31m   [31m├ù[31m <OrderForm />[2m > [22mmuestra toast de exito, resetea formulario y respeta spinner[39m[32m 56[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrderForm />[2m > [22mmuestra toast destructivo en errores 4xx y conserva datos[39m[32m 7[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrderForm />[2m > [22mrefresca el panel cuando los sockets estan deshabilitados[39m[32m 12[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[90mstderr[2m | app/menu/__tests__/menu-page.test.tsx[2m > 
+[22m[2mMenuPage[2m > [22m[2mutiliza el DashboardLayout con rol de admin 
+requerido
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <MenuPage> component:
+
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:85)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/menu/__tests__/menu-page.test.tsx[2m > 
+[22m[2mMenuPage[2m > [22m[2mmuestra el contenedor placeholder con estilo 
+centrado
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <MenuPage> component:
+
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:85)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/menu/__tests__/menu-page.test.tsx[2m > 
+[22m[2mMenuPage[2m > [22m[2mrenderiza correctamente el t├¡tulo y descripci├│n
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <MenuPage> component:
+
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:85)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m[2m<OrdersPanel />[2m > [22m[2mrenderiza resumen y lista de pedidos
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+The above error occurred in the <OrdersPanel> component:
+
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:84:22)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | tests/hooks/use-table-layout.test.tsx[2m > 
+[22m[2museTableLayout[2m > [22m[2mshould handle delete layout error
+[22m[39m[useTableLayout] Error deleting layout: Error: Delete failed
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mtests\hooks\use-tab
+le-layout.test.tsx:278:62
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/
+[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mno
+de_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+[90mstderr[2m | app/menu/__tests__/menu-page.test.tsx[2m > 
+[22m[2mMenuPage[2m > [22m[2mmuestra el mensaje para administradores
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useMenuItems 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-menu.ts:125:22)
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:103)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+    at invokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\node_mo
+dules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:296:3)
+The above error occurred in the <MenuPage> component:
+
+    at MenuPage 
+(C:\Users\alvar\Downloads\restaurantmanagement\app\menu\page.tsx:30:85)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+ [31mΓ¥»[39m app/menu/__tests__/menu-page.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 2622[2mms[22m[39m
+[31m   [31m├ù[31m MenuPage[2m > [22mrenderiza el placeholder de gesti├│n de men├║[39m[33m 2372[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m MenuPage[2m > [22mutiliza el DashboardLayout con rol de admin requerido[39m[32m 69[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m MenuPage[2m > [22mmuestra el contenedor placeholder con estilo centrado[39m[32m 51[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m MenuPage[2m > [22mrenderiza correctamente el t├¡tulo y descripci├│n[39m[32m 51[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m MenuPage[2m > [22mmuestra el mensaje para administradores[39m[32m 75[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[90mstderr[2m | app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m[2m<OrdersPanel />[2m > [22m[2mpermite cambiar filtros de estado
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+The above error occurred in the <OrdersPanel> component:
+
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:84:22)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m[2m<OrdersPanel />[2m > [22m[2mmuestra estado de carga inicial
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+The above error occurred in the <OrdersPanel> component:
+
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:84:22)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m[2m<OrdersPanel />[2m > [22m[2mrenderiza alerta en caso de error y 
+permite reintentar
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+The above error occurred in the <OrdersPanel> component:
+
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:84:22)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+[90mstderr[2m | app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m[2m<OrdersPanel />[2m > [22m[2mpermite refrescar manualmente
+[22m[39mError: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+Error: useAuth must be used within an AuthProvider
+    at useAuth 
+(C:\Users\alvar\Downloads\restaurantmanagement\contexts\auth-context.tsx:319:11)
+    at useTables 
+(C:\Users\alvar\Downloads\restaurantmanagement\hooks\use-tables.ts:26:22)
+    at useTablesIndex 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:57:22)
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:90:22)
+    at renderWithHooks (C:\Users\alvar\Downloads\restaurantmanagement\node_modules
+\react-dom\cjs\react-dom.development.js:15486:18)
+    at mountIndeterminateComponent (C:\Users\alvar\Downloads\restaurantmanagement\
+node_modules\react-dom\cjs\react-dom.development.js:20103:13)
+    at beginWork (C:\Users\alvar\Downloads\restaurantmanagement\node_modules\react
+-dom\cjs\react-dom.development.js:21626:16)
+    at HTMLUnknownElement.callCallback (C:\Users\alvar\Downloads\restaurantmanagem
+ent\node_modules\react-dom\cjs\react-dom.development.js:4164:14)
+    at HTMLUnknownElement.callTheUserObjectsOperation (C:\Users\alvar\Downloads\re
+staurantmanagement\node_modules\jsdom\lib\jsdom\living\generated\EventListener.js:
+26:30)
+    at innerInvokeEventListeners (C:\Users\alvar\Downloads\restaurantmanagement\no
+de_modules\jsdom\lib\jsdom\living\events\EventTarget-impl.js:360:16)
+The above error occurred in the <OrdersPanel> component:
+
+    at OrdersPanel 
+(C:\Users\alvar\Downloads\restaurantmanagement\components\orders-panel.tsx:84:22)
+
+Consider adding an error boundary to your tree to customize error handling 
+behavior.
+Visit https://reactjs.org/link/error-boundaries to learn more about error 
+boundaries.
+
+ [31mΓ¥»[39m app/pedidos/__tests__/orders-panel.test.tsx [2m([22m[2m5 tests[22m[2m | [22m[31m5 failed[39m[2m)[22m[33m 2743[2mms[22m[39m
+[31m   [31m├ù[31m <OrdersPanel />[2m > [22mrenderiza resumen y lista de pedidos[39m[33m 2651[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrdersPanel />[2m > [22mpermite cambiar filtros de estado[39m[32m 21[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrdersPanel />[2m > [22mmuestra estado de carga inicial[39m[32m 18[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrdersPanel />[2m > [22mrenderiza alerta en caso de error y permite reintentar[39m[32m 39[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[31m   [31m├ù[31m <OrdersPanel />[2m > [22mpermite refrescar manualmente[39m[32m 10[2mms[22m[39m
+[31m     ΓåÆ useAuth must be used within an AuthProvider[39m
+[90mstderr[2m | tests/hooks/use-table-layout.test.tsx[2m > 
+[22m[2museTableLayout[2m > [22m[2mshould rollback on delete error
+[22m[39m[useTableLayout] Error deleting layout: Error: Delete failed
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mtests\hooks\use-tab
+le-layout.test.tsx:308:62
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:155:11
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:752:26
+    at [90mfile:///C:/Users/alvar/Downloads/restaurantmanagement/[39mnode_module
+s/[4m@vitest[24m/runner/dist/chunk-hooks.js:1897:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/
+[39mnode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1863:10[90m)[39m
+    at runTest [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mno
+de_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1574:12[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runSuite [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1729:8[90m)[39m
+    at runFiles [90m(file:///C:/Users/alvar/Downloads/restaurantmanagement/[39mn
+ode_modules/[4m@vitest[24m/runner/dist/chunk-hooks.js:1787:3[90m)[39m
+
+ [31mΓ¥»[39m tests/hooks/use-table-layout.test.tsx [2m([22m[2m20 tests[22m[2m | [22m[31m2 failed[39m[2m)[22m[33m 2401[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould fetch layout successfully[32m 112[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould handle fetch error[32m 88[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould return null when no user[32m 70[2mms[22m[39m
+[31m   [31m├ù[31m useTableLayout[2m > [22mshould create default layout when none exists[39m[32m 116[2mms[22m[39m
+[31m     ΓåÆ expected "createDefaultLayout" to be called with arguments: [ ArrayContaining{ΓÇª}, ΓÇª(1) ][90m
+
+Received: 
+
+[1m  1st createDefaultLayout call:
+
+[22m[2m  [[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[31m+   [[90m
+[31m+     {[90m
+[2m        "id": "table-1",[22m
+[2m        "zone_id": "zone-1",[22m
+[2m      },[22m
+[32m-     ObjectContaining {[90m
+[31m+     {[90m
+[2m        "id": "table-2",[22m
+[2m        "zone_id": "zone-1",[22m
+[2m      },[22m
+[2m    ],[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[32m-       "id": "zone-1",[90m
+[32m-       "name": "Main Hall",[90m
+[32m-     },[90m
+[32m-   ],[90m
+[31m+   [],[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould not create default layout when disabled[32m 100[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould wait for tables and zones to load[32m 256[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould save layout successfully[32m 105[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould handle save layout error[32m 88[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould apply optimistic update when saving layout[32m 233[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould rollback optimistic update on save error[32m 111[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould delete layout successfully[32m 64[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould handle delete layout error[32m 79[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould set layout to null optimistically during delete[32m 153[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould rollback on delete error[32m 84[2mms[22m[39m
+[31m   [31m├ù[31m useTableLayout[2m > [22mshould generate default layout from current tables and zones[39m[32m 99[2mms[22m[39m
+[31m     ΓåÆ expected "createDefaultLayout" to be called with arguments: [ ArrayContaining{ΓÇª}, ΓÇª(1) ][90m
+
+Received: 
+
+[1m  1st createDefaultLayout call:
+
+[22m[2m  [[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[31m+   [[90m
+[31m+     {[90m
+[2m        "id": "table-1",[22m
+[31m+       "zone_id": "zone-1",[90m
+[2m      },[22m
+[32m-     ObjectContaining {[90m
+[31m+     {[90m
+[2m        "id": "table-2",[22m
+[32m-     },[90m
+[32m-   ],[90m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[32m-       "id": "zone-1",[90m
+[31m+       "zone_id": "zone-1",[90m
+[2m      },[22m
+[2m    ],[22m
+[31m+   [],[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould return null when generating layout with no tables[32m 106[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould refresh layout[32m 157[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould cache layout data[32m 110[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould invalidate cache after save mutation[32m 140[2mms[22m[39m
+   [32mΓ£ô[39m useTableLayout[2m > [22mshould invalidate cache after delete mutation[32m 127[2mms[22m[39m
+ [31mΓ¥»[39m tests/hooks/use-zones.test.tsx [2m([22m[2m18 tests[22m[2m | [22m[31m12 failed[39m[2m)[22m[33m 2870[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mQuery - Fetching zones[2m > [22mshould fetch active zones by default[39m[32m 140[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 2 but got +0[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mQuery - Fetching zones[2m > [22mshould fetch all zones including inactive when specified[39m[32m 75[2mms[22m[39m
+[31m     ΓåÆ expected [] to have a length of 3 but got +0[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mQuery - Fetching zones[2m > [22mshould handle fetch error[32m 88[2mms[22m[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mQuery - Fetching zones[2m > [22mshould not fetch if tenant is not available[32m 6[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Create zone[2m > [22mshould create zone successfully[39m[32m 76[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mMutation - Create zone[2m > [22mshould handle create error[32m 81[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Create zone[2m > [22mshould perform optimistic update on create[39m[33m 1139[2mms[22m[39m
+[31m     ΓåÆ expected "createZone" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body>[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+  [36m</body>[31m
+[36m</html>[31m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Update zone[2m > [22mshould update zone successfully[39m[32m 107[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mMutation - Update zone[2m > [22mshould handle update error and rollback[32m 114[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Update zone[2m > [22mshould update active status (soft delete)[39m[32m 112[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Soft delete (deleteZone)[2m > [22mshould soft delete zone successfully[39m[32m 113[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mMutation - Soft delete (deleteZone)[2m > [22mshould handle soft delete error[32m 121[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mMutation - Hard delete[2m > [22mshould hard delete zone successfully[39m[32m 124[2mms[22m[39m
+[31m     ΓåÆ Cannot read properties of undefined (reading 'ok')[39m
+   [32mΓ£ô[39m useZones Hook[2m > [22mMutation - Hard delete[2m > [22mshould handle hard delete error[32m 112[2mms[22m[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mRefresh functionality[2m > [22mshould refresh zones on demand[39m[32m 134[2mms[22m[39m
+[31m     ΓåÆ expected "getZones" to be called 1 times, but got 0 times[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mReact Query features[2m > [22mshould cache query results[39m[32m 119[2mms[22m[39m
+[31m     ΓåÆ expected [] to be [] // Object.is equality
+
+If it should pass with deep equality, replace "toBe" with "toStrictEqual"
+
+Expected: []
+Received: serializes to the same string
+[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mReact Query features[2m > [22mshould invalidate cache after mutation[39m[32m 112[2mms[22m[39m
+[31m     ΓåÆ expected "getZones" to be called 1 times, but got 0 times[39m
+[31m   [31m├ù[31m useZones Hook[2m > [22mReact Query features[2m > [22mshould use different cache for includeInactive parameter[39m[32m 94[2mms[22m[39m
+[31m     ΓåÆ expected "getZones" to be called with arguments: [ 'tenant-test-123', false ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[90mstdout[2m | app/api/order/qr/__tests__/route.test.ts[2m > [22m[2mPOST /api/order/qr[2m > [22m[2mshould successfully create order with valid data
+[22m[39m[QR Order] Order ORD-1761926255697-ro5dkrpg4 created for table TABLE-1
+[QR Order] Customer: John Doe, Items: 2, Total: 2
+
+[90mstdout[2m | app/api/order/qr/__tests__/route.test.ts[2m > [22m[2mPOST /api/order/qr[2m > [22m[2mshould handle modifiers pricing correctly
+[22m[39m[QR Order] Order ORD-1761926255705-6ma3a4hq3 created for table TABLE-1
+[QR Order] Customer: Jane Smith, Items: 1, Total: 5
+
+[90mstdout[2m | app/api/order/qr/__tests__/route.test.ts[2m > [22m[2mPOST /api/order/qr[2m > [22m[2mshould support different payment methods
+[22m[39m[QR Order] Order ORD-1761926255707-8adcat495 created for table TABLE-1
+[QR Order] Customer: Test User, Items: 1, Total: 0
+
+[90mstdout[2m | app/api/order/qr/__tests__/route.test.ts[2m > [22m[2mPOST /api/order/qr[2m > [22m[2mshould support different payment methods
+[22m[39m[QR Order] Order ORD-1761926255709-p701bi20r created for table TABLE-1
+[QR Order] Customer: Test User, Items: 1, Total: 0
+
+[90mstdout[2m | app/api/order/qr/__tests__/route.test.ts[2m > [22m[2mPOST /api/order/qr[2m > [22m[2mshould support different payment methods
+[22m[39m[QR Order] Order ORD-1761926255710-x1dd0jker created for table TABLE-1
+[QR Order] Customer: Test User, Items: 1, Total: 0
+
+ [32mΓ£ô[39m app/api/order/qr/__tests__/route.test.ts [2m([22m[2m12 tests[22m[2m)[22m[32m 41[2mms[22m[39m
+[90mstderr[2m | tests/integration/alerts-orders.test.tsx[2m > [22m[2mAlerts 
++ Orders Integration[2m > [22m[2mshould filter alerts by table
+[22m[39mQuery data cannot be undefined. Please make sure to return a value 
+other than undefined from your query function. Affected query key: 
+["alerts","tenant-test-123",{"activeOnly":false,"tableId":"table-1"}]
+
+ [32mΓ£ô[39m lib/server/__tests__/socket-payloads.test.ts [2m([22m[2m6 tests[22m[2m)[22m[32m 8[2mms[22m[39m
+ [32mΓ£ô[39m lib/server/__tests__/socket-bus.test.ts [2m([22m[2m2 tests[22m[2m)[22m[32m 28[2mms[22m[39m
+ [32mΓ£ô[39m tests/integration/alerts-orders.test.tsx [2m([22m[2m9 tests[22m[2m)[22m[33m 953[2mms[22m[39m
+ [32mΓ£ô[39m app/(public)/qr/validate/__tests__/validate-page.test.tsx [2m([22m[2m4 tests[22m[2m)[22m[32m 5[2mms[22m[39m
+[90mstderr[2m | app/(public)/qr/_hooks/__tests__/use-qr-session.test.ts[2m > 
+[22m[2museQrSession[2m > [22m[2mhandles corrupted session data
+[22m[39m[useQrSession] Validation error: SyntaxError: Unexpected token 'i', 
+"invalid-json" is not valid JSON
+    at JSON.parse (<anonymous>)
+    at validateSession [90m(C:\Users\alvar\Downloads\restaurantmanagement\[39map
+p\(public)\qr\_hooks\use-qr-session.ts:76:34[90m)[39m
+    at [90mC:\Users\alvar\Downloads\restaurantmanagement\[39mapp\(public)\qr\_ho
+oks\use-qr-session.ts:136:5
+    at commitHookEffectListMount [90m(C:\Users\alvar\Downloads\restaurantmanageme
+nt\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:23189:26[90m
+)[39m
+    at commitPassiveMountOnFiber [90m(C:\Users\alvar\Downloads\restaurantmanageme
+nt\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:24970:11[90m
+)[39m
+    at commitPassiveMountEffects_complete [90m(C:\Users\alvar\Downloads\restauran
+tmanagement\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:2493
+0:9[90m)[39m
+    at commitPassiveMountEffects_begin [90m(C:\Users\alvar\Downloads\restaurantma
+nagement\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:24917:7
+[90m)[39m
+    at commitPassiveMountEffects [90m(C:\Users\alvar\Downloads\restaurantmanageme
+nt\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:24905:3[90m)
+[39m
+    at flushPassiveEffectsImpl [90m(C:\Users\alvar\Downloads\restaurantmanagement
+\[39mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:27078:3[90m)[
+39m
+    at flushPassiveEffects [90m(C:\Users\alvar\Downloads\restaurantmanagement\[3
+9mnode_modules\[4mreact-dom[24m\cjs\react-dom.development.js:27023:14[90m)[39m
+
+ [32mΓ£ô[39m app/(public)/qr/_hooks/__tests__/use-qr-session.test.ts [2m([22m[2m8 tests[22m[2m)[22m[32m 75[2mms[22m[39m
+ [32mΓ£ô[39m app/(public)/qr/_hooks/__tests__/use-cart-item.test.ts [2m([22m[2m29 tests[22m[2m)[22m[32m 92[2mms[22m[39m
+ [32mΓ£ô[39m tests/integration/orders-menu.test.tsx [2m([22m[2m8 tests[22m[2m)[22m[33m 723[2mms[22m[39m
+ [32mΓ£ô[39m tests/hooks/use-tables.test.tsx [2m([22m[2m16 tests[22m[2m)[22m[33m 1568[2mms[22m[39m
+ [32mΓ£ô[39m app/pedidos/__tests__/use-orders-panel.test.tsx [2m([22m[2m3 tests[22m[2m)[22m[33m 311[2mms[22m[39m
+ [2m[90mΓåô[39m[22m lib/__tests__/socket-client.test.ts [2m([22m[2m2 tests[22m[2m | [22m[33m2 skipped[39m[2m)[22m
+ [32mΓ£ô[39m tests/hooks/use-alerts.test.tsx [2m([22m[2m23 tests[22m[2m)[22m[33m 2404[2mms[22m[39m
+ [32mΓ£ô[39m tests/hooks/use-orders.test.tsx [2m([22m[2m22 tests[22m[2m)[22m[33m 2566[2mms[22m[39m
+   [33m[2mΓ£ô[22m[39m useOrders Hook[2m > [22mMutation - Update status[2m > [22mshould update to different statuses [33m 425[2mms[22m[39m
+ [32mΓ£ô[39m tests/hooks/use-menu.test.tsx [2m([22m[2m44 tests[22m[2m)[22m[33m 3551[2mms[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Suites 4 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+components/__tests__/alert-dialog-standardization.test.tsx[2m [ 
+components/__tests__/alert-dialog-standardization.test.tsx ][22m
+[31m[1mReferenceError[22m: expect is not defined[39m
+[36m [2mΓ¥»[22m 
+node_modules/@testing-library/jest-dom/dist/index.mjs:[2m9:1[22m[39m
+    [90m  7| [39m[35mimport[39m [32m'css.escape'[39m[33m;[39m
+    [90m  8| [39m
+    [90m  9| [39mexpect[33m.[39m[34mextend[39m(extensions)[33m;[39m
+    [90m   | [39m[31m^[39m
+    [90m 10| [39m
+[90m [2mΓ¥»[22m 
+components/__tests__/alert-dialog-standardization.test.tsx:[2m8:1[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[1/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/__tests__/table-store.test.ts[2m [ 
+lib/__tests__/table-store.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "@/lib/server/table-store" from 
+"lib/__tests__/table-store.test.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/alvar/Downloads/restaurantmanagement/lib/__tests__/table-sto
+re.test.ts[39m:10:16
+[33m  6  |    await fs.rm(dataDir, { recursive: true, force: true }).catch(() => 
+void 0);
+  7  |    vi.resetModules();
+  8  |    return import("@/lib/server/table-store");
+     |                  ^
+  9  |  }
+  10 |  describe("table-store", () => {[39m
+[90m [2mΓ¥»[22m TransformPluginContext._formatLog 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31185:43[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.error 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31182:14[22m[39m
+[90m [2mΓ¥»[22m normalizeUrl 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29665:18[22m[39m
+[90m [2mΓ¥»[22m 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29723:32[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29691:4[22m[39m
+[90m [2mΓ¥»[22m EnvironmentPluginContainer.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m30984:14[22m[39m
+[90m [2mΓ¥»[22m loadAndTransform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m26116:26[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[2/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/orders-api.test.ts[2m [ 
+app/api/__tests__/orders-api.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "@/lib/server/order-store" from 
+"app/api/__tests__/orders-api.test.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/alvar/Downloads/restaurantmanagement/app/api/__tests__/order
+s-api.test.ts[39m:92:48
+[33m  12 |    vi.clearAllMocks();
+  13 |    vi.resetModules();
+  14 |    const { resetOrderStoreCache } = await 
+import("@/lib/server/order-store");
+     |                                                  ^
+  15 |    await resetOrderStoreCache();
+  16 |  }[39m
+[90m [2mΓ¥»[22m TransformPluginContext._formatLog 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31185:43[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.error 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31182:14[22m[39m
+[90m [2mΓ¥»[22m normalizeUrl 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29665:18[22m[39m
+[90m [2mΓ¥»[22m 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29723:32[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29691:4[22m[39m
+[90m [2mΓ¥»[22m EnvironmentPluginContainer.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m30984:14[22m[39m
+[90m [2mΓ¥»[22m loadAndTransform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m26116:26[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[3/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/payment-store.test.ts[2m [ 
+lib/server/__tests__/payment-store.test.ts ][22m
+[31m[1mError[22m: Failed to resolve import "../payment-store" from 
+"lib/server/__tests__/payment-store.test.ts". Does the file exist?[39m
+  Plugin: [35mvite:import-analysis[39m
+  File: [36mC:/Users/alvar/Downloads/restaurantmanagement/lib/server/__tests__/pa
+yment-store.test.ts[39m:2:0
+[33m  5  |    assertServerOnly: vi.fn()
+  6  |  }));
+  7  |  const __vi_import_0__ = await import("../payment-store");
+     |                                       ^
+  8  |  const __vi_import_1__ = await import("fs/promises");
+  9  |  const __vi_import_2__ = await import("fs");[39m
+[90m [2mΓ¥»[22m TransformPluginContext._formatLog 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31185:43[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.error 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m31182:14[22m[39m
+[90m [2mΓ¥»[22m normalizeUrl 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29665:18[22m[39m
+[90m [2mΓ¥»[22m 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29723:32[22m[39m
+[90m [2mΓ¥»[22m TransformPluginContext.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m29691:4[22m[39m
+[90m [2mΓ¥»[22m EnvironmentPluginContainer.transform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m30984:14[22m[39m
+[90m [2mΓ¥»[22m loadAndTransform 
+node_modules/vite/dist/node/chunks/dep-D5b0Zz6C.js:[2m26116:26[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[4/6
+4]ΓÄ»[22m[39m
+
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Failed Tests 60 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+[41m[1m FAIL [22m[49m lib/__tests__/order-service.test.ts[2m > 
+[22mcreateOrder[2m > [22mlanza un error generico para fallos 5xx o de red
+[31m[1mAssertionError[22m: expected OrderServiceError: Ocurri├│ un error 
+inespΓÇª { ΓÇª(2) } to match object { Object (message) }
+(3 matching properties omitted from actual)[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- {[39m
+[32m-   "message": "No se pudo crear el pedido",[39m
+[31m+ OrderServiceError {[39m
+[31m+   "message": "Ocurri├│ un error inesperado. Por favor, intenta 
+nuevamente.",[39m
+[31m+   "name": "OrderServiceError",[39m
+[31m+   "code": undefined,[39m
+[31m+   "status": 500,[39m
+[2m  }[22m
+
+[36m [2mΓ¥»[22m lib/__tests__/order-service.test.ts:[2m177:5[22m[39m
+    [90m175| [39m    )
+    [90m176| [39m
+    [90m177| [39m    [35mawait[39m [34mexpect[39m([34mcreateOrder[39m(base
+Payload))[33m.[39mrejects[33m.[39m[34mtoMatchObject[39m({
+    [90m   | [39m    [31m^[39m
+    [90m178| [39m      message[33m:[39m [32m"No se pudo crear el 
+pedido"[39m[33m,[39m
+    [90m179| [39m    })
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[5/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/__tests__/supabase-connection.test.ts[2m > 
+[22mSupabase Connection[2m > [22mshould connect to Supabase successfully
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'json')[39m
+[36m [2mΓ¥»[22m lib/__tests__/supabase-connection.test.ts:[2m9:33[22m[39m
+    [90m  7| [39m    [90m// We need to provide the full URL[39m
+    [90m  8| [39m    const response = await 
+fetch('http://localhost:3000/api/test-supabΓÇª
+    [90m  9| [39m    [35mconst[39m data [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+    [90m   | [39m                                [31m^[39m
+    [90m 10| [39m
+    [90m 11| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m200[39m)
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[6/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-table-layout.test.tsx[2m > 
+[22museTableLayout[2m > [22mshould create default layout when none exists
+[31m[1mAssertionError[22m: expected "createDefaultLayout" to be called with 
+arguments: [ ArrayContaining{ΓÇª}, ΓÇª(1) ][90m
+
+Received: 
+
+[1m  1st createDefaultLayout call:
+
+[22m[2m  [[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[31m+   [[90m
+[31m+     {[90m
+[2m        "id": "table-1",[22m
+[2m        "zone_id": "zone-1",[22m
+[2m      },[22m
+[32m-     ObjectContaining {[90m
+[31m+     {[90m
+[2m        "id": "table-2",[22m
+[2m        "zone_id": "zone-1",[22m
+[2m      },[22m
+[2m    ],[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[32m-       "id": "zone-1",[90m
+[32m-       "name": "Main Hall",[90m
+[32m-     },[90m
+[32m-   ],[90m
+[31m+   [],[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/hooks/use-table-layout.test.tsx:[2m152:48[22m[39m
+    [90m150| [39m    })
+    [90m151| [39m
+    [90m152| [39m    [34mexpect[39m(layoutsService[33m.[39mcreateDefaultLayo
+ut)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                                               [31m^[39m
+    [90m153| [39m      expect[33m.[39m[34marrayContaining[39m([
+    [90m154| [39m        expect[33m.[39m[34mobjectContaining[39m({ 
+id[33m:[39m [32m'table-1'[39m[33m,[39m zone_id[33m:[39m 
+[32m'zone-1'[39m })[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[7/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-table-layout.test.tsx[2m > 
+[22museTableLayout[2m > [22mshould generate default layout from current tables 
+and zones
+[31m[1mAssertionError[22m: expected "createDefaultLayout" to be called with 
+arguments: [ ArrayContaining{ΓÇª}, ΓÇª(1) ][90m
+
+Received: 
+
+[1m  1st createDefaultLayout call:
+
+[22m[2m  [[22m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[31m+   [[90m
+[31m+     {[90m
+[2m        "id": "table-1",[22m
+[31m+       "zone_id": "zone-1",[90m
+[2m      },[22m
+[32m-     ObjectContaining {[90m
+[31m+     {[90m
+[2m        "id": "table-2",[22m
+[32m-     },[90m
+[32m-   ],[90m
+[32m-   ArrayContaining [[90m
+[32m-     ObjectContaining {[90m
+[32m-       "id": "zone-1",[90m
+[31m+       "zone_id": "zone-1",[90m
+[2m      },[22m
+[2m    ],[22m
+[31m+   [],[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/hooks/use-table-layout.test.tsx:[2m332:48[22m[39m
+    [90m330| [39m
+    [90m331| [39m    
+[34mexpect[39m(defaultLayout)[33m.[39m[34mtoEqual[39m(mockLayout)
+    [90m332| [39m    [34mexpect[39m(layoutsService[33m.[39mcreateDefaultLayo
+ut)[33m.[39m[34mtoHaveBeenCalledWith[39m(
+    [90m   | [39m                                               [31m^[39m
+    [90m333| [39m      expect[33m.[39m[34marrayContaining[39m([
+    [90m334| [39m        expect[33m.[39m[34mobjectContaining[39m({ 
+id[33m:[39m [32m'table-1'[39m })[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[8/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mQuery - Fetching zones[2m > [22mshould fetch active zones by 
+default
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m116:36[22m[39m
+    [90m114| [39m
+    [90m115| [39m      [90m// Verificar datos cargados (solo activas)[39m
+    [90m116| [39m      [34mexpect[39m(result[33m.[39mcurrent[33m.[39mzones
+)[33m.[39m[34mtoHaveLength[39m([34m2[39m)
+    [90m   | [39m                                   [31m^[39m
+    [90m117| [39m      [34mexpect[39m(result[33m.[39mcurrent[33m.[39mzones
+[[34m0[39m][33m.[39mname)[33m.[39m[34mtoBe[39m([32m'Terraza'[39m)
+    [90m118| [39m      [34mexpect[39m(result[33m.[39mcurrent[33m.[39mzones
+[[34m1[39m][33m.[39mname)[33m.[39m[34mtoBe[39m([32m'Sal├│n 
+Principal'[39m)
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[9/6
+4]ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mQuery - Fetching zones[2m > [22mshould fetch all zones 
+including inactive when specified
+[31m[1mAssertionError[22m: expected [] to have a length of 3 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m141:36[22m[39m
+    [90m139| [39m
+    [90m140| [39m      [90m// Verificar que incluye inactivas[39m
+    [90m141| [39m      [34mexpect[39m(result[33m.[39mcurrent[33m.[39mzones
+)[33m.[39m[34mtoHaveLength[39m([34m3[39m)
+    [90m   | [39m                                   [31m^[39m
+    [90m142| [39m      [34mexpect[39m(zonesService[33m.[39mgetZones)[33m.[
+39m[34mtoHaveBeenCalledWith[39m(
+    [90m143| [39m        [32m'tenant-test-123'[39m[33m,[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[10/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Create zone[2m > [22mshould create zone successfully
+[41m[1m FAIL [22m[49m tests/integration/tables-zones.test.tsx[2m > 
+[22mTables + Zones Integration[2m > [22mshould create zone and immediately 
+assign tables to it
+[41m[1m FAIL [22m[49m tests/integration/tables-zones.test.tsx[2m > 
+[22mTables + Zones Integration[2m > [22mshould handle concurrent zone and 
+table operations
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m58:14[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[11/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Create zone[2m > [22mshould perform optimistic 
+update on create
+[31m[1mAssertionError[22m: expected "createZone" to be called at least once
+
+Ignored nodes: comments, script, style
+[36m<html>[31m
+  [36m<head />[31m
+  [36m<body>[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+    [36m<div />[31m
+  [36m</body>[31m
+[36m</html>[31m[39m
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m270:41[22m[39m
+    [90m268| [39m      [90m// Verificar que eventualmente se completa[39m
+    [90m269| [39m      [35mawait[39m [34mwaitFor[39m(() [33m=>[39m {
+    [90m270| [39m        [34mexpect[39m(zonesService[33m.[39mcreateZone)[33
+m.[39m[34mtoHaveBeenCalled[39m()
+    [90m   | [39m                                        [31m^[39m
+    [90m271| [39m      })
+    [90m272| [39m    })
+[90m [2mΓ¥»[22m runWithExpensiveErrorDiagnosticsDisabled 
+node_modules/@testing-library/dom/dist/config.js:[2m47:12[22m[39m
+[90m [2mΓ¥»[22m checkCallback 
+node_modules/@testing-library/dom/dist/wait-for.js:[2m124:77[22m[39m
+[90m [2mΓ¥»[22m Timeout.checkRealTimersCallback 
+node_modules/@testing-library/dom/dist/wait-for.js:[2m118:16[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[12/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Update zone[2m > [22mshould update zone successfully
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Update zone[2m > [22mshould update active status 
+(soft delete)
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m96:14[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[13/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Soft delete (deleteZone)[2m > [22mshould soft delete 
+zone successfully
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m122:14[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[14/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mMutation - Hard delete[2m > [22mshould hard delete zone 
+successfully
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m148:14[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[15/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mRefresh functionality[2m > [22mshould refresh zones on demand
+[31m[1mAssertionError[22m: expected "getZones" to be called 1 times, but got 0 
+times[39m
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m476:37[22m[39m
+    [90m474| [39m
+    [90m475| [39m      [90m// Verificar refetch[39m
+    [90m476| [39m      
+expect(zonesService.getZones).toHaveBeenCalledTimes(initialCallsΓÇª
+    [90m   | [39m                                    [31m^[39m
+    [90m477| [39m    })
+    [90m478| [39m  })
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[16/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mReact Query features[2m > [22mshould cache query results
+[31m[1mAssertionError[22m: expected [] to be [] // Object.is equality
+
+If it should pass with deep equality, replace "toBe" with "toStrictEqual"
+
+Expected: []
+Received: serializes to the same string
+[39m
+
+[2mCompared values have no visual difference.[22m
+
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m493:36[22m[39m
+    [90m491| [39m      [34mrerender[39m()
+    [90m492| [39m
+    [90m493| [39m      [34mexpect[39m(result[33m.[39mcurrent[33m.[39mzones
+)[33m.[39m[34mtoBe[39m(firstZones)
+    [90m   | [39m                                   [31m^[39m
+    [90m494| [39m      [90m// No deber├¡a hacer fetch adicional (cache 
+activo)[39m
+    [90m495| [39m      [34mexpect[39m(zonesService[33m.[39mgetZones)[33m.[
+39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[17/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mReact Query features[2m > [22mshould invalidate cache after 
+mutation
+[31m[1mAssertionError[22m: expected "getZones" to be called 1 times, but got 0 
+times[39m
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m511:37[22m[39m
+    [90m509| [39m
+    [90m510| [39m      [90m// Primera carga[39m
+    [90m511| [39m      [34mexpect[39m(zonesService[33m.[39mgetZones)[33m.[
+39m[34mtoHaveBeenCalledTimes[39m([34m1[39m)
+    [90m   | [39m                                    [31m^[39m
+    [90m512| [39m
+    [90m513| [39m      [90m// Mutation invalida cache[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[18/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/hooks/use-zones.test.tsx[2m > [22museZones 
+Hook[2m > [22mReact Query features[2m > [22mshould use different cache for 
+includeInactive parameter
+[31m[1mAssertionError[22m: expected "getZones" to be called with arguments: [ 
+'tenant-test-123', false ][90m
+
+Number of calls: [1m0[22m
+[31m[39m
+[36m [2mΓ¥»[22m tests/hooks/use-zones.test.tsx:[2m530:37[22m[39m
+    [90m528| [39m      })
+    [90m529| [39m
+    [90m530| [39m      
+expect(zonesService.getZones).toHaveBeenCalledWith('tenant-test-ΓÇª
+    [90m   | [39m                                    [31m^[39m
+    [90m531| [39m
+    [90m532| [39m      [90m// Renderizar hook con includeInactive=true 
+(diferente cache)[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[19/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/tables-zones.test.tsx[2m > 
+[22mTables + Zones Integration[2m > [22mshould load zones and tables together
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m tests/integration/tables-zones.test.tsx:[2m82:39[22m[39m
+    [90m 80| [39m    })
+    [90m 81| [39m
+    [90m 82| [39m    [34mexpect[39m(zonesResult[33m.[39mcurrent[33m.[39mzo
+nes)[33m.[39m[34mtoHaveLength[39m([34m2[39m)
+    [90m   | [39m                                      [31m^[39m
+    [90m 83| [39m    [34mexpect[39m(tablesResult[33m.[39mcurrent[33m.[39mt
+ables)[33m.[39m[34mtoHaveLength[39m([34m3[39m)
+    [90m 84| [39m  })
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[20/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m tests/integration/tables-zones.test.tsx[2m > 
+[22mTables + Zones Integration[2m > [22mshould handle zone deletion affecting 
+tables
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m122:14[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[21/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/menu/__tests__/menu-page.test.tsx[2m > 
+[22mMenuPage[2m > [22mrenderiza el placeholder de gesti├│n de men├║
+[41m[1m FAIL [22m[49m app/menu/__tests__/menu-page.test.tsx[2m > 
+[22mMenuPage[2m > [22mutiliza el DashboardLayout con rol de admin requerido
+[41m[1m FAIL [22m[49m app/menu/__tests__/menu-page.test.tsx[2m > 
+[22mMenuPage[2m > [22mmuestra el contenedor placeholder con estilo centrado
+[41m[1m FAIL [22m[49m app/menu/__tests__/menu-page.test.tsx[2m > 
+[22mMenuPage[2m > [22mrenderiza correctamente el t├¡tulo y descripci├│n
+[41m[1m FAIL [22m[49m app/menu/__tests__/menu-page.test.tsx[2m > 
+[22mMenuPage[2m > [22mmuestra el mensaje para administradores
+[31m[1mError[22m: useAuth must be used within an AuthProvider[39m
+[36m [2mΓ¥»[22m useAuth contexts/auth-context.tsx:[2m319:11[22m[39m
+    [90m317| [39m  [35mconst[39m context [33m=[39m 
+[34museContext[39m([33mAuthContext[39m)
+    [90m318| [39m  [35mif[39m (context [33m===[39m undefined) {
+    [90m319| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m"useAuth must be used within an AuthProvider"[39m)
+    [90m   | [39m          [31m^[39m
+    [90m320| [39m  }
+    [90m321| [39m  [35mreturn[39m context
+[90m [2mΓ¥»[22m useMenuItems hooks/use-menu.ts:[2m125:22[22m[39m
+[90m [2mΓ¥»[22m MenuPage app/menu/page.tsx:[2m30:103[22m[39m
+[90m [2mΓ¥»[22m renderWithHooks 
+node_modules/react-dom/cjs/react-dom.development.js:[2m15486:18[22m[39m
+[90m [2mΓ¥»[22m mountIndeterminateComponent 
+node_modules/react-dom/cjs/react-dom.development.js:[2m20103:13[22m[39m
+[90m [2mΓ¥»[22m beginWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m21626:16[22m[39m
+[90m [2mΓ¥»[22m beginWork$1 
+node_modules/react-dom/cjs/react-dom.development.js:[2m27465:14[22m[39m
+[90m [2mΓ¥»[22m performUnitOfWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26599:12[22m[39m
+[90m [2mΓ¥»[22m workLoopSync 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26505:5[22m[39m
+[90m [2mΓ¥»[22m renderRootSync 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26473:7[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[22/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/menu-api.test.ts[2m > [22mmenu 
+API[2m > [22mGET /api/menu returns catalog with headers
+[31m[1mAssertionError[22m: expected 401 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/menu-api.test.ts:[2m28:29[22m[39m
+    [90m 26| [39m
+    [90m 27| [39m    [35mconst[39m response [33m=[39m [35mawait[39m 
+[33mGET[39m()
+    [90m 28| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m200[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 29| [39m    [34mexpect[39m(response[33m.[39mheaders[33m.[39m[35m
+get[39m([32m"x-menu-version"[39m))[33m.[39m[34mtoBeTruthy[39m()
+    [90m 30| [39m    [34mexpect[39m(response[33m.[39mheaders[33m.[39m[35m
+get[39m([32m"x-menu-updated-at"[39m))[33m.[39m[34mtoBeTruthy[39m()
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[23/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/menu-api.test.ts[2m > [22mmenu 
+API[2m > [22mPATCH /api/menu/items/:id returns 404 for unknown item
+[31m[1mAssertionError[22m: expected 401 to be 404 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 404[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/menu-api.test.ts:[2m50:29[22m[39m
+    [90m 48| [39m    )
+    [90m 49| [39m
+    [90m 50| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m404[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 51| [39m  })
+    [90m 52| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[24/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/menu-api.test.ts[2m > [22mmenu 
+API[2m > [22mPOST /api/menu/orders returns 404 when item is missing
+[31m[1mAssertionError[22m: expected 401 to be 404 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 404[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/menu-api.test.ts:[2m66:29[22m[39m
+    [90m 64| [39m    )
+    [90m 65| [39m
+    [90m 66| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m404[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 67| [39m    [35mconst[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+    [90m 68| [39m    
+[34mexpect[39m(body[33m.[39merror)[33m.[39m[34mtoContain[39m([32m"Menu 
+item not found"[39m)
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[25/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/menu-api.test.ts[2m > [22mmenu 
+API[2m > [22mPOST /api/menu/orders accepts items with modifiers and notes
+[31m[1mAssertionError[22m: expected 401 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/menu-api.test.ts:[2m114:29[22m[39m
+    [90m112| [39m    )
+    [90m113| [39m
+    [90m114| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m201[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m115| [39m    [35mconst[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+    [90m116| [39m    [34mexpect[39m(body[33m.[39mdata[33m.[39mitems[[34m0
+[39m][33m.[39mmodifiers)[33m.[39m[34mtoBeDefined[39m()
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[26/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/menu-api.test.ts[2m > [22mmenu 
+API[2m > [22mPOST /api/menu/orders accepts items without modifiers (backward 
+compatibility)
+[31m[1mAssertionError[22m: expected 401 to be 201 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 201[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/menu-api.test.ts:[2m141:29[22m[39m
+    [90m139| [39m    )
+    [90m140| [39m
+    [90m141| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m201[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m142| [39m    [35mconst[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+    [90m143| [39m    [34mexpect[39m(body[33m.[39mdata[33m.[39mitems[[34m0
+[39m][33m.[39mprice)[33m.[39m[34mtoBe[39m([34m1800[39m) [90m// Solo 
+precio base[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[27/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/tables-api.test.ts[2m > [22mtables 
+API[2m > [22mGET /api/tables returns list with metadata
+[31m[1mAssertionError[22m: expected 401 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/tables-api.test.ts:[2m21:29[22m[39m
+    [90m 19| [39m
+    [90m 20| [39m    [35mconst[39m response [33m=[39m [35mawait[39m 
+[33mGET[39m()
+    [90m 21| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m200[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 22| [39m
+    [90m 23| [39m    [35mconst[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[28/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/tables-api.test.ts[2m > [22mtables 
+API[2m > [22mGET /api/table-layout returns layout and tables
+[31m[1mAssertionError[22m: expected 401 to be 200 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 200[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/tables-api.test.ts:[2m32:29[22m[39m
+    [90m 30| [39m
+    [90m 31| [39m    [35mconst[39m response [33m=[39m [35mawait[39m 
+[33mGET[39m()
+    [90m 32| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m200[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 33| [39m
+    [90m 34| [39m    [35mconst[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[29/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/tables-api.test.ts[2m > [22mtables 
+API[2m > [22mPATCH /api/tables/[id]/state updates table status
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 
+'status')[39m
+[36m [2mΓ¥»[22m app/api/__tests__/tables-api.test.ts:[2m45:22[22m[39m
+    [90m 43| [39m    let response = await getTable(new 
+Request("http://localhost"), { pΓÇª
+    [90m 44| [39m    [35mlet[39m body [33m=[39m [35mawait[39m 
+response[33m.[39m[34mjson[39m()
+    [90m 45| [39m    [34mexpect[39m(body[33m.[39mdata[33m.[39mstatus)[33m
+.[39m[34mtoBe[39m([32m"libre"[39m)
+    [90m   | [39m                     [31m^[39m
+    [90m 46| [39m
+    [90m 47| [39m    [35mconst[39m patchResponse [33m=[39m [35mawait[39m 
+[33mPATCH[39m(
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[30/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/api/__tests__/tables-api.test.ts[2m > [22mtables 
+API[2m > [22mPATCH /api/tables/[id]/state rejects invalid transition
+[31m[1mAssertionError[22m: expected 401 to be 409 // Object.is equality[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 409[39m
+[31m+ 401[39m
+
+[36m [2mΓ¥»[22m app/api/__tests__/tables-api.test.ts:[2m75:29[22m[39m
+    [90m 73| [39m    )
+    [90m 74| [39m
+    [90m 75| [39m    [34mexpect[39m(response[33m.[39mstatus)[33m.[39m[34m
+toBe[39m([34m409[39m)
+    [90m   | [39m                            [31m^[39m
+    [90m 76| [39m  })
+    [90m 77| [39m})
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[31/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m<OrderForm />[2m > [22mmuestra toast de exito, resetea formulario y 
+respeta spinner
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m<OrderForm />[2m > [22mmuestra toast destructivo en errores 4xx y conserva 
+datos
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/order-form.test.tsx[2m > 
+[22m<OrderForm />[2m > [22mrefresca el panel cuando los sockets estan 
+deshabilitados
+[31m[1mError[22m: useAuth must be used within an AuthProvider[39m
+[36m [2mΓ¥»[22m useAuth contexts/auth-context.tsx:[2m319:11[22m[39m
+    [90m317| [39m  [35mconst[39m context [33m=[39m 
+[34museContext[39m([33mAuthContext[39m)
+    [90m318| [39m  [35mif[39m (context [33m===[39m undefined) {
+    [90m319| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m"useAuth must be used within an AuthProvider"[39m)
+    [90m   | [39m          [31m^[39m
+    [90m320| [39m  }
+    [90m321| [39m  [35mreturn[39m context
+[90m [2mΓ¥»[22m useTables hooks/use-tables.ts:[2m26:22[22m[39m
+[90m [2mΓ¥»[22m OrderForm components/order-form.tsx:[2m37:90[22m[39m
+[90m [2mΓ¥»[22m renderWithHooks 
+node_modules/react-dom/cjs/react-dom.development.js:[2m15486:18[22m[39m
+[90m [2mΓ¥»[22m mountIndeterminateComponent 
+node_modules/react-dom/cjs/react-dom.development.js:[2m20103:13[22m[39m
+[90m [2mΓ¥»[22m beginWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m21626:16[22m[39m
+[90m [2mΓ¥»[22m beginWork$1 
+node_modules/react-dom/cjs/react-dom.development.js:[2m27465:14[22m[39m
+[90m [2mΓ¥»[22m performUnitOfWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26599:12[22m[39m
+[90m [2mΓ¥»[22m workLoopSync 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26505:5[22m[39m
+[90m [2mΓ¥»[22m renderRootSync 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26473:7[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[32/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m<OrdersPanel />[2m > [22mrenderiza resumen y lista de pedidos
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m<OrdersPanel />[2m > [22mpermite cambiar filtros de estado
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m<OrdersPanel />[2m > [22mmuestra estado de carga inicial
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m<OrdersPanel />[2m > [22mrenderiza alerta en caso de error y permite 
+reintentar
+[41m[1m FAIL [22m[49m app/pedidos/__tests__/orders-panel.test.tsx[2m > 
+[22m<OrdersPanel />[2m > [22mpermite refrescar manualmente
+[31m[1mError[22m: useAuth must be used within an AuthProvider[39m
+[36m [2mΓ¥»[22m useAuth contexts/auth-context.tsx:[2m319:11[22m[39m
+    [90m317| [39m  [35mconst[39m context [33m=[39m 
+[34museContext[39m([33mAuthContext[39m)
+    [90m318| [39m  [35mif[39m (context [33m===[39m undefined) {
+    [90m319| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m"useAuth must be used within an AuthProvider"[39m)
+    [90m   | [39m          [31m^[39m
+    [90m320| [39m  }
+    [90m321| [39m  [35mreturn[39m context
+[90m [2mΓ¥»[22m useTables hooks/use-tables.ts:[2m26:22[22m[39m
+[90m [2mΓ¥»[22m useTablesIndex components/orders-panel.tsx:[2m57:22[22m[39m
+[90m [2mΓ¥»[22m OrdersPanel components/orders-panel.tsx:[2m90:22[22m[39m
+[90m [2mΓ¥»[22m renderWithHooks 
+node_modules/react-dom/cjs/react-dom.development.js:[2m15486:18[22m[39m
+[90m [2mΓ¥»[22m mountIndeterminateComponent 
+node_modules/react-dom/cjs/react-dom.development.js:[2m20103:13[22m[39m
+[90m [2mΓ¥»[22m beginWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m21626:16[22m[39m
+[90m [2mΓ¥»[22m beginWork$1 
+node_modules/react-dom/cjs/react-dom.development.js:[2m27465:14[22m[39m
+[90m [2mΓ¥»[22m performUnitOfWork 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26599:12[22m[39m
+[90m [2mΓ¥»[22m workLoopSync 
+node_modules/react-dom/cjs/react-dom.development.js:[2m26505:5[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[33/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/services/__tests__/menu-service.test.ts[2m > 
+[22mMenu Service - Categories[2m > [22mshould create a new category
+[31m[1mAssertionError[22m: expected 'Bruschetta' to be 'Postres' // Object.is 
+equality[39m
+
+Expected: [32m"Postres"[39m
+Received: [31m"Bruschetta"[39m
+
+[36m [2mΓ¥»[22m 
+lib/services/__tests__/menu-service.test.ts:[2m159:31[22m[39m
+    [90m157| [39m
+    [90m158| [39m    
+[34mexpect[39m(result[33m.[39merror)[33m.[39m[34mtoBeNull[39m()
+    [90m159| [39m    [34mexpect[39m(result[33m.[39mdata[33m?.[39mname)[33
+m.[39m[34mtoBe[39m([32m'Postres'[39m)
+    [90m   | [39m                              [31m^[39m
+    [90m160| [39m  })
+    [90m161| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[34/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/services/__tests__/users-service.test.ts[2m > 
+[22mUsers Service - Edge Cases[2m > [22mshould handle empty tenant id
+[31m[1mAssertionError[22m: promise resolved "[]" instead of rejecting[39m
+
+[32m- Expected:[39m 
+Error {
+  "message": "rejected promise",
+}
+
+[31m+ Received:[39m 
+[]
+
+[36m [2mΓ¥»[22m 
+lib/services/__tests__/users-service.test.ts:[2m317:30[22m[39m
+    [90m315| [39m[34mdescribe[39m([32m'Users Service - Edge 
+Cases'[39m[33m,[39m () [33m=>[39m {
+    [90m316| [39m  [34mit[39m([32m'should handle empty tenant 
+id'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m317| [39m    [35mawait[39m [34mexpect[39m([34mgetUsers[39m([32m''
+[39m))[33m.[39mrejects[33m.[39m[34mtoThrow[39m()
+    [90m   | [39m                             [31m^[39m
+    [90m318| [39m  })
+    [90m319| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[35/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/services/__tests__/users-service.test.ts[2m > 
+[22mUsers Service - Edge Cases[2m > [22mshould handle non-existent user id
+[31m[1mAssertionError[22m: promise resolved "[]" instead of rejecting[39m
+
+[32m- Expected:[39m 
+Error {
+  "message": "rejected promise",
+}
+
+[31m+ Received:[39m 
+[]
+
+[36m [2mΓ¥»[22m 
+lib/services/__tests__/users-service.test.ts:[2m321:56[22m[39m
+    [90m319| [39m
+    [90m320| [39m  [34mit[39m([32m'should handle non-existent user 
+id'[39m[33m,[39m [35masync[39m () [33m=>[39m {
+    [90m321| [39m    await expect(getUserById('non-existent', 
+TENANT_ID)).rejects.toThrΓÇª
+    [90m   | [39m                                                       
+[31m^[39m
+    [90m322| [39m  })
+    [90m323| [39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[36/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateQR[2m > [22mshould generate complete QR code 
+data
+[31m[1mError[22m: Table not found: table-1[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m94:22[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[37/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateQR[2m > [22mshould accept custom QR options
+[31m[1mError[22m: Table not found: table-2[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m131:22[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[38/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateQR[2m > [22mshould set expiration to 24 hours 
+from now
+[31m[1mError[22m: Table not found: table-3[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m147:22[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateQR[2m > [22mshould generate unique tokens for 
+same table
+[31m[1mError[22m: Table not found: table-4[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m163:23[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[40/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mvalidateToken[2m > [22mshould validate correct token 
+and return table data
+[31m[1mError[22m: Table not found: table-5[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m181:25[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[41/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mrefreshToken[2m > [22mshould generate new QR for table
+[31m[1mError[22m: Table not found: table-9[39m
+[36m [2mΓ¥»[22m generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m266:22[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[42/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mrefreshToken[2m > [22mshould generate different tokens 
+on each refresh
+[31m[1mError[22m: Table not found: table-10[39m
+[36m [2mΓ¥»[22m generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m277:23[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[43/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgetTokenMetadata[2m > [22mshould extract metadata from 
+valid token
+[31m[1mError[22m: Table not found: table-11[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m287:25[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[44/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22misTokenExpired[2m > [22mshould return false for valid 
+token
+[31m[1mError[22m: Table not found: table-13[39m
+[36m [2mΓ¥»[22m Module.generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m330:25[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[45/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateBatch[2m > [22mshould generate QRs for multiple 
+tables
+[31m[1mAssertionError[22m: expected [] to have a length of 3 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 3[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m360:30[22m[39m
+    [90m358| [39m      [35mconst[39m result [33m=[39m [35mawait[39m 
+[34mgenerateBatch[39m({ tableIds })[33m;[39m
+    [90m359| [39m
+    [90m360| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m[34
+mtoHaveLength[39m([34m3[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m361| [39m      [34mexpect[39m(result[33m.[39mfailed)[33m.[39m[34m
+toHaveLength[39m([34m0[39m)[33m;[39m
+    [90m362| [39m      [34mexpect[39m(result[33m.[39msummary[33m.[39mtotal
+)[33m.[39m[34mtoBe[39m([34m3[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[46/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateBatch[2m > [22mshould handle mixed success and 
+failures
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m378:30[22m[39m
+    [90m376| [39m      [35mconst[39m result [33m=[39m [35mawait[39m 
+[34mgenerateBatch[39m({ tableIds })[33m;[39m
+    [90m377| [39m
+    [90m378| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m[34
+mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m379| [39m      [34mexpect[39m(result[33m.[39mfailed)[33m.[39m[34m
+toHaveLength[39m([34m1[39m)[33m;[39m
+    [90m380| [39m      [34mexpect[39m(result[33m.[39msummary[33m.[39mtotal
+)[33m.[39m[34mtoBe[39m([34m3[39m)[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[47/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mgenerateBatch[2m > [22mshould apply custom options to 
+all QRs in batch
+[31m[1mAssertionError[22m: expected [] to have a length of 2 but got +0[39m
+
+[32m- Expected[39m
+[31m+ Received[39m
+
+[32m- 2[39m
+[31m+ 0[39m
+
+[36m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m399:30[22m[39m
+    [90m397| [39m      })[33m;[39m
+    [90m398| [39m
+    [90m399| [39m      [34mexpect[39m(result[33m.[39msuccess)[33m.[39m[34
+mtoHaveLength[39m([34m2[39m)[33m;[39m
+    [90m   | [39m                             [31m^[39m
+    [90m400| [39m      
+result[33m.[39msuccess[33m.[39m[34mforEach[39m((qr) [33m=>[39m {
+    [90m401| [39m        [34mexpect[39m(qr[33m.[39mqrCodeBase64)[33m.[39m
+[34mtoBeDefined[39m()[33m;[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[48/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mLegacy API compatibility[2m > [22mshould support 
+generateQRCode legacy function
+[31m[1mError[22m: Table not found: table-50[39m
+[36m [2mΓ¥»[22m generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m generateQRCode lib/server/qr-service.ts:[2m476:18[22m[39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m410:22[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[49/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/qr-service.test.ts[2m > [22mQR 
+Service v2.0[2m > [22mLegacy API compatibility[2m > [22mshould support 
+validateQRToken legacy function
+[31m[1mError[22m: Table not found: table-51[39m
+[36m [2mΓ¥»[22m generateQR lib/server/qr-service.ts:[2m92:13[22m[39m
+    [90m 90| [39m    [35mif[39m (tableError [33m||[39m [33m![39mtable) {
+    [90m 91| [39m      logger.error(`[generateQR] Table not found: ${tableId}`, 
+tableErΓÇª
+    [90m 92| [39m      [35mthrow[39m [35mnew[39m 
+[33mError[39m([32m`Table not found: 
+[39m[36m${[39mtableId[36m}[39m[32m`[39m)[33m;[39m
+    [90m   | [39m            [31m^[39m
+    [90m 93| [39m    }
+    [90m 94| [39m
+[90m [2mΓ¥»[22m generateQRCode lib/server/qr-service.ts:[2m476:18[22m[39m
+[90m [2mΓ¥»[22m lib/server/__tests__/qr-service.test.ts:[2m423:25[22m[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[50/64]
+ΓÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m lib/server/__tests__/session-manager.test.ts[2m > 
+[22msession-manager v2.0.0[2m > [22mcreateSession[2m > [22mshould create 
+session with valid QR token
+[31m[1mAssertionError[22m: expected "validateToken" to be called with 
+arguments: [ 'valid-qr-token' ][90m
+
+Received: 
+
+[1m  1st validateToken call:
+
+[22m[2m  [[22m
+[2m    "valid-qr-token",[22m
+[31m+   undefined,[90m
+[2m  ][22m
+[31m[90m
+
+Number of calls: [1m1[22m
+[31m[39m
+[36m [2mΓ¥»[22m 
+lib/server/__tests__/session-manager.test.ts:[2m105:39[22m[39m
+    [90m103| [39m
+    [90m104| [39m      [90m// Verify QR validation was called[39m
+    [90m105| [39m      [34mexpect[39m(qrService[33m.[39mvalidateToken)[33m.
+[39m[34mtoHaveBeenCalledWith[39m(mockToken)[33m;[39m
+    [90m   | [39m                                      [31m^[39m
+    [90m106| [39m
+    [90m107| [39m      [90m// Verify session was stored[39m
+
+[31m[2mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[51/64]
+ΓÄ»[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Unhandled Errors 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+[31m[1m
+Vitest caught 1 unhandled error during the test run.
+This might cause false positive tests. Resolve unhandled errors to make sure your 
+tests are not affected.[22m[39m
+
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m[1m[41m Unhandled Rejection 
+[49m[22m[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+[31m[1mTypeError[22m: Cannot read properties of undefined (reading 'ok')[39m
+[36m [2mΓ¥»[22m fetchAPI hooks/use-zones.ts:[2m23:17[22m[39m
+    [90m 21| [39m  })
+    [90m 22| [39m  
+    [90m 23| [39m  [35mif[39m ([33m![39mresponse[33m.[39mok) {
+    [90m   | [39m                [31m^[39m
+    [90m 24| [39m    const error = await response.json().catch(() => ({ error: 
+`HTTP ${ΓÇª
+    [90m 25| [39m    [35mthrow[39m [35mnew[39m 
+[33mError[39m(error[33m.[39merror [33m||[39m [32m`Error: 
+[39m[36m${[39mresponse[33m.[39mstatus[36m}[39m[32m`[39m)
+[90m [2mΓ¥»[22m Object.mutationFn hooks/use-zones.ts:[2m58:14[22m[39m
+
+[31mThis error originated in "[1mtests/hooks/use-zones.test.tsx[22m" test 
+file. It doesn't mean the error was thrown inside the file itself, but while it 
+was running.[39m
+[31mThe latest test that might've caused the error is "[1mshould perform 
+optimistic update on create[22m". It might mean one of the following:
+- The error was thrown, while Vitest was running this test.
+- If the error occurred after the test had been completed, this was the last 
+documented test before it was thrown.[39m
+[31mΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ»ΓÄ
+»ΓÄ»ΓÄ»ΓÄ»ΓÄ»[39m
+
+
+[2m Test Files [22m [1m[31m18 failed[39m[22m[2m | [22m[1m[32m13 passed[39m[22m[2m | [22m[33m1 skipped[39m[90m (32)[39m
+[2m      Tests [22m [1m[31m60 failed[39m[22m[2m | [22m[1m[32m278 passed[39m[22m[2m | [22m[33m2 skipped[39m[90m (340)[39m
+[2m     Errors [22m [1m[31m1 error[39m[22m
+[2m   Start at [22m 12:57:25
+[2m   Duration [22m 13.25s[2m (transform 13.98s, setup 11.14s, collect 27.93s, tests 27.96s, environment 70.12s, prepare 9.50s)[22m
+

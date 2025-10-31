@@ -145,6 +145,12 @@ export class TableBusinessRules {
    * Verifica si el restaurante está operando
    */
   static checkOperatingHours(): ValidationResult {
+    // Permitir bypass de validación de horarios en desarrollo
+    if (process.env.NEXT_PUBLIC_SKIP_HOURS_VALIDATION === '1') {
+      console.log('[TableBusinessRules] Validación de horarios desactivada (desarrollo)')
+      return { valid: true }
+    }
+
     const now = new Date()
     const currentHour = now.getHours()
     const currentDay = now.getDay() // 0 = Domingo, 6 = Sábado

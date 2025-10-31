@@ -331,3 +331,111 @@ export async function getPaymentsStats(tenantId: string, filters?: {
     return { data: null, error: error as Error }
   }
 }
+
+/**
+ * Crea un pago de cortesía (invitar la casa)
+ * Crea una orden automática con el total de la mesa y marca el pago como completado
+ */
+export async function createCourtesyPayment(
+  tableId: string,
+  tenantId: string,
+  reason?: string
+) {
+  const supabase = createBrowserClient()
+
+  try {
+    // 1. Obtener orders pendientes de la mesa
+    const { data: orders, error: ordersError } = await supabase
+      .from('orders')
+      .select('*')
+      .eq('table_id', tableId)
+      .eq('tenant_id', tenantId)
+      .in('status', ['abierto', 'en-preparacion', 'listo', 'servido'])
+      .in('payment_status', ['pendiente', 'parcial'])
+
+    if (ordersError) throw ordersError
+
+    if (!orders || orders.length === 0) {
+      throw new Error('No hay órdenes pendientes en esta mesa')
+    }
+
+    // 2. Crear pagos de cortesía para cada orden
+    const courtesyPayments = []
+    for (const order of orders) {
+      // Generar número de pago
+      const { count } = await supabase
+        .from('payments')
+        .select('*', { count: 'exact', head: true })
+        .eq('tenant_id', tenantId)
+
+      const paymentNumber = `PAY-${String((count || 0) + 1).padStart(6, '0')}`
+
+      const { data: payment, error: paymentError } = await supabase
+        .from('payments')
+        .insert({
+          tenant_id: tenantId,
+          order_id: order.id,
+          table_id: tableId,
+          payment_number: paymentNumber,
+          provider: 'cash',
+          status: 'completed',
+          method: 'courtesy',
+          amount_cents: order.total_cents,
+          currency: 'ARS',
+          type: 'courtesy',
+          completed_at: new Date().toISOString(),
+          metadata: {
+            reason: reason || 'Cortesía de la casa',
+            original_order_number: order.order_number,
+          },
+        } as any) // Using any because type field might not be in generated types yet
+        .select()
+        .single()
+
+      if (paymentError) throw paymentError
+      courtesyPayments.push(payment)
+
+      // 3. Actualizar el estado de la orden
+      const { error: updateOrderError } = await supabase
+        .from('orders')
+        .update({
+          payment_status: 'pagado',
+          status: 'pagado',
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', order.id)
+
+      if (updateOrderError) throw updateOrderError
+
+      logger.info('Pago de cortesía creado', {
+        paymentId: payment.id,
+        orderId: order.id,
+        tableId,
+        amount: order.total_cents,
+      })
+    }
+
+    // 4. Actualizar el estado de la mesa a 'libre'
+    const { error: updateTableError } = await supabase
+      .from('tables')
+      .update({
+        status: 'libre',
+        updated_at: new Date().toISOString(),
+      })
+      .eq('id', tableId)
+      .eq('tenant_id', tenantId)
+
+    if (updateTableError) throw updateTableError
+
+    logger.info('Cortesía aplicada exitosamente', {
+      tableId,
+      paymentsCreated: courtesyPayments.length,
+      totalAmount: courtesyPayments.reduce((sum, p) => sum + p.amount_cents, 0),
+    })
+
+    return { data: courtesyPayments, error: null }
+  } catch (error) {
+    logger.error('Error al crear pago de cortesía', error as Error, { tableId })
+    return { data: null, error: error as Error }
+  }
+}

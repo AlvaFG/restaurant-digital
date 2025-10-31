@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { memo, useEffect, useMemo, useState } from "react"
 import { Bell, ShoppingCart } from "lucide-react"
 
 import { TableMap } from "@/components/table-map"
@@ -10,6 +10,7 @@ import { LoadingSpinner } from "@/components/loading-spinner"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { useTables } from "@/hooks/use-tables"
 import { useOrders } from "@/hooks/use-orders"
+import { logger } from "@/lib/logger"
 import { AlertService, type Alert, type Order } from "@/lib/mock-data"
 import { deserializeAlert, deserializeOrderToMock, getReadyAlerts } from "@/lib/socket-client-utils"
 import { useSocket } from "@/hooks/use-socket"
@@ -29,7 +30,7 @@ export function SalonLiveView() {
   )
 }
 
-function LiveAlertsPanel() {
+const LiveAlertsPanel = memo(function LiveAlertsPanel() {
   const { on, off, lastReadyPayload, isConnected, isReconnecting } = useSocket()
   const [alerts, setAlerts] = useState<Alert[]>(() => {
     const snapshot = getReadyAlerts(lastReadyPayload)
@@ -46,7 +47,7 @@ function LiveAlertsPanel() {
           setAlerts(data)
         }
       } catch (error) {
-        console.error("[SalonLiveView] Failed to load alerts", error)
+        logger.error("[SalonLiveView] Failed to load alerts", error instanceof Error ? error : new Error(String(error)))
       } finally {
         if (!cancelled) {
           setIsLoading(false)
@@ -139,9 +140,9 @@ function LiveAlertsPanel() {
       </CardContent>
     </Card>
   )
-}
+})
 
-function ActiveOrdersPanel() {
+const ActiveOrdersPanel = memo(function ActiveOrdersPanel() {
   const { on, off } = useSocket()
   const { orders: initialOrders } = useOrders()
   const { tables } = useTables()
@@ -219,4 +220,4 @@ function ActiveOrdersPanel() {
       </CardContent>
     </Card>
   )
-}
+})

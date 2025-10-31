@@ -29,6 +29,20 @@ export interface TableMapLayout {
     shape: "rectangle" | "circle"
     zone: string
   }>
+  visualZones?: Array<{
+    id: string
+    name: string
+    type: 'rectangle' | 'circle' | 'polygon'
+    x: number
+    y: number
+    width?: number
+    height?: number
+    radius?: number
+    points?: number[]
+    fill: string
+    stroke: string
+    opacity: number
+  }>
 }
 
 interface TenantSettings {

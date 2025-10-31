@@ -17,86 +17,58 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Plus, Edit, Trash2, Users } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
-
-interface User {
-  id: string
-  name: string
-  email: string
-  role: "admin" | "staff"
-  active: boolean
-  createdAt: Date
-  lastLogin?: Date
-}
-
-const MOCK_USERS: User[] = [
-  {
-    id: "1",
-    name: "Administrador",
-    email: "admin@admin.com",
-    role: "admin",
-    active: true,
-    createdAt: new Date("2024-01-15"),
-    lastLogin: new Date(),
-  },
-  {
-    id: "2",
-    name: "Personal",
-    email: "staff@staff.com",
-    role: "staff",
-    active: true,
-    createdAt: new Date("2024-01-20"),
-    lastLogin: new Date(Date.now() - 2 * 60 * 60 * 1000),
-  },
-  {
-    id: "3",
-    name: "María García",
-    email: "maria@restaurante.com",
-    role: "staff",
-    active: true,
-    createdAt: new Date("2024-02-01"),
-    lastLogin: new Date(Date.now() - 24 * 60 * 60 * 1000),
-  },
-  {
-    id: "4",
-    name: "Juan Pérez",
-    email: "juan@restaurante.com",
-    role: "staff",
-    active: false,
-    createdAt: new Date("2024-01-10"),
-    lastLogin: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000),
-  },
-]
+import { useUsers, useUserStats, useCreateUser, useUpdateUser, useToggleUserActive, useDeleteUser, type User } from "@/hooks/use-users"
+import { LoadingSpinner } from "@/components/loading-spinner"
 
 export function UsersManagement() {
-  const [users, setUsers] = useState<User[]>(MOCK_USERS)
+  // Hooks for Supabase operations
+  const { data: users = [], isLoading, error } = useUsers()
+  const { data: stats } = useUserStats()
+  const createUserMutation = useCreateUser()
+  const updateUserMutation = useUpdateUser()
+  const toggleActiveMutation = useToggleUserActive()
+  const deleteUserMutation = useDeleteUser()
+
+  // Local state for UI
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [editingUser, setEditingUser] = useState<User | null>(null)
+  const [deletingUserId, setDeletingUserId] = useState<string | null>(null)
+  const [userToToggle, setUserToToggle] = useState<{userId: string, newActive: boolean, userName: string} | null>(null)
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    role: "staff" as "admin" | "staff",
+    password: "",
+    role: "staff" as "admin" | "staff" | "manager",
     active: true,
   })
-  const { toast } = useToast()
 
-  const handleCreateUser = () => {
-    const newUser: User = {
-      id: Date.now().toString(),
-      ...formData,
-      createdAt: new Date(),
+  const handleCreateUser = async () => {
+    if (!formData.name || !formData.email || !formData.password) {
+      return
     }
 
-    setUsers([...users, newUser])
+    await createUserMutation.mutateAsync({
+      name: formData.name,
+      email: formData.email,
+      password: formData.password,
+      role: formData.role,
+      active: formData.active,
+    })
+
     setIsDialogOpen(false)
     resetForm()
-
-    toast({
-      title: "Usuario creado",
-      description: `Usuario ${newUser.name} creado exitosamente`,
-    })
   }
 
   const handleEditUser = (user: User) => {
@@ -104,62 +76,71 @@ export function UsersManagement() {
     setFormData({
       name: user.name,
       email: user.email,
+      password: "", // Don't populate password
       role: user.role,
       active: user.active,
     })
     setIsDialogOpen(true)
   }
 
-  const handleUpdateUser = () => {
+  const handleUpdateUser = async () => {
     if (!editingUser) return
 
-    setUsers(
-      users.map((user) =>
-        user.id === editingUser.id
-          ? {
-              ...user,
-              ...formData,
-            }
-          : user,
-      ),
-    )
+    await updateUserMutation.mutateAsync({
+      userId: editingUser.id,
+      input: {
+        name: formData.name,
+        email: formData.email,
+        role: formData.role,
+        active: formData.active,
+      },
+    })
 
     setIsDialogOpen(false)
     setEditingUser(null)
     resetForm()
-
-    toast({
-      title: "Usuario actualizado",
-      description: `Usuario ${formData.name} actualizado exitosamente`,
-    })
   }
 
-  const handleDeleteUser = (userId: string) => {
-    setUsers(users.filter((user) => user.id !== userId))
-    toast({
-      title: "Usuario eliminado",
-      description: "Usuario eliminado exitosamente",
-    })
+  const handleDeleteUser = async () => {
+    if (!deletingUserId) return
+
+    await deleteUserMutation.mutateAsync(deletingUserId)
+    setDeletingUserId(null)
   }
 
-  const handleToggleActive = (userId: string, active: boolean) => {
-    setUsers(users.map((user) => (user.id === userId ? { ...user, active } : user)))
-    toast({
-      title: active ? "Usuario activado" : "Usuario desactivado",
-      description: `El usuario ha sido ${active ? "activado" : "desactivado"}`,
+  const handleToggleActive = async (userId: string, newActive: boolean, userName: string) => {
+    // Si está activando, no pedir confirmación
+    if (newActive) {
+      await toggleActiveMutation.mutateAsync({ userId, active: newActive })
+      return
+    }
+    
+    // Si está desactivando, pedir confirmación
+    setUserToToggle({ userId, newActive, userName })
+  }
+
+  const confirmToggleActive = async () => {
+    if (!userToToggle) return
+    
+    await toggleActiveMutation.mutateAsync({ 
+      userId: userToToggle.userId, 
+      active: userToToggle.newActive 
     })
+    setUserToToggle(null)
   }
 
   const resetForm = () => {
     setFormData({
       name: "",
       email: "",
+      password: "",
       role: "staff",
       active: true,
     })
   }
 
-  const formatDate = (date: Date) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString)
     return date.toLocaleDateString("es-AR", {
       day: "2-digit",
       month: "2-digit",
@@ -167,17 +148,40 @@ export function UsersManagement() {
     })
   }
 
-  const getLastLoginText = (lastLogin?: Date) => {
+  const getLastLoginText = (lastLogin?: string | null) => {
     if (!lastLogin) return "Nunca"
 
+    const date = new Date(lastLogin)
     const now = new Date()
-    const diffMs = now.getTime() - lastLogin.getTime()
+    const diffMs = now.getTime() - date.getTime()
     const diffHours = Math.floor(diffMs / (1000 * 60 * 60))
 
     if (diffHours < 1) return "Hace menos de 1 hora"
     if (diffHours < 24) return `Hace ${diffHours} horas`
     const diffDays = Math.floor(diffHours / 24)
     return `Hace ${diffDays} días`
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <LoadingSpinner />
+      </div>
+    )
+  }
+
+  // Error state
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Card className="border-destructive">
+          <CardContent className="pt-6">
+            <p className="text-destructive">Error al cargar usuarios</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
   }
 
   return (
@@ -221,20 +225,37 @@ export function UsersManagement() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   placeholder="juan@restaurante.com"
+                  required
                 />
               </div>
+
+              {!editingUser && (
+                <div className="space-y-2">
+                  <Label htmlFor="password">Contraseña</Label>
+                  <Input
+                    id="password"
+                    type="password"
+                    value={formData.password}
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    required
+                  />
+                  <p className="text-xs text-muted-foreground">Mínimo 6 caracteres</p>
+                </div>
+              )}
 
               <div className="space-y-2">
                 <Label htmlFor="role">Rol</Label>
                 <Select
                   value={formData.role}
-                  onValueChange={(value: "admin" | "staff") => setFormData({ ...formData, role: value })}
+                  onValueChange={(value: "admin" | "staff" | "manager") => setFormData({ ...formData, role: value })}
                 >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
                 </Select>
@@ -251,10 +272,14 @@ export function UsersManagement() {
             </div>
 
             <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={createUserMutation.isPending || updateUserMutation.isPending}>
                 Cancelar
               </Button>
-              <Button onClick={editingUser ? handleUpdateUser : handleCreateUser}>
+              <Button 
+                onClick={editingUser ? handleUpdateUser : handleCreateUser}
+                disabled={createUserMutation.isPending || updateUserMutation.isPending || !formData.name || !formData.email || (!editingUser && !formData.password)}
+              >
+                {(createUserMutation.isPending || updateUserMutation.isPending) && <LoadingSpinner />}
                 {editingUser ? "Actualizar" : "Crear"}
               </Button>
             </DialogFooter>
@@ -272,7 +297,7 @@ export function UsersManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{stats?.total || users.length}</div>
           </CardContent>
         </Card>
 
@@ -284,7 +309,7 @@ export function UsersManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.active).length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{stats?.active || users.filter((u: any) => u.active).length}</div>
           </CardContent>
         </Card>
 
@@ -296,7 +321,7 @@ export function UsersManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.role === "admin").length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{stats?.admins || users.filter((u: any) => u.role === "admin" && u.active).length}</div>
           </CardContent>
         </Card>
 
@@ -308,7 +333,7 @@ export function UsersManagement() {
             </div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{users.filter((u) => u.role === "staff").length}</div>
+            <div className="text-2xl font-light tracking-tight dark:text-zinc-100">{stats?.staff || users.filter((u: any) => u.role === "staff" && u.active).length}</div>
           </CardContent>
         </Card>
       </div>
@@ -341,23 +366,23 @@ export function UsersManagement() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                      {user.role === "admin" ? "Administrador" : "Staff"}
+                      {user.role === "admin" ? "Administrador" : user.role === "manager" ? "Manager" : "Staff"}
                     </Badge>
                   </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Switch
                         checked={user.active}
-                        onCheckedChange={(checked) => handleToggleActive(user.id, checked)}
-                        size="sm"
+                        onCheckedChange={(checked) => handleToggleActive(user.id, checked, user.name)}
+                        disabled={toggleActiveMutation.isPending}
                       />
                       <Badge variant={user.active ? "default" : "secondary"}>
                         {user.active ? "Activo" : "Inactivo"}
                       </Badge>
                     </div>
                   </TableCell>
-                  <TableCell className="text-sm">{getLastLoginText(user.lastLogin)}</TableCell>
-                  <TableCell className="text-sm">{formatDate(user.createdAt)}</TableCell>
+                  <TableCell className="text-sm">{getLastLoginText(user.last_login_at)}</TableCell>
+                  <TableCell className="text-sm">{formatDate(user.created_at)}</TableCell>
                   <TableCell className="text-right">
                     <div className="flex justify-end gap-2">
                       <Button variant="outline" size="sm" onClick={() => handleEditUser(user)}>
@@ -366,8 +391,8 @@ export function UsersManagement() {
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => handleDeleteUser(user.id)}
-                        disabled={user.role === "admin" && users.filter((u) => u.role === "admin").length === 1}
+                        onClick={() => setDeletingUserId(user.id)}
+                        disabled={user.role === "admin" && users.filter((u: any) => u.role === "admin" && u.active).length === 1}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -379,6 +404,44 @@ export function UsersManagement() {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deletingUserId} onOpenChange={() => setDeletingUserId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Estás seguro?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El usuario será desactivado y no podrá acceder al sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteUser}>Eliminar</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Active Confirmation Dialog (only for deactivation) */}
+      <AlertDialog open={!!userToToggle && !userToToggle.newActive} onOpenChange={() => setUserToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desactivar usuario "{userToToggle?.userName}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este usuario no podrá acceder al sistema hasta que lo reactives.
+              Las sesiones activas se cerrarán automáticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={toggleActiveMutation.isPending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmToggleActive}
+              disabled={toggleActiveMutation.isPending}
+            >
+              {toggleActiveMutation.isPending ? "Desactivando..." : "Desactivar"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }

@@ -1,57 +1,48 @@
 "use client"
 
-import { useRef, useState } from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { TableList, type TableListRef } from "@/components/table-list"
+import { UnifiedSalonView } from "@/components/unified-salon-view"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
-import { Button } from "@/components/ui/button"
-import { RefreshCw, Plus, Settings2 } from "lucide-react"
+import type { Table } from "@/lib/mock-data"
 
 export default function MesasPage() {
-  const tableListRef = useRef<TableListRef>(null)
+  const router = useRouter()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showZonesManager, setShowZonesManager] = useState(false)
 
-  const handleRefresh = () => {
-    tableListRef.current?.reload()
+  const handleTableClick = (table: Table) => {
+    router.push(`/mesas/${table.id}`)
   }
 
   const handleTableCreated = () => {
-    tableListRef.current?.reload()
+    // El componente se actualiza automáticamente con React Query
   }
 
   const handleZonesUpdated = () => {
-    tableListRef.current?.reload()
+    // El componente se actualiza automáticamente con React Query
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-start justify-between">
-          <div>
-            <h1 className="text-3xl font-light tracking-tight">Mesas</h1>
-            <p className="text-muted-foreground font-light">
-              Gestiona las mesas y organizalas por zonas.
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={handleRefresh}>
-              <RefreshCw className="mr-2 h-4 w-4" />
-              Actualizar
-            </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowZonesManager(true)}>
-              <Settings2 className="mr-2 h-4 w-4" />
-              Editar zonas
-            </Button>
-            <Button size="sm" onClick={() => setShowAddDialog(true)}>
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar mesa
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-light tracking-tight">Gestión de Mesas</h1>
+          <p className="text-muted-foreground font-light">
+            Administra las mesas y organízalas por zonas
+          </p>
         </div>
 
-        <TableList ref={tableListRef} />
+        <UnifiedSalonView
+          defaultView="list"
+          allowEditing={true}
+          showManagement={true}
+          onTableClick={handleTableClick}
+          onAddTable={() => setShowAddDialog(true)}
+          onManageZones={() => setShowZonesManager(true)}
+        />
 
         <AddTableDialog
           open={showAddDialog}

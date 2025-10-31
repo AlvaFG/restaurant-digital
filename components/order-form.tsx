@@ -22,7 +22,7 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Separator } from "@/components/ui/separator"
 import { useToast } from "@/hooks/use-toast"
-import { ChevronDown, Minus, Plus, ShoppingCart, X } from "lucide-react"
+import { ChevronDown, Loader2, Minus, Plus, ShoppingCart, X } from "lucide-react"
 import { logger } from "@/lib/logger"
 import { MENSAJES } from "@/lib/i18n/mensajes"
 
@@ -101,6 +101,12 @@ export function OrderForm() {
   const calculateTotal = () => orderItems.reduce((sum, item) => sum + item.menuItem.price_cents * item.quantity, 0)
 
   const handleSubmit = async () => {
+    console.log('[OrderForm] handleSubmit iniciado', {
+      selectedTableId,
+      orderItemsCount: orderItems.length,
+      isSubmitting
+    })
+
     if (!selectedTableId || orderItems.length === 0) {
       logger.warn('Intento de enviar pedido sin mesa o items', {
         hasTable: !!selectedTableId,
@@ -153,6 +159,8 @@ export function OrderForm() {
     }
 
     setIsSubmitting(true)
+    console.log('[OrderForm] Comenzando creación de pedido...')
+    
     try {
       const payload = {
         tableId: selectedTableId,
@@ -176,6 +184,8 @@ export function OrderForm() {
 
       const result = await createOrder(payload)
 
+      console.log('[OrderForm] Pedido creado exitosamente', result)
+
       // Mensaje mejorado según el estado anterior de la mesa
       let description = tableNumber
         ? `Pedido creado para la mesa ${tableNumber}`
@@ -185,23 +195,31 @@ export function OrderForm() {
       if (result && typeof result === 'object' && '_table_status_changed' in result) {
         const resultData = result as any
         if (resultData._table_status_changed) {
-          description += `. Mesa cambió de estado a "${resultData._new_table_status}"`
+          const newStatusLabel = TABLE_STATE_LABELS[resultData._new_table_status as keyof typeof TABLE_STATE_LABELS] || resultData._new_table_status
+          const previousStatusLabel = TABLE_STATE_LABELS[resultData._previous_table_status as keyof typeof TABLE_STATE_LABELS] || resultData._previous_table_status
+          description += `. Mesa actualizada de "${previousStatusLabel}" a "${newStatusLabel}"`
         }
       } else if (previousTableStatus === TABLE_STATE.FREE) {
-        description += `. Mesa cambió de estado a "${TABLE_STATE_LABELS.pedido_en_curso}"`
+        description += `. Mesa actualizada a "${TABLE_STATE_LABELS.pedido_en_curso}"`
       }
 
       logger.info('Pedido creado exitosamente', {
         tableId: selectedTableId,
         tableNumber,
-        previousTableStatus
+        previousTableStatus,
+        newStatus: result && typeof result === 'object' && '_new_table_status' in result ? (result as any)._new_table_status : undefined,
+        statusChanged: result && typeof result === 'object' && '_table_status_changed' in result ? (result as any)._table_status_changed : undefined
       })
 
       toast({
-        title: "Pedido creado",
+        title: "✅ Pedido creado",
         description,
+        duration: 5000, // Mostrar por 5 segundos
       })
 
+      console.log('[OrderForm] Toast de éxito mostrado')
+
+      // Limpiar formulario
       setSelectedTableId("")
       setOrderItems([])
 
@@ -212,6 +230,8 @@ export function OrderForm() {
         await refetch({ silent: false })
       }
     } catch (error) {
+      console.error('[OrderForm] Error al crear pedido', error)
+      
       logger.error('Error al crear pedido desde formulario', error as Error, {
         tableId: selectedTableId,
         itemsCount: orderItems.length
@@ -219,11 +239,13 @@ export function OrderForm() {
       
       const message = error instanceof Error ? error.message : MENSAJES.ERRORES.GENERICO
       toast({
-        title: "No se pudo crear el pedido",
+        title: "❌ No se pudo crear el pedido",
         description: message,
         variant: "destructive",
+        duration: 7000, // Mostrar errores por más tiempo
       })
     } finally {
+      console.log('[OrderForm] Finalizando proceso, isSubmitting = false')
       setIsSubmitting(false)
     }
   }
@@ -330,6 +352,12 @@ export function OrderForm() {
             <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
               <ShoppingCart className="h-5 w-5" />
               Pedido ({orderItems.length})
+              {isSubmitting && (
+                <span className="ml-auto flex items-center gap-2 text-sm text-muted-foreground">
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  Procesando...
+                </span>
+              )}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -390,7 +418,8 @@ export function OrderForm() {
                 </div>
 
                 <Button onClick={handleSubmit} className="w-full" disabled={isSubmitting || !selectedTableId}>
-                  {isSubmitting ? "Creando..." : "Crear pedido"}
+                  {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {isSubmitting ? "Creando pedido..." : "Crear pedido"}
                 </Button>
               </div>
             )}

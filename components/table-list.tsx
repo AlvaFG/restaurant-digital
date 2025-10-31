@@ -50,7 +50,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
   const { toast } = useToast()
   
   // Use hooks for data fetching and mutations
-  const { tables, loading: tablesLoading, error: tablesError, updateStatus, deleteTable: deleteTableMutation } = useTables()
+  const { tables, loading: tablesLoading, error: tablesError, updateStatus, deleteTable: deleteTableMutation, inviteHouse } = useTables()
   const { zones, loading: zonesLoading } = useZones()
   
   const [selectedTableId, setSelectedTableId] = useState<string | null>(null)
@@ -143,13 +143,17 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
         userId: user?.id
       })
       
-      // TODO: Implement inviteHouse logic in service/hook
-      // For now, we just update the status
-      await updateStatus(selectedTable.id, 'libre')
+      // Use the new inviteHouse function from hook
+      await inviteHouse(selectedTable.id, 'Cortesía del restaurante')
       
       logger.info('Casa invitada exitosamente', {
         tableId: selectedTable.id,
         tableNumber: selectedTable.number
+      })
+
+      toast({
+        title: "Cortesía aplicada",
+        description: `La mesa ${selectedTable.number} fue marcada como cortesía.`,
       })
       
       setShowInviteDialog(false)
@@ -158,6 +162,11 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       logger.error('Error al invitar la casa', actionError as Error, {
         tableId: selectedTable.id,
         tableNumber: selectedTable.number
+      })
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "No se pudo aplicar la cortesía. Intenta nuevamente.",
       })
     } finally {
       setIsProcessingAction(false)

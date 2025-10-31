@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server"
 
-import { getFullMenu } from "@/lib/services/menu-service"
 import { getCurrentUser } from '@/lib/supabase/server'
+import { createServerClient } from '@/lib/supabase/server'
 import type { User } from "@supabase/supabase-js"
 
 import { buildMenuHeaders, handleMenuError, menuJsonResponse } from "./utils"
@@ -39,10 +39,20 @@ export async function GET() {
 
     logRequest('GET', '/api/menu', { tenantId })
     
-    const { data: categories, error } = await getFullMenu(tenantId)
+    // Obtener menú directamente desde Supabase
+    const supabase = await createServerClient()
+    const { data: categories, error } = await supabase
+      .from('menu_categories')
+      .select(`
+        *,
+        items:menu_items (*)
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
     
     if (error || !categories) {
-      logger.error('Error al obtener menú desde Supabase', new Error(`Get menu failed: ${error}`), {
+      logger.error('Error al obtener menú desde Supabase', new Error(`Get menu failed: ${error?.message}`), {
         tenantId
       })
       throw new Error('Error al obtener menú')
@@ -52,7 +62,7 @@ export async function GET() {
     logResponse('GET', '/api/menu', 200, duration)
     
     // Extraer items de todas las categorías
-    const allItems = categories.flatMap(cat => cat.items || [])
+    const allItems = categories.flatMap((cat: any) => cat.items || [])
     
     logger.info('Catálogo de menú obtenido desde Supabase', { 
       categoriesCount: categories.length,
@@ -62,22 +72,24 @@ export async function GET() {
     })
     
     return NextResponse.json({
-      categories: categories.map(cat => ({
-        id: cat.id,
-        name: cat.name,
-        description: cat.description,
-        active: cat.active,
-        sortOrder: cat.sort_order,
-      })),
-      items: allItems.map(item => ({
-        id: item.id,
-        categoryId: item.category_id,
-        name: item.name,
-        description: item.description,
-        priceCents: item.price_cents,
-        available: item.available,
-        imageUrl: item.image_url,
-      })),
+      data: {
+        categories: categories.map((cat: any) => ({
+          id: cat.id,
+          name: cat.name,
+          description: cat.description,
+          active: cat.active,
+          sortOrder: cat.sort_order,
+        })),
+        items: allItems.map((item: any) => ({
+          id: item.id,
+          categoryId: item.category_id,
+          name: item.name,
+          description: item.description,
+          priceCents: item.price_cents,
+          available: item.available,
+          imageUrl: item.image_url,
+        })),
+      },
       metadata: {
         categoriesCount: categories.length,
         itemsCount: allItems.length,
@@ -110,13 +122,23 @@ export async function HEAD() {
 
     logger.debug('Obteniendo metadata de menú', { tenantId })
     
-    const { data: categories, error } = await getFullMenu(tenantId)
+    // Obtener menú directamente desde Supabase
+    const supabase = await createServerClient()
+    const { data: categories, error } = await supabase
+      .from('menu_categories')
+      .select(`
+        *,
+        items:menu_items (*)
+      `)
+      .eq('tenant_id', tenantId)
+      .eq('active', true)
+      .order('sort_order', { ascending: true })
     
     if (error || !categories) {
       return new NextResponse(null, { status: 500 })
     }
 
-    const allItems = categories.flatMap(cat => cat.items || [])
+    const allItems = categories.flatMap((cat: any) => cat.items || [])
 
     return new NextResponse(null, {
       headers: {

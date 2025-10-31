@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -8,88 +8,112 @@ import { Badge } from "@/components/ui/badge"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Plus, Edit, Trash2, RefreshCw } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
-import type { MenuCategory, MenuItem } from "@/lib/mock-data"
-
-interface MenuResponse {
-  categories: MenuCategory[]
-  items: MenuItem[]
-}
+import { useMenuItems, useMenuCategories } from "@/hooks/use-menu"
+import { MenuItemDialog } from "@/components/menu-item-dialog"
+import { MenuCategoryDialog } from "@/components/menu-category-dialog"
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 export default function MenuPage() {
-  const [menuData, setMenuData] = useState<MenuResponse | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { toast } = useToast()
+  
+  // Use hooks
+  const { items, loading: itemsLoading, createItem, updateItem, deleteItem, refresh: refreshItems } = useMenuItems()
+  const { categories, loading: categoriesLoading, createCategory, updateCategory, refresh: refreshCategories } = useMenuCategories()
+  
+  // Dialog states
+  const [showItemDialog, setShowItemDialog] = useState(false)
+  const [editingItem, setEditingItem] = useState<any | null>(null)
+  const [showCategoryDialog, setShowCategoryDialog] = useState(false)
+  const [editingCategory, setEditingCategory] = useState<any | null>(null)
+  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
+  const [itemToDelete, setItemToDelete] = useState<any | null>(null)
+  const [isDeleting, setIsDeleting] = useState(false)
+  
+  const isLoading = itemsLoading || categoriesLoading
 
-  const loadMenu = async () => {
-    const wasLoading = isLoading
-    setIsLoading(true)
-    setError(null)
+  // Handlers for items
+  const handleAddItem = () => {
+    setEditingItem(null)
+    setShowItemDialog(true)
+  }
+
+  const handleEditItem = (item: any) => {
+    setEditingItem(item)
+    setShowItemDialog(true)
+  }
+
+  const handleDeleteItem = (item: any) => {
+    setItemToDelete(item)
+    setShowDeleteDialog(true)
+  }
+
+  const confirmDeleteItem = async () => {
+    if (!itemToDelete) return
+    
+    setIsDeleting(true)
     try {
-      const response = await fetch('/api/menu', { cache: 'no-store' })
-      if (!response.ok) throw new Error('Error al cargar el menú')
-      
-      const data = await response.json()
-      setMenuData({
-        categories: data.data.categories || [],
-        items: data.data.items || [],
-      })
-      
-      if (!wasLoading) {
-        toast({
-          title: "Menú actualizado",
-          description: "Los datos del menú se han cargado correctamente",
-        })
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido')
+      await deleteItem(itemToDelete.id)
       toast({
-        title: "Error",
-        description: "No se pudo cargar el menú",
+        title: "Item eliminado",
+        description: `"${itemToDelete.name}" fue eliminado exitosamente.`,
+      })
+      setItemToDelete(null)
+      setShowDeleteDialog(false)
+    } catch (error) {
+      toast({
+        title: "Error al eliminar item",
+        description: error instanceof Error ? error.message : 'Intenta nuevamente.',
         variant: "destructive",
       })
     } finally {
-      setIsLoading(false)
+      setIsDeleting(false)
     }
   }
 
-  useEffect(() => {
-    loadMenu()
-  }, [])
-
-  const handleEditItem = (item: MenuItem) => {
-    toast({
-      title: "Editar item",
-      description: `Funcionalidad en desarrollo: ${item.name}`,
-    })
+  const handleSaveItem = async (data: any) => {
+    if (editingItem) {
+      await updateItem(editingItem.id, data)
+    } else {
+      await createItem(data)
+    }
   }
 
-  const handleDeleteItem = (item: MenuItem) => {
-    toast({
-      title: "Eliminar item",
-      description: `Funcionalidad en desarrollo: ${item.name}`,
-      variant: "destructive",
-    })
-  }
-
-  const handleAddItem = () => {
-    toast({
-      title: "Agregar item",
-      description: "Funcionalidad en desarrollo",
-    })
-  }
-
+  // Handlers for categories
   const handleAddCategory = () => {
+    setEditingCategory(null)
+    setShowCategoryDialog(true)
+  }
+
+  const handleSaveCategory = async (data: any) => {
+    if (editingCategory) {
+      await updateCategory(editingCategory.id, data)
+    } else {
+      await createCategory(data)
+    }
+  }
+
+  const handleRefresh = () => {
+    refreshItems()
+    refreshCategories()
     toast({
-      title: "Nueva categoría",
-      description: "Funcionalidad en desarrollo",
+      title: "Menú actualizado",
+      description: "Los datos del menú se han actualizado correctamente.",
     })
   }
 
   const filteredItems = selectedCategory
-    ? (menuData?.items.filter(item => item.categoryId === selectedCategory) || [])
-    : (menuData?.items || [])
+    ? items.filter((item: any) => item.categoryId === selectedCategory)
+    : items
 
   const formatPrice = (cents: number) => {
     return new Intl.NumberFormat('es-AR', {
@@ -107,7 +131,7 @@ export default function MenuPage() {
             <p className="text-muted-foreground font-light">Gestión del menú del restaurante</p>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={loadMenu} disabled={isLoading}>
+            <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
               Actualizar
             </Button>
@@ -122,15 +146,6 @@ export default function MenuPage() {
           <div className="flex h-64 items-center justify-center">
             <LoadingSpinner />
           </div>
-        ) : error ? (
-          <Card className="border-destructive">
-            <CardContent className="pt-6">
-              <p className="text-destructive">{error}</p>
-              <Button onClick={loadMenu} variant="outline" className="mt-4">
-                Reintentar
-              </Button>
-            </CardContent>
-          </Card>
         ) : (
           <div className="grid gap-6 lg:grid-cols-[300px,1fr]">
             <aside className="space-y-4">
@@ -147,11 +162,11 @@ export default function MenuPage() {
                     className="w-full justify-start"
                     onClick={() => setSelectedCategory(null)}
                   >
-                    Todas ({menuData?.items.length || 0})
+                    Todas ({items.length})
                   </Button>
-                  {menuData?.categories.map((category) => {
-                    const itemCount = menuData.items.filter(
-                      item => item.categoryId === category.id
+                  {categories.map((category: any) => {
+                    const itemCount = items.filter(
+                      (item: any) => item.categoryId === category.id
                     ).length
                     return (
                       <Button
@@ -205,7 +220,7 @@ export default function MenuPage() {
                 </Card>
               ) : (
                 <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-                  {filteredItems.map((item) => (
+                  {filteredItems.map((item: any) => (
                     <Card key={item.id} className="flex flex-col">
                       <CardHeader>
                         <div className="flex items-start justify-between">
@@ -222,10 +237,10 @@ export default function MenuPage() {
                       </CardHeader>
                       <CardContent className="flex-1 flex flex-col justify-between">
                         <div className="space-y-2">
-                          <p className="text-2xl font-light">{formatPrice(item.priceCents)}</p>
+                          <p className="text-2xl font-light">{formatPrice(item.price_cents || item.priceCents)}</p>
                           {item.tags && item.tags.length > 0 && (
                             <div className="flex flex-wrap gap-1">
-                              {item.tags.map((tag, idx) => (
+                              {item.tags.map((tag: string, idx: number) => (
                                 <Badge key={idx} variant="outline" className="text-xs">
                                   {tag}
                                 </Badge>
@@ -260,6 +275,49 @@ export default function MenuPage() {
           </div>
         )}
       </div>
+
+      {/* Menu Item Dialog */}
+      <MenuItemDialog
+        open={showItemDialog}
+        onOpenChange={setShowItemDialog}
+        item={editingItem}
+        categories={categories}
+        onSave={handleSaveItem}
+      />
+
+      {/* Category Dialog */}
+      <MenuCategoryDialog
+        open={showCategoryDialog}
+        onOpenChange={setShowCategoryDialog}
+        category={editingCategory}
+        onSave={handleSaveCategory}
+      />
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              ¿Eliminar "{itemToDelete?.name}"?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El item será eliminado permanentemente del menú.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>
+              Cancelar
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteItem}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? "Eliminando..." : "Eliminar item"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   )
 }

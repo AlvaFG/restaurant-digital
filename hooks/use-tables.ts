@@ -16,6 +16,8 @@ import {
   getTablesByZone as getTablesByZoneService,
   getTablesStats as getTablesStatsService,
 } from '@/lib/services/tables-service'
+import { createCourtesyPayment } from '@/lib/services/payments-service'
+import { toast } from '@/hooks/use-toast'
 
 export function useTables(filters?: {
   zoneId?: string
@@ -164,6 +166,33 @@ export function useTables(filters?: {
     },
   })
 
+  const inviteHouseMutation = useMutation({
+    mutationFn: async ({ tableId, reason }: { tableId: string; reason?: string }) => {
+      if (!tenant?.id) throw new Error('No tenant ID available')
+      const { data, error: inviteError } = await createCourtesyPayment(tableId, tenant.id, reason)
+      if (inviteError) throw inviteError
+      return data
+    },
+    onSuccess: (data, { tableId }) => {
+      // Invalidate queries to refresh data
+      queryClient.invalidateQueries({ queryKey })
+      queryClient.invalidateQueries({ queryKey: ['orders'] })
+      queryClient.invalidateQueries({ queryKey: ['payments'] })
+      
+      toast({
+        title: "Cortesía aplicada",
+        description: "La mesa ha sido invitada exitosamente.",
+      })
+    },
+    onError: (error: Error) => {
+      toast({
+        variant: "destructive",
+        title: "Error al invitar la casa",
+        description: error.message,
+      })
+    },
+  })
+
   return {
     tables,
     loading,
@@ -175,6 +204,8 @@ export function useTables(filters?: {
     updateStatus: (tableId: string, status: string) =>
       updateStatusMutation.mutateAsync({ tableId, status }),
     deleteTable: (tableId: string) => deleteTableMutation.mutateAsync(tableId),
+    inviteHouse: (tableId: string, reason?: string) =>
+      inviteHouseMutation.mutateAsync({ tableId, reason }),
     refresh: () => queryClient.invalidateQueries({ queryKey }),
   }
 }

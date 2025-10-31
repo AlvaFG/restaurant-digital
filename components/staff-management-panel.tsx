@@ -22,6 +22,16 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog'
+import {
   Table,
   TableBody,
   TableCell,
@@ -49,11 +59,15 @@ export function StaffManagementPanel() {
   const [staffList, setStaffList] = useState<StaffUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isCreating, setIsCreating] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+  const [isTogglingActive, setIsTogglingActive] = useState(false)
   const [globalError, setGlobalError] = useState('')
   const [formError, setFormError] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
+  const [staffToDelete, setStaffToDelete] = useState<StaffUser | null>(null)
+  const [staffToToggle, setStaffToToggle] = useState<{staff: StaffUser, newActive: boolean} | null>(null)
 
   const [newStaffName, setNewStaffName] = useState('')
   const [newStaffEmail, setNewStaffEmail] = useState('')
@@ -158,16 +172,18 @@ export function StaffManagementPanel() {
   }
 
   const handleDeleteStaff = async (staffId: string, staffEmail: string) => {
-    const confirmation = window.confirm(
-      `AQueres eliminar al usuario ${staffEmail}? Esta accion no se puede deshacer.`,
-    )
+    setStaffToDelete(staffList.find(s => s.id === staffId) || null)
+  }
 
-    if (!confirmation) {
-      return
-    }
+  const confirmDeleteStaff = async () => {
+    if (!staffToDelete) return
+
+    setIsDeleting(true)
+    setGlobalError('')
+    setSuccessMessage('')
 
     try {
-      const response = await fetch(`/api/auth/staff/${staffId}`, { method: 'DELETE' })
+      const response = await fetch(`/api/auth/staff/${staffToDelete.id}`, { method: 'DELETE' })
 
       if (!response.ok) {
         throw new Error('No se pudo eliminar el usuario staff.')
@@ -175,30 +191,58 @@ export function StaffManagementPanel() {
 
       setSuccessMessage('Usuario staff eliminado correctamente.')
       await loadStaff()
+      setStaffToDelete(null)
     } catch (error) {
       logger.error('Error al eliminar staff', error as Error)
       setGlobalError(error instanceof Error ? error.message : 'No se pudo eliminar el usuario.')
+      setStaffToDelete(null)
+    } finally {
+      setIsDeleting(false)
     }
   }
 
-  const handleToggleActive = async (staffId: string, currentActive: boolean) => {
+  const handleToggleActive = async (staff: StaffUser, newActive: boolean) => {
+    // Si está activando, no pedir confirmación
+    if (newActive) {
+      await executeToggleActive(staff.id, newActive)
+      return
+    }
+    
+    // Si está desactivando, pedir confirmación
+    setStaffToToggle({ staff, newActive })
+  }
+
+  const executeToggleActive = async (staffId: string, newActive: boolean) => {
+    setIsTogglingActive(true)
+    setGlobalError('')
+    setSuccessMessage('')
+
     try {
       const response = await fetch(`/api/auth/staff/${staffId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ active: !currentActive }),
+        body: JSON.stringify({ active: newActive }),
       })
 
       if (!response.ok) {
         throw new Error('No se pudo actualizar el estado del usuario.')
       }
 
-      setSuccessMessage(!currentActive ? 'Usuario activado correctamente.' : 'Usuario desactivado correctamente.')
+      setSuccessMessage(newActive ? 'Usuario activado correctamente.' : 'Usuario desactivado correctamente.')
       await loadStaff()
     } catch (error) {
       logger.error('Error al actualizar estado', error as Error)
       setGlobalError(error instanceof Error ? error.message : 'No se pudo actualizar el estado del usuario.')
+    } finally {
+      setIsTogglingActive(false)
     }
+  }
+
+  const confirmToggleActive = async () => {
+    if (!staffToToggle) return
+    
+    await executeToggleActive(staffToToggle.staff.id, staffToToggle.newActive)
+    setStaffToToggle(null)
   }
 
   return (
@@ -371,7 +415,8 @@ export function StaffManagementPanel() {
                           type="button"
                           variant="outline"
                           size="sm"
-                          onClick={() => handleToggleActive(staff.id, staff.active)}
+                          onClick={() => handleToggleActive(staff, !staff.active)}
+                          disabled={isTogglingActive}
                         >
                           {staff.active ? 'Desactivar' : 'Activar'}
                         </Button>
@@ -380,6 +425,7 @@ export function StaffManagementPanel() {
                           variant="destructive"
                           size="sm"
                           onClick={() => handleDeleteStaff(staff.id, staff.email)}
+                          disabled={isDeleting}
                         >
                           <Trash2 className="h-4 w-4" />
                         </Button>
@@ -392,7 +438,64 @@ export function StaffManagementPanel() {
           )}
         </CardContent>
       </Card>
+
+      {/* AlertDialog para confirmar eliminación */}
+      <AlertDialog open={!!staffToDelete} onOpenChange={(open) => !open && setStaffToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Eliminar usuario "{staffToDelete?.email}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Esta acción no se puede deshacer. El usuario será eliminado permanentemente del sistema.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDeleteStaff}
+              disabled={isDeleting}
+              className="bg-destructive hover:bg-destructive/90"
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Eliminando...
+                </>
+              ) : (
+                'Eliminar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* AlertDialog para confirmar desactivación */}
+      <AlertDialog open={!!staffToToggle && !staffToToggle.newActive} onOpenChange={(open) => !open && setStaffToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>¿Desactivar usuario "{staffToToggle?.staff.email}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Este usuario no podrá acceder al sistema hasta que lo reactives.
+              Las sesiones activas se cerrarán automáticamente.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isTogglingActive}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmToggleActive}
+              disabled={isTogglingActive}
+            >
+              {isTogglingActive ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Desactivando...
+                </>
+              ) : (
+                'Desactivar'
+              )}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
-
