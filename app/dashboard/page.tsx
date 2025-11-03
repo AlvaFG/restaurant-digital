@@ -66,7 +66,6 @@ export default function DashboardPage() {
         }
 
         const data = await response.json()
-        console.log('✅ Métricas cargadas:', data)
 
         if (data.data) {
           setMetrics({

@@ -11,6 +11,10 @@
 
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
+import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
+
+const logger = createLogger('layouts-service')
 
 // Layout types (from mock-data.ts, will be migrated later)
 export interface TableMapLayout {
@@ -65,7 +69,7 @@ export async function getLayout(tenantId: string): Promise<TableMapLayout | null
     .single()
   
   if (error) {
-    console.error('[layouts-service] Error fetching layout:', error)
+    logger.error('Error fetching layout', error)
     return null
   }
   
@@ -116,14 +120,14 @@ export async function saveLayout(tenantId: string, layout: TableMapLayout): Prom
       .eq('id', tenantId)
     
     if (updateError) {
-      console.error('[layouts-service] Error saving layout:', updateError)
+      logger.error('Error saving layout', updateError)
       return false
     }
     
-    console.log('[layouts-service] Layout saved successfully')
+    logger.info('Layout saved successfully')
     return true
   } catch (err) {
-    console.error('[layouts-service] Unexpected error saving layout:', err)
+    logger.error('Unexpected error saving layout', err as Error)
     return false
   }
 }
@@ -163,14 +167,14 @@ export async function deleteLayout(tenantId: string): Promise<boolean> {
       .eq('id', tenantId)
     
     if (updateError) {
-      console.error('[layouts-service] Error deleting layout:', updateError)
+      logger.error('Error deleting layout', updateError)
       return false
     }
     
-    console.log('[layouts-service] Layout deleted successfully')
+    logger.info('Layout deleted successfully')
     return true
   } catch (err) {
-    console.error('[layouts-service] Unexpected error deleting layout:', err)
+    logger.error('Unexpected error deleting layout', err as Error)
     return false
   }
 }

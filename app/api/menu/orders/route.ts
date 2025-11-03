@@ -4,6 +4,9 @@ import { z } from "zod"
 import { createOrder as createOrderService } from "@/lib/services/orders-service"
 import { getCurrentUser } from '@/lib/supabase/server'
 import type { User } from "@supabase/supabase-js"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger("menu/orders")
 
 /**
  * Extract tenantId from Supabase Auth User
@@ -110,7 +113,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: error.message }, { status: 404 })
     }
 
-    console.error("[api/menu/orders]", error)
+    logger.error('Error creating order', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "No se pudo crear la orden" },
       { status: 500 },

@@ -13,6 +13,9 @@
 import { NextRequest, NextResponse } from "next/server"
 import * as sessionManager from "@/lib/server/session-manager"
 import { SessionStatus as Status } from "@/lib/server/session-types"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger("order/qr")
 
 interface QrOrderRequest {
   tableId: string
@@ -110,8 +113,13 @@ export async function POST(request: NextRequest) {
     // TODO: Notify kitchen via WebSocket
     // TODO: Send confirmation to customer
 
-    console.log(`[QR Order] Order ${orderId} created for table ${body.tableId}`)
-    console.log(`[QR Order] Customer: ${body.customerName}, Items: ${body.items.length}, Total: ${totalCents / 100}`)
+    logger.info('Order created successfully', {
+      orderId,
+      tableId: body.tableId,
+      customerName: body.customerName,
+      itemsCount: body.items.length,
+      totalAmount: totalCents / 100,
+    })
 
     return NextResponse.json(
       {
@@ -126,7 +134,7 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     )
   } catch (error) {
-    console.error("[QR Order] Error submitting order:", error)
+    logger.error('Error submitting order', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }
@@ -167,7 +175,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ orders })
   } catch (error) {
-    console.error("[QR Order] Error fetching orders:", error)
+    logger.error('Error fetching orders', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 }

@@ -50,12 +50,6 @@ const navItems: NavItem[] = [
     roles: ["admin", "staff"],
   },
   {
-    title: "Mesas",
-    href: "/mesas",
-    icon: Table,
-    roles: ["admin", "staff"],
-  },
-  {
     title: "Pedidos",
     href: "/pedidos",
     icon: ShoppingCart,
@@ -75,21 +69,9 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Editor de Mesas",
-    href: "/mesas/editor",
-    icon: Edit,
-    roles: ["admin"],
-  },
-  {
     title: "Zonas",
     href: "/configuracion/zonas",
     icon: MapPinned,
-    roles: ["admin"],
-  },
-  {
-    title: "Gestión de Staff",
-    href: "/staff",
-    icon: Users,
     roles: ["admin"],
   },
   {
@@ -108,12 +90,6 @@ const navItems: NavItem[] = [
     title: "Configuración",
     href: "/configuracion",
     icon: Settings,
-    roles: ["admin"],
-  },
-  {
-    title: "Branding",
-    href: "/configuracion/branding",
-    icon: Palette,
     roles: ["admin"],
   },
 ]

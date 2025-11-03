@@ -54,7 +54,10 @@ export default function QRValidatePage() {
       } catch (err) {
         setStatus('error');
         setError('Error al validar el código QR. Por favor, inténtalo de nuevo.');
-        console.error('Validation error:', err);
+        // Log error for debugging (public route)
+        if (process.env.NODE_ENV === 'development') {
+          console.error('QR validation error:', err);
+        }
       }
     }
 

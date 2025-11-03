@@ -46,6 +46,10 @@ export interface OrderItemModifierInput {
   id?: string
   name: string
   priceCents: number
+  groupId: string
+  groupName: string
+  optionId: string
+  optionName: string
 }
 
 export interface CreateOrderItemInput {
@@ -104,6 +108,11 @@ export interface OrderItemModifier {
   id?: string
   name: string
   priceCents: number
+  // Propiedades para compatibilidad con CartItemModifier
+  groupId: string
+  groupName: string
+  optionId: string
+  optionName: string
 }
 
 export interface StoredOrderItem extends BaseOrderItem {

@@ -6,6 +6,7 @@
 
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '@/contexts/auth-context'
+import type { Database } from '@/lib/supabase/database.types'
 import {
   createPayment as createPaymentService,
   getPayments as getPaymentsService,
@@ -16,6 +17,15 @@ import {
   getPaymentsStats as getPaymentsStatsService,
 } from '@/lib/services/payments-service'
 
+type Payment = Database['public']['Tables']['payments']['Row']
+type PaymentStats = {
+  total: number
+  byStatus: Record<string, number>
+  byProvider: Record<string, number>
+  totalAmount: number
+  completedAmount: number
+}
+
 export function usePayments(filters?: {
   orderId?: string
   status?: string
@@ -23,7 +33,7 @@ export function usePayments(filters?: {
   limit?: number
 }) {
   const { tenant } = useAuth()
-  const [payments, setPayments] = useState<any[]>([])
+  const [payments, setPayments] = useState<Payment[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -139,7 +149,7 @@ export function usePayments(filters?: {
 
 export function usePayment(paymentId?: string) {
   const { tenant } = useAuth()
-  const [payment, setPayment] = useState<any | null>(null)
+  const [payment, setPayment] = useState<Payment | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -177,7 +187,7 @@ export function usePayment(paymentId?: string) {
 
 export function usePaymentByExternalId(externalId?: string) {
   const { tenant } = useAuth()
-  const [payment, setPayment] = useState<any | null>(null)
+  const [payment, setPayment] = useState<Payment | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 
@@ -218,7 +228,7 @@ export function usePaymentsStats(filters?: {
   endDate?: string
 }) {
   const { tenant } = useAuth()
-  const [stats, setStats] = useState<any | null>(null)
+  const [stats, setStats] = useState<PaymentStats | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<Error | null>(null)
 

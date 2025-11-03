@@ -8,6 +8,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { MOCK_ORDERS } from '@/lib/mock-data'
 import { calculatePopularItemsAnalytics, getDateRangePreset } from '@/lib/analytics-service'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger("analytics/popular-items")
 
 export async function GET(request: NextRequest) {
   try {
@@ -32,7 +35,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    console.error('Error calculating popular items:', error)
+    logger.error('Error calculating popular items', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       {
         success: false,

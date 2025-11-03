@@ -35,8 +35,6 @@ export function LoginForm() {
 
     try {
       if (mode === "register") {
-        console.log('📝 [LoginForm] Intentando registro con:', email)
-        
         // Validar contraseñas
         if (password !== confirmPassword) {
           throw new Error("Las contraseñas no coinciden")
@@ -63,12 +61,9 @@ export function LoginForm() {
           const errorMsg = data.error?.message || data.error || "Error al crear cuenta"
           throw new Error(errorMsg)
         }
-
-        console.log('✅ [LoginForm] Registro exitoso, iniciando sesión automática...')
         
         // Después de registro exitoso, hacer login automáticamente
         await login(email, password)
-        console.log('✅ [LoginForm] Login automático exitoso, redirigiendo a dashboard...')
         
         // Pequeño delay para asegurar que el estado se actualizó
         await new Promise(resolve => setTimeout(resolve, 300))
@@ -76,25 +71,17 @@ export function LoginForm() {
         router.push("/dashboard")
       } else {
         // Login normal
-        console.log('📝 [LoginForm] Intentando login con:', email)
-        console.log('⏳ [LoginForm] Llamando a login()...')
         
         const loginStartTime = Date.now()
         await login(email, password)
         const loginDuration = Date.now() - loginStartTime
         
-        console.log(`✅ [LoginForm] Login completado en ${loginDuration}ms`)
-        console.log('⏳ [LoginForm] Esperando 300ms antes de redireccionar...')
-        
         // Pequeño delay para asegurar que el estado se actualizó
         await new Promise(resolve => setTimeout(resolve, 300))
         
-        console.log('🔄 [LoginForm] Redirigiendo a /dashboard...')
         router.push("/dashboard")
-        console.log('✅ [LoginForm] Router.push ejecutado')
       }
     } catch (err) {
-      console.error('❌ [LoginForm] Error en', mode === 'login' ? 'login' : 'registro', ':', err)
       const errorMessage = err instanceof Error ? err.message : "Error en la operación"
       
       // Traducir mensajes de error comunes de Supabase

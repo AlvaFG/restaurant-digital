@@ -8,6 +8,7 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('tables-service')
 
@@ -52,8 +53,7 @@ export async function getTables(tenantId: string, filters?: {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener mesas', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getTables', error, { tenantId, filters })
   }
 }
 
@@ -82,8 +82,7 @@ export async function getTableById(tableId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener mesa', error as Error, { tableId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getTableById', error, { tableId, tenantId })
   }
 }
 
@@ -124,8 +123,7 @@ export async function createTable(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al crear mesa', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createTable', error, { number: input.number, tenantId })
   }
 }
 
@@ -176,8 +174,7 @@ export async function updateTable(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar mesa', error as Error, { tableId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateTable', error, { tableId, tenantId })
   }
 }
 
@@ -206,8 +203,7 @@ export async function updateTableStatus(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar estado de mesa', error as Error, { tableId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateTableStatus', error, { tableId, status, tenantId })
   }
 }
 
@@ -230,8 +226,7 @@ export async function deleteTable(tableId: string, tenantId: string) {
 
     return { error: null }
   } catch (error) {
-    logger.error('Error al eliminar mesa', error as Error, { tableId })
-    return { error: error as Error }
+    return handleServiceError('deleteTable', error, { tableId, tenantId })
   }
 }
 
@@ -253,8 +248,7 @@ export async function getTablesByZone(zoneId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener mesas por zona', error as Error, { zoneId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getTablesByZone', error, { zoneId, tenantId })
   }
 }
 
@@ -283,7 +277,6 @@ export async function getTablesStats(tenantId: string) {
 
     return { data: stats, error: null }
   } catch (error) {
-    logger.error('Error al obtener estadísticas de mesas', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getTablesStats', error, { tenantId })
   }
 }

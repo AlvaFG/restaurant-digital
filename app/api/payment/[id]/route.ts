@@ -3,6 +3,9 @@ import { getPaymentById } from '@/lib/services/payments-service'
 import { PaymentError, PAYMENT_ERROR_CODES } from '@/lib/server/payment-types'
 import { getCurrentUser } from '@/lib/supabase/server'
 import type { User } from "@supabase/supabase-js"
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger("payment/[id]")
 
 /**
  * Extract tenantId from Supabase Auth User
@@ -65,7 +68,7 @@ export async function GET(
       },
     })
   } catch (error) {
-    console.error('[API] Payment fetch error:', error)
+    logger.error('Payment fetch error', error instanceof Error ? error : new Error(String(error)), { paymentId: params.id })
 
     if (error instanceof PaymentError) {
       return NextResponse.json(

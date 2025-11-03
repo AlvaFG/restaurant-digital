@@ -8,6 +8,7 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('payments-service')
 
@@ -70,8 +71,7 @@ export async function createPayment(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al crear pago', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createPayment', error, { orderId: input.orderId, tenantId })
   }
 }
 
@@ -123,8 +123,7 @@ export async function getPayments(tenantId: string, filters?: {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener pagos', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getPayments', error, { tenantId, filters })
   }
 }
 
@@ -154,8 +153,7 @@ export async function getPaymentById(paymentId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener pago', error as Error, { paymentId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getPaymentById', error, { paymentId, tenantId })
   }
 }
 
@@ -177,8 +175,7 @@ export async function getPaymentByExternalId(externalId: string, tenantId: strin
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener pago por ID externo', error as Error, { externalId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getPaymentByExternalId', error, { externalId, tenantId })
   }
 }
 
@@ -233,8 +230,7 @@ export async function updatePaymentStatus(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar estado de pago', error as Error, { paymentId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updatePaymentStatus', error, { paymentId, status, tenantId })
   }
 }
 
@@ -275,8 +271,7 @@ export async function updatePayment(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar pago', error as Error, { paymentId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updatePayment', error, { paymentId, tenantId })
   }
 }
 
@@ -327,8 +322,7 @@ export async function getPaymentsStats(tenantId: string, filters?: {
 
     return { data: stats, error: null }
   } catch (error) {
-    logger.error('Error al obtener estadísticas de pagos', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getPaymentsStats', error, { tenantId, filters })
   }
 }
 
@@ -435,7 +429,6 @@ export async function createCourtesyPayment(
 
     return { data: courtesyPayments, error: null }
   } catch (error) {
-    logger.error('Error al crear pago de cortesía', error as Error, { tableId })
-    return { data: null, error: error as Error }
+    return handleServiceError('createCourtesyPayment', error, { tableId, tenantId })
   }
 }

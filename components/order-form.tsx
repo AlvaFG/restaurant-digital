@@ -101,12 +101,6 @@ export function OrderForm() {
   const calculateTotal = () => orderItems.reduce((sum, item) => sum + item.menuItem.price_cents * item.quantity, 0)
 
   const handleSubmit = async () => {
-    console.log('[OrderForm] handleSubmit iniciado', {
-      selectedTableId,
-      orderItemsCount: orderItems.length,
-      isSubmitting
-    })
-
     if (!selectedTableId || orderItems.length === 0) {
       logger.warn('Intento de enviar pedido sin mesa o items', {
         hasTable: !!selectedTableId,
@@ -159,7 +153,6 @@ export function OrderForm() {
     }
 
     setIsSubmitting(true)
-    console.log('[OrderForm] Comenzando creación de pedido...')
     
     try {
       const payload = {
@@ -183,8 +176,6 @@ export function OrderForm() {
       })
 
       const result = await createOrder(payload)
-
-      console.log('[OrderForm] Pedido creado exitosamente', result)
 
       // Mensaje mejorado según el estado anterior de la mesa
       let description = tableNumber
@@ -217,21 +208,17 @@ export function OrderForm() {
         duration: 5000, // Mostrar por 5 segundos
       })
 
-      console.log('[OrderForm] Toast de éxito mostrado')
-
       // Limpiar formulario
       setSelectedTableId("")
       setOrderItems([])
 
-      // Refrescar tanto los pedidos como las mesas para mostrar el cambio de estado
+      // Refreschar tanto los pedidos como las mesas para mostrar el cambio de estado
       await refreshTables()
       
       if (typeof window !== "undefined" && process.env.NEXT_PUBLIC_DISABLE_SOCKET === "1") {
         await refetch({ silent: false })
       }
     } catch (error) {
-      console.error('[OrderForm] Error al crear pedido', error)
-      
       logger.error('Error al crear pedido desde formulario', error as Error, {
         tableId: selectedTableId,
         itemsCount: orderItems.length
@@ -245,7 +232,6 @@ export function OrderForm() {
         duration: 7000, // Mostrar errores por más tiempo
       })
     } finally {
-      console.log('[OrderForm] Finalizando proceso, isSubmitting = false')
       setIsSubmitting(false)
     }
   }

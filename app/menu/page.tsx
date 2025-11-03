@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import { useState } from "react"
+import type { MenuItem, MenuCategory } from "@/lib/types/menu"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -32,11 +33,11 @@ export default function MenuPage() {
   
   // Dialog states
   const [showItemDialog, setShowItemDialog] = useState(false)
-  const [editingItem, setEditingItem] = useState<any | null>(null)
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null)
   const [showCategoryDialog, setShowCategoryDialog] = useState(false)
-  const [editingCategory, setEditingCategory] = useState<any | null>(null)
+  const [editingCategory, setEditingCategory] = useState<MenuCategory | null>(null)
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
-  const [itemToDelete, setItemToDelete] = useState<any | null>(null)
+  const [itemToDelete, setItemToDelete] = useState<MenuItem | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
   
   const isLoading = itemsLoading || categoriesLoading
@@ -47,7 +48,7 @@ export default function MenuPage() {
     setShowItemDialog(true)
   }
 
-  const handleEditItem = (item: any) => {
+  const handleEditItem = (item: MenuItem) => {
     setEditingItem(item)
     setShowItemDialog(true)
   }

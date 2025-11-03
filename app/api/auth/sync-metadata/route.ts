@@ -12,7 +12,7 @@ import { logger } from '@/lib/logger'
 
 export async function POST() {
   try {
-    console.log('[sync-metadata] Iniciando sincronización...')
+    logger.info('Iniciando sincronización de metadata')
     
     // Obtener usuario actual
     const user = await getCurrentUser()
@@ -20,7 +20,7 @@ export async function POST() {
       return NextResponse.json({ error: 'No autenticado' }, { status: 401 })
     }
 
-    console.log('[sync-metadata] Usuario autenticado:', user.id)
+    logger.debug('Usuario autenticado', { userId: user.id })
 
     // Obtener datos desde la tabla users
     const supabase = createServerClient()
@@ -31,14 +31,14 @@ export async function POST() {
       .single()
 
     if (userError || !userData) {
-      console.error('[sync-metadata] Usuario no encontrado en tabla:', userError)
+      logger.error('Usuario no encontrado en tabla', userError ? new Error(userError.message) : undefined, { userId: user.id })
       return NextResponse.json(
         { error: 'Usuario no encontrado en base de datos' },
         { status: 404 }
       )
     }
 
-    console.log('[sync-metadata] Datos de usuario encontrados:', {
+    logger.debug('Datos de usuario encontrados', {
       userId: userData.id,
       tenantId: userData.tenant_id,
     })
@@ -57,15 +57,14 @@ export async function POST() {
     )
 
     if (updateError) {
-      console.error('[sync-metadata] Error al actualizar metadata:', updateError)
+      logger.error('Error al actualizar metadata', new Error(updateError.message), { userId: userData.id })
       return NextResponse.json(
         { error: 'No se pudo actualizar user_metadata', details: updateError.message },
         { status: 500 }
       )
     }
 
-    console.log('[sync-metadata] ✅ Metadata actualizado exitosamente')
-    logger.info('user_metadata sincronizado', {
+    logger.info('Metadata actualizado exitosamente', {
       userId: userData.id,
       tenantId: userData.tenant_id,
     })
@@ -81,8 +80,7 @@ export async function POST() {
       }
     })
   } catch (error) {
-    console.error('[sync-metadata] Error inesperado:', error)
-    logger.error('Error al sincronizar metadata', error as Error)
+    logger.error('Error inesperado al sincronizar metadata', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       { error: 'Error inesperado', details: error instanceof Error ? error.message : String(error) },
       { status: 500 }

@@ -10,6 +10,7 @@ import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
 import { TableBusinessRules } from '@/lib/business-rules/table-rules'
 import { logTableStatusChange } from '@/lib/services/audit-service'
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('orders-service')
 
@@ -274,8 +275,9 @@ export async function createOrder(input: CreateOrderInput, tenantId: string) {
     }
 
   } catch (error) {
-    logger.error('Error al crear orden con transacción atómica', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createOrderWithTransaction', error, { 
+      tableId: input.tableId
+    })
   }
 }
 
@@ -329,8 +331,7 @@ export async function getOrders(tenantId: string, filters?: {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener órdenes', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getOrders', error, { tenantId, filters })
   }
 }
 
@@ -357,8 +358,7 @@ export async function getOrderById(orderId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener orden', error as Error, { orderId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getOrderById', error, { orderId, tenantId })
   }
 }
 
@@ -387,8 +387,7 @@ export async function updateOrderStatus(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar estado de orden', error as Error, { orderId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateOrderStatus', error, { orderId, status, tenantId })
   }
 }
 
@@ -417,8 +416,7 @@ export async function updateOrderPaymentStatus(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar estado de pago', error as Error, { orderId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateOrderPaymentStatus', error, { orderId, paymentStatus, tenantId })
   }
 }
 
@@ -443,8 +441,7 @@ export async function cancelOrder(orderId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al cancelar orden', error as Error, { orderId })
-    return { data: null, error: error as Error }
+    return handleServiceError('cancelOrder', error, { orderId, tenantId })
   }
 }
 
@@ -493,7 +490,6 @@ export async function getOrdersSummary(tenantId: string, filters?: {
 
     return { data: summary, error: null }
   } catch (error) {
-    logger.error('Error al obtener resumen de órdenes', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getOrdersSummary', error, { tenantId, filters })
   }
 }

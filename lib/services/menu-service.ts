@@ -8,6 +8,7 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('menu-service')
 
@@ -35,8 +36,7 @@ export async function getMenuCategories(tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener categorías', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getMenuCategories', error, { tenantId })
   }
 }
 
@@ -81,8 +81,7 @@ export async function getMenuItems(tenantId: string, filters?: {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener items del menú', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getMenuItems', error, { tenantId, filters })
   }
 }
 
@@ -111,8 +110,7 @@ export async function getMenuItemById(itemId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener item del menú', error as Error, { itemId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getMenuItemById', error, { itemId, tenantId })
   }
 }
 
@@ -157,8 +155,7 @@ export async function createMenuItem(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al crear item del menú', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createMenuItem', error, { name: input.name, tenantId })
   }
 }
 
@@ -207,8 +204,7 @@ export async function updateMenuItem(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar item del menú', error as Error, { itemId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateMenuItem', error, { itemId, tenantId })
   }
 }
 
@@ -231,8 +227,7 @@ export async function deleteMenuItem(itemId: string, tenantId: string) {
 
     return { error: null }
   } catch (error) {
-    logger.error('Error al eliminar item del menú', error as Error, { itemId })
-    return { error: error as Error }
+    return handleServiceError('deleteMenuItem', error, { itemId, tenantId })
   }
 }
 
@@ -268,8 +263,7 @@ export async function createMenuCategory(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al crear categoría', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createMenuCategory', error, { name: input.name, tenantId })
   }
 }
 
@@ -310,8 +304,7 @@ export async function updateMenuCategory(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar categoría', error as Error, { categoryId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateMenuCategory', error, { categoryId, tenantId })
   }
 }
 
@@ -336,7 +329,6 @@ export async function getFullMenu(tenantId: string) {
 
     return { data: categories, error: null }
   } catch (error) {
-    logger.error('Error al obtener menú completo', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getFullMenu', error, { tenantId })
   }
 }

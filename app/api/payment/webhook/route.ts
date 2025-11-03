@@ -8,6 +8,9 @@ import { NextRequest, NextResponse } from 'next/server'
 import { paymentService } from '@/lib/payment-service'
 import { MOCK_ORDERS, type Order } from '@/lib/mock-data'
 import type { PaymentWebhook } from '@/lib/payment-types'
+import { createLogger } from '@/lib/logger'
+
+const logger = createLogger("payment/webhook")
 
 export const dynamic = 'force-dynamic'
 
@@ -15,15 +18,15 @@ export async function POST(request: NextRequest) {
   try {
     const webhook: PaymentWebhook = await request.json()
 
-    console.log('🔔 MercadoPago Webhook received:', {
+    logger.info('MercadoPago Webhook received', {
       type: webhook.type,
       action: webhook.action,
-      data: webhook.data,
+      dataId: webhook.data?.id,
     })
 
     // Only process payment notifications
     if (webhook.type !== 'payment') {
-      console.log('ℹ️ Skipping non-payment webhook')
+      logger.debug('Skipping non-payment webhook', { type: webhook.type })
       return NextResponse.json({ received: true })
     }
 
@@ -31,7 +34,7 @@ export async function POST(request: NextRequest) {
     const paymentId = webhook.data.id
     const payment = await paymentService.verifyPayment(paymentId)
 
-    console.log('💳 Payment verified:', {
+    logger.info('Payment verified', {
       id: payment.id,
       orderId: payment.orderId,
       status: payment.status,
@@ -41,7 +44,7 @@ export async function POST(request: NextRequest) {
     // Get associated order
     const order = MOCK_ORDERS.find((o: Order) => o.id === payment.orderId)
     if (!order) {
-      console.error('❌ Order not found for payment:', payment.orderId)
+      logger.error('Order not found for payment', undefined, { paymentId: payment.orderId })
       return NextResponse.json({ error: 'Order not found' }, { status: 404 })
     }
 
@@ -55,23 +58,23 @@ export async function POST(request: NextRequest) {
       case 'approved':
         updatedOrder.paymentStatus = 'pagado'
         updatedOrder.status = 'preparando' // Auto-confirm paid orders
-        console.log('✅ Payment approved, order confirmed')
+        logger.info('Payment approved, order confirmed', { orderId: order.id })
         break
 
       case 'rejected':
         updatedOrder.paymentStatus = 'cancelado'
-        console.log('❌ Payment rejected')
+        logger.warn('Payment rejected', { orderId: order.id, paymentId: payment.id })
         break
 
       case 'pending':
         updatedOrder.paymentStatus = 'pendiente'
-        console.log('⏳ Payment pending')
+        logger.info('Payment pending', { orderId: order.id })
         break
 
       case 'refunded':
         updatedOrder.paymentStatus = 'cancelado'
         updatedOrder.status = 'cerrado'
-        console.log('💸 Payment refunded')
+        logger.info('Payment refunded', { orderId: order.id, paymentId: payment.id })
         break
     }
 
@@ -81,11 +84,11 @@ export async function POST(request: NextRequest) {
       MOCK_ORDERS[orderIndex] = updatedOrder as Order
     }
 
-    console.log(`✓ Order ${order.id} payment status: ${payment.status}`)
+    logger.info('Order payment status updated', { orderId: order.id, status: payment.status })
 
     return NextResponse.json({ received: true })
   } catch (error) {
-    console.error('❌ Webhook processing error:', error)
+    logger.error('Webhook processing error', error instanceof Error ? error : new Error(String(error)))
     return NextResponse.json(
       {
         error: error instanceof Error ? error.message : 'Webhook processing failed',

@@ -8,6 +8,7 @@
 import { createBrowserClient } from "@/lib/supabase/client"
 import type { Database } from "@/lib/supabase/database.types"
 import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('zones-service')
 
@@ -38,8 +39,7 @@ export async function getZones(tenantId: string, includeInactive = false) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener zonas', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getZones', error, { tenantId, includeInactive })
   }
 }
 
@@ -69,8 +69,7 @@ export async function getZoneById(zoneId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener zona', error as Error, { zoneId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getZoneById', error, { zoneId, tenantId })
   }
 }
 
@@ -106,8 +105,7 @@ export async function createZone(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al crear zona', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('createZone', error, { name: input.name, tenantId })
   }
 }
 
@@ -148,8 +146,7 @@ export async function updateZone(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al actualizar zona', error as Error, { zoneId })
-    return { data: null, error: error as Error }
+    return handleServiceError('updateZone', error, { zoneId, tenantId })
   }
 }
 
@@ -175,8 +172,7 @@ export async function deleteZone(zoneId: string, tenantId: string) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al desactivar zona', error as Error, { zoneId })
-    return { data: null, error: error as Error }
+    return handleServiceError('deleteZone', error, { zoneId, tenantId })
   }
 }
 
@@ -212,8 +208,7 @@ export async function hardDeleteZone(zoneId: string, tenantId: string) {
 
     return { error: null }
   } catch (error) {
-    logger.error('Error al eliminar zona', error as Error, { zoneId })
-    return { error: error as Error }
+    return handleServiceError('hardDeleteZone', error, { zoneId, tenantId })
   }
 }
 
@@ -252,7 +247,6 @@ export async function getZonesWithStats(tenantId: string) {
 
     return { data: zonesWithStats, error: null }
   } catch (error) {
-    logger.error('Error al obtener zonas con estadísticas', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getZonesWithStats', error, { tenantId })
   }
 }

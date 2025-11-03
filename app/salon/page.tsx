@@ -1,71 +1,47 @@
 ﻿"use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { TableMap } from "@/components/table-map"
+import { UnifiedSalonView } from "@/components/unified-salon-view"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
-import { Button } from "@/components/ui/button"
-import { useRouter } from "next/navigation"
-import { Plus, Layout } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
 import type { Table } from "@/lib/mock-data"
 
 export default function SalonPage() {
   const router = useRouter()
-  const { toast } = useToast()
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showZonesManager, setShowZonesManager] = useState(false)
-  const [refreshKey, setRefreshKey] = useState(0)
 
   const handleTableClick = (table: Table) => {
     router.push(`/mesas/${table.id}`)
   }
 
   const handleTableCreated = () => {
-    toast({
-      title: "Mesa creada",
-      description: "La mesa se ha agregado exitosamente al salón.",
-    })
-    setRefreshKey(prev => prev + 1) // Trigger refresh
+    // El componente se actualiza automáticamente con React Query
   }
 
   const handleZonesUpdated = () => {
-    toast({
-      title: "Zonas actualizadas",
-      description: "Los cambios en las zonas se han guardado correctamente.",
-    })
-    setRefreshKey(prev => prev + 1) // Trigger refresh
+    // El componente se actualiza automáticamente con React Query
   }
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold tracking-tight">
-              Mapa Visual del Restaurante
-            </h1>
-            <p className="text-muted-foreground">
-              Diseña el layout de tu restaurante visto desde arriba con zonas personalizadas
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button onClick={() => setShowAddDialog(true)} variant="outline">
-              <Plus className="mr-2 h-4 w-4" />
-              Agregar Mesa
-            </Button>
-            <Button onClick={() => setShowZonesManager(true)} variant="outline">
-              <Layout className="mr-2 h-4 w-4" />
-              Gestionar Zonas
-            </Button>
-          </div>
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Salón</h1>
+          <p className="text-muted-foreground">
+            Visualiza y administra el layout del restaurante con zonas personalizadas
+          </p>
         </div>
 
-        <TableMap
-          key={refreshKey}
+        <UnifiedSalonView
+          defaultView="map"
+          allowEditing={true}
+          showManagement={true}
           onTableClick={handleTableClick}
-          editable={true}
+          onAddTable={() => setShowAddDialog(true)}
+          onManageZones={() => setShowZonesManager(true)}
         />
 
         <AddTableDialog

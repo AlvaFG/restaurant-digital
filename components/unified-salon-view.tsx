@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { TableMap } from "@/components/table-map"
 import { TableList, type TableListRef } from "@/components/table-list"
@@ -111,46 +111,75 @@ export function UnifiedSalonView({
     }
   }, [isEditMode, onTableClick, router])
 
-  // Toggle de modo edición
+  // Toggle de modo edición con keyboard support
   const handleToggleEditMode = useCallback(() => {
     setIsEditMode((prev) => !prev)
   }, [])
 
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyPress = (e: KeyboardEvent) => {
+      // Only handle shortcuts when not typing in inputs
+      if ((e.target as HTMLElement).tagName === 'INPUT' || (e.target as HTMLElement).tagName === 'TEXTAREA') {
+        return
+      }
+
+      // M = Toggle map view
+      if (e.key === 'm' || e.key === 'M') {
+        setCurrentView('map')
+      }
+      
+      // L = Toggle list view
+      if (e.key === 'l' || e.key === 'L') {
+        setCurrentView('list')
+      }
+      
+      // E = Toggle edit mode (admin only)
+      if ((e.key === 'e' || e.key === 'E') && canEdit && currentView === 'map') {
+        e.preventDefault()
+        handleToggleEditMode()
+      }
+    }
+
+    document.addEventListener('keydown', handleKeyPress)
+    return () => document.removeEventListener('keydown', handleKeyPress)
+  }, [canEdit, currentView, handleToggleEditMode])
+
   return (
     <div className="space-y-6">
-      {/* Header con estadísticas */}
-      <div className="grid gap-4 md:grid-cols-5">
+      {/* Header con estadísticas - Responsive grid */}
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-blue-700 dark:text-blue-300">{tableStats.total}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-300">{tableStats.total}</div>
             <p className="text-xs text-blue-600 dark:text-blue-400">Total de mesas</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-green-700 dark:text-green-300">{tableStats.libre}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-300">{tableStats.libre}</div>
             <p className="text-xs text-green-600 dark:text-green-400">Libres</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-red-700 dark:text-red-300">{tableStats.ocupada}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-300">{tableStats.ocupada}</div>
             <p className="text-xs text-red-600 dark:text-red-400">Ocupadas</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-800">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-yellow-700 dark:text-yellow-300">{tableStats.reservada}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-300">{tableStats.reservada}</div>
             <p className="text-xs text-yellow-600 dark:text-yellow-400">Reservadas</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
-          <CardContent className="pt-6">
-            <div className="text-2xl font-bold text-purple-700 dark:text-purple-300">{tableStats.limpieza}</div>
+          <CardContent className="pt-4 sm:pt-6">
+            <div className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300">{tableStats.limpieza}</div>
             <p className="text-xs text-purple-600 dark:text-purple-400">En limpieza</p>
           </CardContent>
         </Card>
@@ -159,14 +188,29 @@ export function UnifiedSalonView({
       {/* Controles principales */}
       <div className="flex flex-wrap items-center justify-between gap-4">
         {/* Toggle de vista */}
-        <Tabs value={currentView} onValueChange={(v) => setCurrentView(v as 'map' | 'list')} className="w-auto">
-          <TabsList>
-            <TabsTrigger value="map" className="gap-2">
-              <LayoutGrid className="h-4 w-4" />
+        <Tabs 
+          value={currentView} 
+          onValueChange={(v) => setCurrentView(v as 'map' | 'list')} 
+          className="w-auto"
+          aria-label="Selector de vista del salón"
+        >
+          <TabsList role="tablist">
+            <TabsTrigger 
+              value="map" 
+              className="gap-2"
+              aria-label="Vista de mapa visual (atajo: M)"
+              title="Atajo: tecla M"
+            >
+              <LayoutGrid className="h-4 w-4" aria-hidden="true" />
               Mapa visual
             </TabsTrigger>
-            <TabsTrigger value="list" className="gap-2">
-              <List className="h-4 w-4" />
+            <TabsTrigger 
+              value="list" 
+              className="gap-2"
+              aria-label="Vista de lista detallada (atajo: L)"
+              title="Atajo: tecla L"
+            >
+              <List className="h-4 w-4" aria-hidden="true" />
               Lista
             </TabsTrigger>
           </TabsList>
@@ -174,22 +218,25 @@ export function UnifiedSalonView({
 
         {/* Acciones */}
         {showManagement && (
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-2" role="toolbar" aria-label="Herramientas de gestión del salón">
             {canEdit && currentView === 'map' && (
               <Button
                 variant={isEditMode ? "default" : "outline"}
                 size="sm"
                 onClick={handleToggleEditMode}
                 className={cn(isEditMode && "bg-blue-600 hover:bg-blue-700")}
+                aria-pressed={isEditMode}
+                aria-label={isEditMode ? "Salir del modo edición (atajo: E)" : "Activar modo edición (atajo: E)"}
+                title={isEditMode ? "Salir del modo edición - Atajo: E" : "Editar layout del salón - Atajo: E"}
               >
                 {isEditMode ? (
                   <>
-                    <Eye className="mr-2 h-4 w-4" />
+                    <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
                     Ver modo
                   </>
                 ) : (
                   <>
-                    <Edit className="mr-2 h-4 w-4" />
+                    <Edit className="mr-2 h-4 w-4" aria-hidden="true" />
                     Editar layout
                   </>
                 )}
@@ -197,20 +244,35 @@ export function UnifiedSalonView({
             )}
             
             {onManageZones && (
-              <Button variant="outline" size="sm" onClick={onManageZones}>
-                <Settings2 className="mr-2 h-4 w-4" />
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={onManageZones}
+                aria-label="Gestionar zonas del restaurante"
+              >
+                <Settings2 className="mr-2 h-4 w-4" aria-hidden="true" />
                 Gestionar zonas
               </Button>
             )}
             
             {onAddTable && (
-              <Button size="sm" onClick={onAddTable}>
-                <Plus className="mr-2 h-4 w-4" />
+              <Button 
+                size="sm" 
+                onClick={onAddTable}
+                aria-label="Agregar nueva mesa al salón"
+              >
+                <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
                 Agregar mesa
               </Button>
             )}
           </div>
         )}
+      </div>
+
+      {/* Keyboard shortcuts help (screen reader only) */}
+      <div className="sr-only" aria-live="polite">
+        {canEdit && "Atajos de teclado disponibles: M para mapa, L para lista, E para editar"}
+        {!canEdit && "Atajos de teclado disponibles: M para mapa, L para lista"}
       </div>
 
       {/* Filtro de zonas (siempre visible) */}

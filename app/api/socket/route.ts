@@ -2,6 +2,9 @@ import { randomUUID } from "node:crypto"
 
 import type { NextRequest } from "next/server"
 
+// Import edge runtime types for WebSocket
+import "@/lib/types/edge-runtime"
+
 import { AlertService, type Alert } from "@/lib/mock-data"
 import { getCurrentUser } from '@/lib/supabase/server'
 import { getOrders } from '@/lib/services/orders-service'
@@ -9,6 +12,9 @@ import { getTables } from '@/lib/services/tables-service'
 import { getSocketBus } from "@/lib/server/socket-bus"
 import { buildHeartbeatPayload, buildReadyPayload } from "@/lib/server/socket-payloads"
 import type { SocketEnvelope, SocketEventName } from "@/lib/socket-events"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger("socket")
 
 export const runtime = "nodejs"
 
@@ -27,15 +33,15 @@ function assertWebSocketSupport() {
 async function buildReadySnapshot(connectionId: string, tenantId: string) {
   const [orders, tables, alerts] = await Promise.all([
     getOrders(tenantId).catch((error: Error) => {
-      console.error("[socket] Failed to obtain orders", error)
+      logger.error("Failed to obtain orders", error, { connectionId, tenantId })
       return { data: null, error }
     }),
     getTables(tenantId).catch((error: Error) => {
-      console.error("[socket] Failed to list tables", error)
+      logger.error("Failed to list tables", error, { connectionId, tenantId })
       return { data: null, error }
     }),
     AlertService.getActiveAlerts().catch((error: Error) => {
-      console.error("[socket] Failed to fetch alerts", error)
+      logger.error("Failed to fetch alerts", error, { connectionId, tenantId })
       return []
     }),
   ])
@@ -135,7 +141,7 @@ function wireIncomingMessages(socket: WebSocket, connectionId: string) {
           break
       }
     } catch (error) {
-      console.error("[socket] Failed to process incoming message", error, { connectionId })
+      logger.error("Failed to process incoming message", error instanceof Error ? error : new Error(String(error)), { connectionId })
     }
   })
 }
@@ -189,7 +195,7 @@ function attachBusBridge(socket: WebSocket, connectionId: string) {
       try {
         release()
       } catch (error) {
-        console.error("[socket] Failed to release listener", error, { connectionId })
+        logger.error("Failed to release listener", error instanceof Error ? error : new Error(String(error)), { connectionId })
       }
     }
   }
@@ -220,25 +226,25 @@ export async function GET(request: NextRequest) {
   try {
     assertWebSocketSupport()
   } catch (error) {
-    console.error("[socket]", error)
+    logger.error("WebSocket support assertion failed", error instanceof Error ? error : new Error(String(error)))
     return new Response("WebSockets not supported in this runtime", { status: 501 })
   }
 
-  // TypeScript types for WebSocketPair are not available in standard environment
-  // @ts-ignore - WebSocketPair is a runtime feature in some edge environments
-  const { WebSocketPair } = globalThis
+  // Get WebSocketPair from global (available in edge runtime)
+  const WebSocketPairConstructor = (globalThis as any).WebSocketPair as {
+    new (): WebSocketPair
+  } | undefined
   
-  if (!WebSocketPair) {
+  if (!WebSocketPairConstructor) {
     return new Response("WebSockets not available", { status: 501 })
   }
 
-  // @ts-ignore
-  const pair = new WebSocketPair()
+  const pair = new WebSocketPairConstructor()
   const client = pair[0]
   const server = pair[1]
   const connectionId = randomUUID()
 
-  // @ts-ignore - accept() is available on server WebSocket
+  // Accept the server-side WebSocket connection
   server.accept()
 
   try {
@@ -251,8 +257,7 @@ export async function GET(request: NextRequest) {
 
     server.send(JSON.stringify(readyEnvelope))
   } catch (error) {
-    console.error("[socket] Failed to push ready payload", error, { connectionId, tenantId })
-    // @ts-ignore
+    logger.error("Failed to push ready payload", error instanceof Error ? error : new Error(String(error)), { connectionId, tenantId })
     server.close(1011, "Failed to initialize connection")
     return new Response("Failed to initialize socket", { status: 500 })
   }
@@ -262,24 +267,22 @@ export async function GET(request: NextRequest) {
 
   server.addEventListener("close", (event: any) => {
     if (!event.wasClean) {
-      console.warn("[socket] connection closed unexpectedly", { connectionId, tenantId, code: event.code, reason: event.reason })
+      logger.warn("Connection closed unexpectedly", { connectionId, tenantId, code: event.code, reason: event.reason })
     }
   })
 
   server.addEventListener("error", (error: any) => {
-    console.error("[socket] connection error", error, { connectionId, tenantId })
+    logger.error("Connection error", error instanceof Error ? error : new Error(String(error)), { connectionId, tenantId })
     try {
-      // @ts-ignore
       server.close(1011, "Internal socket error")
     } catch (closeError) {
-      console.error("[socket] unable to close socket after error", closeError)
+      logger.error("Unable to close socket after error", closeError instanceof Error ? closeError : new Error(String(closeError)))
     }
   })
 
-  // @ts-ignore - webSocket property exists in edge runtime responses
+  // Return WebSocket upgrade response (edge runtime specific)
   return new Response(null, {
     status: 101,
-    // @ts-ignore
     webSocket: client,
-  })
+  } as ResponseInit & { webSocket: WebSocket })
 }

@@ -17,7 +17,7 @@ export async function GET(request: Request) {
 
   try {
     logRequest('GET', '/api/auth/me')
-    console.log('[auth/me] Iniciando obtención de datos del usuario...')
+    logger.debug('Iniciando obtención de datos del usuario')
 
     const adminClient = createAdminClient()
     let authUser = null
@@ -39,7 +39,7 @@ export async function GET(request: Request) {
       const supabase = createServerClient()
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
-      console.log('[auth/me] Estado de sesión vía cookies', {
+      logger.debug('Estado de sesión vía cookies', {
         hasSession: !!session,
         error: sessionError?.message,
         userId: session?.user?.id,
@@ -52,7 +52,7 @@ export async function GET(request: Request) {
       authUser = session.user
     }
 
-    console.log('[auth/me] Resolviendo usuario en tabla users', { userId: authUser.id })
+    logger.debug('Resolviendo usuario en tabla users', { userId: authUser.id })
 
     const { data: userRow, error: userError } = await adminClient
       .from('users')
@@ -122,7 +122,7 @@ export async function GET(request: Request) {
     }
 
     const duration = Date.now() - startTime
-    console.log('[auth/me] Datos obtenidos exitosamente', {
+    logger.info('Datos obtenidos exitosamente', {
       userId: user.id,
       tenantId: tenant.id,
       duration: `${duration}ms`,
@@ -132,7 +132,7 @@ export async function GET(request: Request) {
     return respuestaExitosa({ user, tenant })
   } catch (error) {
     const duration = Date.now() - startTime
-    console.error('[auth/me] Error:', error)
+    logger.error('Error obteniendo datos del usuario', error instanceof Error ? error : new Error(String(error)))
     logResponse('GET', '/api/auth/me', error instanceof AuthenticationError ? 401 : 500, duration)
     return manejarError(error, 'get-current-user')
   }

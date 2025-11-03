@@ -205,7 +205,14 @@ describe("POST /api/order", () => {
         {
           menuItemId: "1",
           quantity: 2,
-          modifiers: [{ name: "Salsa picante", priceCents: 200 }],
+          modifiers: [{ 
+            name: "Salsa picante", 
+            priceCents: 200,
+            groupId: "extras",
+            groupName: "Extras",
+            optionId: "salsa-picante",
+            optionName: "Salsa picante"
+          }],
           discount: { type: "percentage", value: 10, scope: "item" },
         },
         {
@@ -269,7 +276,7 @@ describe("POST /api/order", () => {
     expect(body.error.details?.path).toEqual(["tableId"])
   })
 
-  it("rechaza modifiers invalidos", async () => {
+  it("should reject malformed item modifiers (missing modifier name)", async () => {
     const { POST } = await import("@/app/api/order/route")
     const response = await POST(
       buildPostRequest(
@@ -278,7 +285,14 @@ describe("POST /api/order", () => {
             {
               menuItemId: "1",
               quantity: 1,
-              modifiers: [{ name: "", priceCents: -10 }],
+              modifiers: [{ 
+                name: "", 
+                priceCents: -10,
+                groupId: "invalid",
+                groupName: "Invalid",
+                optionId: "invalid",
+                optionName: ""
+              }],
             },
           ],
         }),

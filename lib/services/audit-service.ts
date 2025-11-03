@@ -7,6 +7,7 @@
 
 import { createBrowserClient } from "@/lib/supabase/client"
 import { createLogger } from "@/lib/logger"
+import { handleServiceError, type ServiceResult } from '@/lib/error-handler'
 
 const logger = createLogger('audit-service')
 
@@ -104,10 +105,7 @@ export async function logTableStatusChange(input: AuditRecordInput) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al registrar cambio en auditoría', error as Error, {
-      tableId: input.tableId
-    })
-    return { data: null, error: error as Error }
+    return handleServiceError('logTableStatusChange', error, { tableId: input.tableId })
   }
 }
 
@@ -168,10 +166,7 @@ export async function getTableAuditHistory(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener historial de auditoría', error as Error, {
-      tableId
-    })
-    return { data: null, error: error as Error }
+    return handleServiceError('getTableAuditHistory', error, { tableId, tenantId })
   }
 }
 
@@ -246,8 +241,7 @@ export async function getAuditRecords(
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener registros de auditoría', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getAuditRecords', error, { tenantId, filters })
   }
 }
 
@@ -271,8 +265,7 @@ export async function getRecentChanges(tenantId: string, hours: number = 24) {
 
     return { data, error: null }
   } catch (error) {
-    logger.error('Error al obtener cambios recientes', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getRecentChanges', error, { tenantId, hours })
   }
 }
 
@@ -346,8 +339,7 @@ export async function getTableStatistics(
 
     return { data: statistics, error: null }
   } catch (error) {
-    logger.error('Error al calcular estadísticas', error as Error, { tableId })
-    return { data: null, error: error as Error }
+    return handleServiceError('getTableStatistics', error, { tableId, tenantId })
   }
 }
 
@@ -415,8 +407,7 @@ export async function getTenantAuditSummary(
 
     return { data: summary, error: null }
   } catch (error) {
-    logger.error('Error al obtener resumen de auditoría', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('getTenantAuditSummary', error, { tenantId })
   }
 }
 
@@ -465,8 +456,7 @@ export async function exportAuditToCSV(
 
     return { data: csv, error: null }
   } catch (error) {
-    logger.error('Error al exportar auditoría a CSV', error as Error)
-    return { data: null, error: error as Error }
+    return handleServiceError('exportAuditToCSV', error, { tenantId, filters })
   }
 }
 

@@ -7,6 +7,9 @@
 
 import { supabase } from '@/lib/supabase-client';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger('socket-notifications')
 
 export type TableStatusChangeEvent = {
   type: 'table_status_change';
@@ -243,7 +246,7 @@ export class SocketNotificationService {
         try {
           callback(event);
         } catch (error) {
-          console.error('Error en listener:', error);
+          logger.error('Error en listener', error as Error)
         }
       });
     }

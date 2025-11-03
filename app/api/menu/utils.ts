@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server"
 
 import type { MenuMetadata } from "@/lib/mock-data"
+import { createLogger } from "@/lib/logger"
+
+const logger = createLogger("menu/utils")
 
 export function buildMenuHeaders(metadata: MenuMetadata) {
   return {
@@ -19,6 +22,6 @@ export function menuJsonResponse<T>(data: T, metadata: MenuMetadata) {
 }
 
 export function handleMenuError(context: string, error: unknown, message: string) {
-  console.error("[api/menu/" + context + "]", error)
+  logger.error(`Error in ${context}`, error instanceof Error ? error : new Error(String(error)))
   return NextResponse.json({ error: message }, { status: 500 })
 }

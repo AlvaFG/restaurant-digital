@@ -2,7 +2,7 @@
 
 import type React from "react"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useAuth } from "@/contexts/auth-context"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,11 +10,22 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, Save, Clock, DollarSign, Settings } from "lucide-react"
+import { Save, Clock, Settings, AlertCircle } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
+import { StaffManagementPanel } from "@/components/staff-management-panel"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+
+// Expresiones regulares para validación
+const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const PHONE_REGEX = /^[\d\s()+-]+$/
+
+interface ValidationErrors {
+  restaurantName?: string
+  email?: string
+  phone?: string
+}
 
 export function ConfigurationPanel() {
   const { tenant, updateTenant } = useAuth()
@@ -27,11 +38,6 @@ export function ConfigurationPanel() {
     email: "info@restaurante.com",
     address: "Av. Corrientes 1234, CABA",
 
-    // Tips configuration
-    tipsEnabled: true,
-    defaultTipPercentage: 10,
-    suggestedTips: [10, 15, 20],
-
     // Schedule configuration
     openTime: "11:00",
     closeTime: "23:00",
@@ -43,9 +49,84 @@ export function ConfigurationPanel() {
     deliveryEnabled: false,
     reservationsEnabled: true,
   })
+  
+  const [originalSettings] = useState(settings)
   const [isLoading, setIsLoading] = useState(false)
+  const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
+
+  // Detectar cambios no guardados
+  useEffect(() => {
+    const changed = JSON.stringify(settings) !== JSON.stringify(originalSettings)
+    setHasUnsavedChanges(changed)
+  }, [settings, originalSettings])
+
+  // Advertir antes de salir con cambios no guardados
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (hasUnsavedChanges) {
+        e.preventDefault()
+        e.returnValue = ''
+      }
+    }
+
+    window.addEventListener('beforeunload', handleBeforeUnload)
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload)
+  }, [hasUnsavedChanges])
+
+  // Validar campos en tiempo real
+  const validateField = (field: keyof ValidationErrors, value: string): string | undefined => {
+    switch (field) {
+      case 'restaurantName':
+        if (!value.trim()) return 'El nombre del restaurante es obligatorio'
+        if (value.trim().length < 3) return 'El nombre debe tener al menos 3 caracteres'
+        break
+      case 'email':
+        if (!value.trim()) return 'El email es obligatorio'
+        if (!EMAIL_REGEX.test(value)) return 'Ingresa un email válido'
+        break
+      case 'phone':
+        if (value && !PHONE_REGEX.test(value)) return 'El teléfono solo puede contener números, espacios y símbolos (+, -, (), )'
+        break
+    }
+    return undefined
+  }
+
+  const handleFieldChange = (field: string, value: string | boolean | string[]) => {
+    setSettings({ ...settings, [field]: value })
+
+    // Validar campos de texto
+    if (typeof value === 'string' && (field === 'restaurantName' || field === 'email' || field === 'phone')) {
+      const error = validateField(field as keyof ValidationErrors, value)
+      setValidationErrors(prev => ({
+        ...prev,
+        [field]: error
+      }))
+    }
+  }
+
+  const hasErrors = Object.values(validationErrors).some(error => error !== undefined)
 
   const handleSave = async () => {
+    // Validar todos los campos antes de guardar
+    const errors: ValidationErrors = {
+      restaurantName: validateField('restaurantName', settings.restaurantName),
+      email: validateField('email', settings.email),
+      phone: validateField('phone', settings.phone),
+    }
+
+    setValidationErrors(errors)
+
+    // Si hay errores, no guardar
+    if (Object.values(errors).some(error => error !== undefined)) {
+      toast({
+        title: "Error de validación",
+        description: "Por favor corrige los errores antes de guardar",
+        variant: "destructive",
+      })
+      return
+    }
+
     setIsLoading(true)
     try {
       // Mock save operation
@@ -54,14 +135,16 @@ export function ConfigurationPanel() {
       })
 
       toast({
-        title: "ConfiguraciÃ³n guardada",
+        title: "✓ Configuración guardada",
         description: "Los cambios han sido guardados exitosamente",
       })
+      
+      setHasUnsavedChanges(false)
     } catch (error) {
       console.error("[v0] Error saving configuration", error)
       toast({
         title: "Error",
-        description: "No se pudo guardar la configuraciÃ³n",
+        description: "No se pudo guardar la configuración",
         variant: "destructive",
       })
     } finally {
@@ -69,23 +152,13 @@ export function ConfigurationPanel() {
     }
   }
 
-  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
-    if (file) {
-      toast({
-        title: "Logo seleccionado",
-        description: "Guarda los cambios para aplicar el nuevo logo",
-      })
-    }
-  }
-
   const daysOfWeek = [
     { value: "monday", label: "Lunes" },
     { value: "tuesday", label: "Martes" },
-    { value: "wednesday", label: "MiÃ©rcoles" },
+    { value: "wednesday", label: "Miércoles" },
     { value: "thursday", label: "Jueves" },
     { value: "friday", label: "Viernes" },
-    { value: "saturday", label: "SÃ¡bado" },
+    { value: "saturday", label: "Sábado" },
     { value: "sunday", label: "Domingo" },
   ]
 
@@ -94,20 +167,40 @@ export function ConfigurationPanel() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-light tracking-tight">Configuración</h1>
-          <p className="text-muted-foreground font-light">Gestiona la configuración general del restaurante</p>
+          <p className="text-muted-foreground font-light">
+            Gestiona la configuración general del restaurante
+            {hasUnsavedChanges && (
+              <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">
+                • Cambios sin guardar
+              </span>
+            )}
+          </p>
         </div>
-        <Button onClick={handleSave} disabled={isLoading}>
+        <Button 
+          onClick={handleSave} 
+          disabled={isLoading || hasErrors}
+          variant={hasUnsavedChanges ? "default" : "outline"}
+        >
           <Save className="h-4 w-4 mr-2" />
-          {isLoading ? "Guardando..." : "Guardar Cambios"}
+          {isLoading ? "Guardando..." : hasUnsavedChanges ? "Guardar Cambios" : "Guardado"}
         </Button>
       </div>
+
+      {hasErrors && (
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            Hay errores en el formulario. Por favor corrígelos antes de guardar.
+          </AlertDescription>
+        </Alert>
+      )}
 
       <Tabs defaultValue="general" className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="tips">Propinas</TabsTrigger>
           <TabsTrigger value="schedule">Horarios</TabsTrigger>
           <TabsTrigger value="services">Servicios</TabsTrigger>
+          <TabsTrigger value="staff">Staff</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -119,137 +212,74 @@ export function ConfigurationPanel() {
               </CardTitle>
               <CardDescription className="font-light dark:text-zinc-400">Configuración básica del restaurante</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
+            <CardContent className="space-y-4 pt-6">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="restaurantName">Nombre del Restaurante</Label>
+                  <Label htmlFor="restaurantName">
+                    Nombre del Restaurante
+                    <span className="text-destructive ml-1">*</span>
+                  </Label>
                   <Input
                     id="restaurantName"
                     value={settings.restaurantName}
-                    onChange={(e) => setSettings({ ...settings, restaurantName: e.target.value })}
+                    onChange={(e) => handleFieldChange('restaurantName', e.target.value)}
+                    className={validationErrors.restaurantName ? 'border-destructive' : ''}
                   />
+                  {validationErrors.restaurantName && (
+                    <p className="text-sm text-destructive">{validationErrors.restaurantName}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">TelÃ©fono</Label>
+                  <Label htmlFor="phone">Teléfono</Label>
                   <Input
                     id="phone"
                     value={settings.phone}
-                    onChange={(e) => setSettings({ ...settings, phone: e.target.value })}
+                    onChange={(e) => handleFieldChange('phone', e.target.value)}
+                    placeholder="+54 11 1234-5678"
+                    className={validationErrors.phone ? 'border-destructive' : ''}
                   />
+                  {validationErrors.phone && (
+                    <p className="text-sm text-destructive">{validationErrors.phone}</p>
+                  )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">DescripciÃ³n</Label>
+                <Label htmlFor="description">Descripción</Label>
                 <Textarea
                   id="description"
                   value={settings.description}
-                  onChange={(e) => setSettings({ ...settings, description: e.target.value })}
+                  onChange={(e) => handleFieldChange('description', e.target.value)}
                   rows={3}
                 />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">
+                    Email
+                    <span className="text-destructive ml-1">*</span>
+                  </Label>
                   <Input
                     id="email"
                     type="email"
                     value={settings.email}
-                    onChange={(e) => setSettings({ ...settings, email: e.target.value })}
+                    onChange={(e) => handleFieldChange('email', e.target.value)}
+                    className={validationErrors.email ? 'border-destructive' : ''}
                   />
+                  {validationErrors.email && (
+                    <p className="text-sm text-destructive">{validationErrors.email}</p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">DirecciÃ³n</Label>
+                  <Label htmlFor="address">Dirección</Label>
                   <Input
                     id="address"
                     value={settings.address}
-                    onChange={(e) => setSettings({ ...settings, address: e.target.value })}
+                    onChange={(e) => handleFieldChange('address', e.target.value)}
                   />
                 </div>
               </div>
-
-              <Separator />
-
-              <div className="space-y-2">
-                <Label htmlFor="logo">Logo del Restaurante</Label>
-                <div className="flex items-center gap-4">
-                  <Input id="logo" type="file" accept="image/*" onChange={handleLogoUpload} className="flex-1" />
-                  <Button variant="outline" size="sm">
-                    <Upload className="h-4 w-4 mr-2" />
-                    Subir Logo
-                  </Button>
-                </div>
-                <p className="text-xs text-muted-foreground">Formatos soportados: JPG, PNG, SVG. TamaÃ±o mÃ¡ximo: 2MB</p>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="tips" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <DollarSign className="h-5 w-5" />
-                ConfiguraciÃ³n de Propinas
-              </CardTitle>
-              <CardDescription>Gestiona cÃ³mo se manejan las propinas en el restaurante</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <Label htmlFor="tipsEnabled">Habilitar Propinas</Label>
-                  <p className="text-sm text-muted-foreground">Permite a los clientes dejar propina</p>
-                </div>
-                <Switch
-                  id="tipsEnabled"
-                  checked={settings.tipsEnabled}
-                  onCheckedChange={(checked) => setSettings({ ...settings, tipsEnabled: checked })}
-                />
-              </div>
-
-              {settings.tipsEnabled && (
-                <>
-                  <div className="space-y-2">
-                    <Label htmlFor="defaultTip">Propina por Defecto (%)</Label>
-                    <Select
-                      value={settings.defaultTipPercentage.toString()}
-                      onValueChange={(value) =>
-                        setSettings({ ...settings, defaultTipPercentage: Number.parseInt(value) })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="5">5%</SelectItem>
-                        <SelectItem value="10">10%</SelectItem>
-                        <SelectItem value="15">15%</SelectItem>
-                        <SelectItem value="20">20%</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label>Opciones Sugeridas (%)</Label>
-                    <div className="flex gap-2">
-                      {settings.suggestedTips.map((tip, index) => (
-                        <Input
-                          key={index}
-                          type="number"
-                          value={tip}
-                          onChange={(e) => {
-                            const newTips = [...settings.suggestedTips]
-                            newTips[index] = Number.parseInt(e.target.value) || 0
-                            setSettings({ ...settings, suggestedTips: newTips })
-                          }}
-                          className="w-20"
-                        />
-                      ))}
-                    </div>
-                  </div>
-                </>
-              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -259,7 +289,7 @@ export function ConfigurationPanel() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Horarios de AtenciÃ³n
+                Horarios de Atención
               </CardTitle>
               <CardDescription>Configura los horarios de funcionamiento del restaurante</CardDescription>
             </CardHeader>
@@ -271,7 +301,7 @@ export function ConfigurationPanel() {
                     id="openTime"
                     type="time"
                     value={settings.openTime}
-                    onChange={(e) => setSettings({ ...settings, openTime: e.target.value })}
+                    onChange={(e) => handleFieldChange('openTime', e.target.value)}
                   />
                 </div>
                 <div className="space-y-2">
@@ -280,13 +310,13 @@ export function ConfigurationPanel() {
                     id="closeTime"
                     type="time"
                     value={settings.closeTime}
-                    onChange={(e) => setSettings({ ...settings, closeTime: e.target.value })}
+                    onChange={(e) => handleFieldChange('closeTime', e.target.value)}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <Label>DÃ­as Cerrados</Label>
+                <Label>Días Cerrados</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {daysOfWeek.map((day) => (
                     <div key={day.value} className="flex items-center space-x-2">
@@ -295,14 +325,10 @@ export function ConfigurationPanel() {
                         id={day.value}
                         checked={settings.closedDays.includes(day.value)}
                         onChange={(e) => {
-                          if (e.target.checked) {
-                            setSettings({ ...settings, closedDays: [...settings.closedDays, day.value] })
-                          } else {
-                            setSettings({
-                              ...settings,
-                              closedDays: settings.closedDays.filter((d) => d !== day.value),
-                            })
-                          }
+                          const newClosedDays = e.target.checked
+                            ? [...settings.closedDays, day.value]
+                            : settings.closedDays.filter((d) => d !== day.value)
+                          handleFieldChange('closedDays', newClosedDays)
                         }}
                         className="rounded border-gray-300"
                       />
@@ -321,19 +347,19 @@ export function ConfigurationPanel() {
           <Card>
             <CardHeader>
               <CardTitle>Servicios Disponibles</CardTitle>
-              <CardDescription>Configura quÃ© servicios ofrece el restaurante</CardDescription>
+              <CardDescription>Configura qué servicios ofrece el restaurante</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <Label htmlFor="tableService">Servicio en Mesa</Label>
-                    <p className="text-sm text-muted-foreground">AtenciÃ³n con mozo en el local</p>
+                    <p className="text-sm text-muted-foreground">Atención con mozo en el local</p>
                   </div>
                   <Switch
                     id="tableService"
                     checked={settings.tableServiceEnabled}
-                    onCheckedChange={(checked) => setSettings({ ...settings, tableServiceEnabled: checked })}
+                    onCheckedChange={(checked) => handleFieldChange('tableServiceEnabled', checked)}
                   />
                 </div>
 
@@ -345,7 +371,7 @@ export function ConfigurationPanel() {
                   <Switch
                     id="takeaway"
                     checked={settings.takeawayEnabled}
-                    onCheckedChange={(checked) => setSettings({ ...settings, takeawayEnabled: checked })}
+                    onCheckedChange={(checked) => handleFieldChange('takeawayEnabled', checked)}
                   />
                 </div>
 
@@ -357,7 +383,7 @@ export function ConfigurationPanel() {
                   <Switch
                     id="delivery"
                     checked={settings.deliveryEnabled}
-                    onCheckedChange={(checked) => setSettings({ ...settings, deliveryEnabled: checked })}
+                    onCheckedChange={(checked) => handleFieldChange('deliveryEnabled', checked)}
                   />
                 </div>
 
@@ -369,12 +395,16 @@ export function ConfigurationPanel() {
                   <Switch
                     id="reservations"
                     checked={settings.reservationsEnabled}
-                    onCheckedChange={(checked) => setSettings({ ...settings, reservationsEnabled: checked })}
+                    onCheckedChange={(checked) => handleFieldChange('reservationsEnabled', checked)}
                   />
                 </div>
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="staff" className="space-y-4">
+          <StaffManagementPanel />
         </TabsContent>
       </Tabs>
     </div>

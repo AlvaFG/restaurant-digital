@@ -95,7 +95,7 @@ export function StaffManagementPanel() {
       setStaffList((data.data?.staff as StaffUser[]) ?? [])
     } catch (error) {
       logger.error('Error al cargar staff', error as Error)
-      setGlobalError('Ocurrio un problema al cargar el staff. Intenta nuevamente mas tarde.')
+      setGlobalError('Ocurrió un problema al cargar el staff. Intenta nuevamente más tarde.')
     } finally {
       setIsLoading(false)
     }
@@ -111,7 +111,7 @@ export function StaffManagementPanel() {
     return (
       <Alert variant="destructive">
         <AlertDescription>
-          No tenes permisos para acceder a esta seccion. Solo los administradores pueden gestionar el staff.
+          No tienes permisos para acceder a esta sección. Solo los administradores pueden gestionar el staff.
         </AlertDescription>
       </Alert>
     )
@@ -247,13 +247,7 @@ export function StaffManagementPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-3xl font-semibold tracking-tight">Gestion de staff</h2>
-          <p className="text-sm text-muted-foreground">
-            Crea, activa o elimina usuarios con acceso limitado al sistema.
-          </p>
-        </div>
+      <div className="flex items-center justify-end">
         <Dialog
           open={showCreateDialog}
           onOpenChange={(open) => {
