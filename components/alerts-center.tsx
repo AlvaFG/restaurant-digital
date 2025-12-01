@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from 'next-intl'
 
 import {
   ALERT_PRIORITIES,
@@ -28,6 +29,7 @@ type TableMeta = { number?: number }
 export function AlertsCenter() {
   const { on, off, emit, state, lastReadyPayload, isConnected, isReconnecting } = useSocket()
   const { toast } = useToast()
+  const tCommon = useTranslations('common')
   
   // Use useAlerts hook for data management
   const { 
@@ -73,8 +75,8 @@ export function AlertsCenter() {
       // Refresh alerts from hook when new alert arrives
       refresh()
       toast({
-        title: "Nueva alerta",
-        description: payload.alert.message || "Nueva notificación recibida",
+        title: tCommon('newAlert'),
+        description: payload.alert.message || tCommon('newNotificationReceived'),
         variant: "destructive",
       })
     }
@@ -108,14 +110,14 @@ export function AlertsCenter() {
       await acknowledgeAlertMutation(alertId)
       emit("alert.acknowledged", { alertId, acknowledged: true })
       toast({
-        title: "Alerta confirmada",
-        description: "La alerta ha sido marcada como atendida",
+        title: tCommon('alertConfirmed'),
+        description: tCommon('alertMarkedAsAttended'),
       })
     } catch (error) {
       console.error("[alerts-center] Error acknowledging alert", error)
       toast({
-        title: "Error",
-        description: "No se pudo confirmar la alerta",
+        title: tCommon('error'),
+        description: tCommon('couldNotConfirmAlert'),
         variant: "destructive",
       })
     } finally {
@@ -128,14 +130,14 @@ export function AlertsCenter() {
     try {
       await refresh()
       toast({
-        title: "Alertas sincronizadas",
-        description: "Se actualizaron las alertas activas",
+        title: tCommon('alertsSynced'),
+        description: tCommon('alertsUpdated'),
       })
     } catch (error) {
       console.error("[alerts-center] Error refreshing alerts", error)
       toast({
-        title: "Error",
-        description: "No se pudieron actualizar las alertas",
+        title: tCommon('error'),
+        description: tCommon('couldNotUpdateAlerts'),
         variant: "destructive",
       })
     } finally {
@@ -146,7 +148,7 @@ export function AlertsCenter() {
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
-    if (minutes < 1) return "Ahora"
+    if (minutes < 1) return tCommon('now')
     if (minutes < 60) return minutes.toString() + "m"
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return hours.toString() + "h"
@@ -156,7 +158,7 @@ export function AlertsCenter() {
 
   const AlertCard = ({ alert, showAcknowledge = true }: { alert: any; showAcknowledge?: boolean }) => {
     const tableMeta = tablesIndex.get(alert.table_id || alert.tableId)
-    const label = tableMeta?.number ? "Mesa " + tableMeta.number : "Mesa " + (alert.table_id || alert.tableId)
+    const label = tableMeta?.number ? tCommon('table') + " " + tableMeta.number : tCommon('table') + " " + (alert.table_id || alert.tableId)
 
     return (
       <Card className="mb-3 border-l-4" style={{ borderLeftColor: ALERT_TYPE_COLORS[alert.type as keyof typeof ALERT_TYPE_COLORS] }}>
@@ -186,7 +188,7 @@ export function AlertsCenter() {
             {showAcknowledge && !alert.acknowledged && (
               <Button variant="outline" size="sm" onClick={() => handleAcknowledge(alert.id)} disabled={isLoading}>
                 {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <Check className="mr-2 h-4 w-4" />}
-                Atender
+                {tCommon('attend')}
               </Button>
             )}
           </div>
@@ -199,8 +201,8 @@ export function AlertsCenter() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Centro de Alertas</h1>
-          <p className="text-muted-foreground">{activeAlerts.length} alertas activas requieren atención</p>
+          <h1 className="text-3xl font-bold tracking-tight">{tCommon('alertsCenterTitle')}</h1>
+          <p className="text-muted-foreground">{tCommon('activeAlertsCount', { count: activeAlerts.length })}</p>
         </div>
         <div className="flex items-center gap-2">
           <Badge
@@ -214,11 +216,11 @@ export function AlertsCenter() {
                 "bg-muted-foreground": !isConnected && !isReconnecting,
               })}
             />
-            {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
+            {isConnected ? tCommon('live') : isReconnecting ? tCommon('reconnecting') : tCommon('noConnection')}
           </Badge>
           <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
             {isLoading ? <LoadingSpinner size="sm" className="mr-2" /> : <RefreshCw className="mr-2 h-4 w-4" />}
-            Actualizar
+            {tCommon('refresh')}
           </Button>
           <Badge variant="destructive" className="text-sm">
             <Bell className="mr-2 h-4 w-4" />
@@ -229,8 +231,8 @@ export function AlertsCenter() {
 
       <Tabs defaultValue="active" className="space-y-4">
         <TabsList>
-          <TabsTrigger value="active">Activas ({activeAlerts.length})</TabsTrigger>
-          <TabsTrigger value="history">Historial ({acknowledgedAlerts.length})</TabsTrigger>
+          <TabsTrigger value="active">{tCommon('activeTab')} ({activeAlerts.length})</TabsTrigger>
+          <TabsTrigger value="history">{tCommon('historyTab')} ({acknowledgedAlerts.length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="active" className="space-y-4">
@@ -238,7 +240,7 @@ export function AlertsCenter() {
             <CardHeader className="pb-3">
               <CardTitle className="flex items-center gap-2 text-sm">
                 <Filter className="h-4 w-4" />
-                Filtros
+                {tCommon('filters')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -248,7 +250,7 @@ export function AlertsCenter() {
                   className="cursor-pointer"
                   onClick={() => setFilter("all")}
                 >
-                  Todas
+                  {tCommon('all')}
                 </Badge>
                 {Object.keys(ALERT_TYPE_LABELS).map((type) => (
                   <Badge
@@ -268,7 +270,7 @@ export function AlertsCenter() {
             {sortedActiveAlerts.length === 0 ? (
               <Card className="border-dashed">
                 <CardContent className="py-8 text-center text-muted-foreground">
-                  No hay alertas activas para el filtro seleccionado.
+                  {tCommon('noActiveAlerts')}
                 </CardContent>
               </Card>
             ) : (

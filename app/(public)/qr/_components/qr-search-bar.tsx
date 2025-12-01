@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Input } from "@/components/ui/input"
 import { Search, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -15,12 +16,16 @@ interface QrSearchBarProps {
 
 export function QrSearchBar({
   onSearchChange,
-  placeholder = "Buscar platos, ingredientes...",
+  placeholder,
   debounceMs = 300,
   className,
 }: QrSearchBarProps) {
+  const t = useTranslations('customer')
   const [query, setQuery] = useState("")
   const [debouncedQuery, setDebouncedQuery] = useState("")
+
+  // Use translation for placeholder if not provided
+  const effectivePlaceholder = placeholder ?? t('searchMenu')
 
   // Debounce logic
   useEffect(() => {
@@ -51,9 +56,9 @@ export function QrSearchBar({
         type="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder={placeholder}
+        placeholder={effectivePlaceholder}
         className="h-12 pl-10 pr-10 text-base rounded-full border-2 focus-visible:ring-2 focus-visible:ring-primary/20"
-        aria-label="Buscar en el menú"
+        aria-label={t('searchMenu')}
       />
       {query && (
         <Button
@@ -62,7 +67,7 @@ export function QrSearchBar({
           size="icon"
           className="absolute right-1 top-1/2 size-8 -translate-y-1/2 rounded-full hover:bg-muted"
           onClick={handleClear}
-          aria-label="Limpiar búsqueda"
+          aria-label={t('cancel')}
         >
           <X className="size-4" aria-hidden="true" />
         </Button>

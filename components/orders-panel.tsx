@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from 'next-intl'
 import { Search, CreditCard } from "lucide-react"
 
 import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
@@ -20,9 +21,7 @@ import type { Database } from "@/lib/supabase/database.types"
 import {
   ORDER_STATUS_BADGE_VARIANT,
   ORDER_STATUS_GROUPS,
-  ORDER_STATUS_LABELS,
   PAYMENT_STATUS_BADGE_VARIANT,
-  PAYMENT_STATUS_LABELS,
   type OrdersPanelOrder,
 } from "@/lib/order-service"
 import type { OrderStatus, PaymentStatus } from "@/lib/server/order-types"
@@ -31,27 +30,6 @@ type Table = Database['public']['Tables']['tables']['Row']
 
 const STATUS_SEQUENCE: OrderStatus[] = ["abierto", "preparando", "listo", "entregado", "cerrado"]
 const ITEMS_PREVIEW_LIMIT = 3
-
-function formatRelativeTime(date: Date): string {
-  const diff = Date.now() - date.getTime()
-
-  if (diff < 60_000) {
-    return "Hace menos de un minuto"
-  }
-
-  const minutes = Math.round(diff / 60_000)
-  if (minutes < 60) {
-    return `Hace ${minutes} min`
-  }
-
-  const hours = Math.round(diff / 3_600_000)
-  if (hours < 24) {
-    return `Hace ${hours} h`
-  }
-
-  const days = Math.round(diff / 86_400_000)
-  return `Hace ${days} d`
-}
 
 function useTablesIndex() {
   const { tables } = useTables()
@@ -63,9 +41,9 @@ function useTablesIndex() {
   return tablesById
 }
 
-function getTableLabel(order: OrdersPanelOrder, tablesById: Map<string, Table>) {
+function getTableLabel(order: OrdersPanelOrder, tablesById: Map<string, Table>, t: (key: string) => string) {
   const table = tablesById.get(order.tableId)
-  return table ? `Mesa ${table.number}` : `Mesa ${order.tableId}`
+  return table ? `${t('table')} ${table.number}` : `${t('table')} ${order.tableId}`
 }
 
 function getItemTotal(item: OrdersPanelOrder["items"][number]) {
@@ -73,6 +51,9 @@ function getItemTotal(item: OrdersPanelOrder["items"][number]) {
 }
 
 export function OrdersPanel() {
+  const t = useTranslations('dashboard')
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const {
     filteredOrders,
     summary,
@@ -87,6 +68,28 @@ export function OrdersPanel() {
     setSearch,
     refetch,
   } = useOrdersPanelContext()
+
+  // Formato de tiempo relativo con traducciones
+  const formatRelativeTime = (date: Date): string => {
+    const diff = Date.now() - date.getTime()
+
+    if (diff < 60_000) {
+      return tCommon('lessThanMinute')
+    }
+
+    const minutes = Math.round(diff / 60_000)
+    if (minutes < 60) {
+      return tCommon('minutesAgo', { minutes })
+    }
+
+    const hours = Math.round(diff / 3_600_000)
+    if (hours < 24) {
+      return tCommon('hoursAgo', { hours })
+    }
+
+    const days = Math.round(diff / 86_400_000)
+    return tCommon('daysAgo', { days })
+  }
   const tablesById = useTablesIndex()
 
   // Estado para el modal de pago
@@ -136,7 +139,7 @@ export function OrdersPanel() {
 
   const latestOrderDisplay = summary?.latestOrderAt
     ? formatRelativeTime(summary.latestOrderAt)
-    : "Sin registros"
+    : tCommon('noRecords')
 
   const emptyState = !isLoading && filteredOrders.length === 0
 
@@ -144,7 +147,7 @@ export function OrdersPanel() {
     <div className="space-y-4">
       {error ? (
         <Alert variant="destructive">
-          <AlertTitle>Error al obtener pedidos</AlertTitle>
+          <AlertTitle>{tErrors('fetchOrdersError')}</AlertTitle>
           <AlertDescription className="flex flex-wrap items-center gap-x-2 gap-y-1">
             <span>{error}. </span>
             <Button
@@ -155,7 +158,7 @@ export function OrdersPanel() {
               data-testid="orders-error-retry"
               onClick={() => void refetch({ silent: false })}
             >
-              Reintentar
+              {tCommon('retry')}
             </Button>
           </AlertDescription>
         </Alert>
@@ -164,38 +167,38 @@ export function OrdersPanel() {
       <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4" aria-live="polite">
         <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription className="font-light dark:text-zinc-400">Pedidos supervisados</CardDescription>
+            <CardDescription className="font-light dark:text-zinc-400">{tCommon('ordersSupervisedTitle')}</CardDescription>
             <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{activeOrders}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
-            Incluye abiertos, preparando, listos y entregados.
+            {tCommon('ordersSupervisedDesc')}
           </CardContent>
         </Card>
         <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription className="font-light dark:text-zinc-400">Pendientes de cobro</CardDescription>
+            <CardDescription className="font-light dark:text-zinc-400">{tCommon('pendingPaymentTitle')}</CardDescription>
             <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{summary?.pendingPayment ?? 0}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
-            Pedidos marcados con pago pendiente.
+            {tCommon('pendingPaymentDesc')}
           </CardContent>
         </Card>
         <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription className="font-light dark:text-zinc-400">Pedido mas reciente</CardDescription>
+            <CardDescription className="font-light dark:text-zinc-400">{tCommon('mostRecentOrderTitle')}</CardDescription>
             <CardTitle className="text-lg font-light dark:text-zinc-100">{latestOrderDisplay}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
-            Tiempo relativo desde la ultima creacion.
+            {tCommon('mostRecentOrderDesc')}
           </CardContent>
         </Card>
         <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
           <CardHeader className="pb-2">
-            <CardDescription className="font-light dark:text-zinc-400">Pedidos cerrados</CardDescription>
+            <CardDescription className="font-light dark:text-zinc-400">{tCommon('closedOrdersTitle')}</CardDescription>
             <CardTitle className="text-3xl font-light tracking-tight dark:text-zinc-100">{summary?.byStatus.cerrado ?? 0}</CardTitle>
           </CardHeader>
           <CardContent className="text-xs text-muted-foreground font-light dark:text-zinc-400">
-            Total de pedidos marcados como cerrados.
+            {tCommon('closedOrdersDesc')}
           </CardContent>
         </Card>
       </section>
@@ -204,13 +207,13 @@ export function OrdersPanel() {
         <aside className="space-y-4">
           <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
             <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
-              <CardTitle className="font-light dark:text-zinc-100">Filtros</CardTitle>
-              <CardDescription className="font-light dark:text-zinc-400">Busqueda, estado operativo y cobro.</CardDescription>
+              <CardTitle className="font-light dark:text-zinc-100">{tCommon('filters')}</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">{tCommon('searchPlaceholder')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="orders-search" className="sr-only">
-                  Buscar pedidos
+                  {tCommon('searchOrders')}
                 </Label>
                 <div className="relative">
                   <Search className="pointer-events-none absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -218,7 +221,7 @@ export function OrdersPanel() {
                     id="orders-search"
                     value={search}
                     onChange={(event) => setSearch(event.target.value)}
-                    placeholder="Mesa, cliente o item"
+                    placeholder={tCommon('searchPlaceholder')}
                     className="pl-9"
                     autoComplete="off"
                   />
@@ -226,7 +229,7 @@ export function OrdersPanel() {
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-light dark:text-zinc-300">Estados</p>
+                <p className="text-sm font-light dark:text-zinc-300">{tCommon('states')}</p>
                 <ToggleGroup
                   type="multiple"
                   value={statusFilters}
@@ -235,26 +238,26 @@ export function OrdersPanel() {
                 >
                   {STATUS_SEQUENCE.map((status) => (
                     <ToggleGroupItem key={status} value={status} className="px-3 py-1 text-xs capitalize font-light">
-                      {ORDER_STATUS_LABELS[status]}
+                      {t(`orderStatus.${status}`)}
                     </ToggleGroupItem>
                   ))}
                 </ToggleGroup>
               </div>
 
               <div className="space-y-2">
-                <p className="text-sm font-light dark:text-zinc-300">Pago</p>
+                <p className="text-sm font-light dark:text-zinc-300">{tCommon('payment')}</p>
                 <Select
                   value={paymentFilter}
                   onValueChange={(value) => setPaymentFilter(value as PaymentStatus | "todos")}
                 >
                   <SelectTrigger>
-                    <SelectValue placeholder="Estado de pago" />
+                    <SelectValue placeholder={tCommon('paymentStatusLabel')} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="todos">Todos los pagos</SelectItem>
-                    {(Object.entries(PAYMENT_STATUS_LABELS) as Array<[PaymentStatus, string]>).map(([value, label]) => (
+                    <SelectItem value="todos">{tCommon('allPayments')}</SelectItem>
+                    {(["pendiente", "pagado", "cancelado"] as PaymentStatus[]).map((value) => (
                       <SelectItem key={value} value={value}>
-                        {label}
+                        {t(`paymentStatus.${value}`)}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -265,8 +268,8 @@ export function OrdersPanel() {
 
           <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
             <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
-              <CardTitle className="font-light dark:text-zinc-100">Resumen por grupo</CardTitle>
-              <CardDescription className="font-light dark:text-zinc-400">Distribucion de pedidos por etapa.</CardDescription>
+              <CardTitle className="font-light dark:text-zinc-100">{tCommon('groupSummaryTitle')}</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">{tCommon('groupSummaryDesc')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-3 text-sm font-light dark:text-zinc-300">
               {(Object.entries(ORDER_STATUS_GROUPS) as Array<[string, OrderStatus[]]>).map(([groupKey, statuses]) => {
@@ -292,7 +295,7 @@ export function OrdersPanel() {
           {emptyState ? (
             <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
               <CardContent className="py-12 text-center text-sm text-muted-foreground font-light dark:text-zinc-400">
-                No hay pedidos que coincidan con los filtros.
+                {tCommon('noMatchingOrders')}
               </CardContent>
             </Card>
           ) : null}
@@ -303,22 +306,22 @@ export function OrdersPanel() {
                 <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between border-b dark:border-zinc-800 dark:bg-zinc-900/50">
                   <div className="flex items-center gap-2">
                     <CardTitle className="text-lg font-light capitalize dark:text-zinc-100">
-                      {ORDER_STATUS_LABELS[status]}
+                      {t(`orderStatus.${status}`)}
                     </CardTitle>
                     <Badge variant={orders.length > 0 ? "secondary" : "outline"} className="font-light">{orders.length}</Badge>
                   </div>
                   <CardDescription className="font-light dark:text-zinc-400">
-                    Seguimiento de pedidos en estado {ORDER_STATUS_LABELS[status].toLowerCase()}.
+                    {tCommon('trackingStatus', { status: t(`orderStatus.${status}`).toLowerCase() })}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {orders.length === 0 ? (
-                    <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">Sin pedidos en este estado.</p>
+                    <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">{tCommon('noOrdersInStatus')}</p>
                   ) : (
                     <ScrollArea className="max-h-[480px] pr-3">
                       <div className="space-y-3">
                         {orders.map((order) => {
-                          const tableLabel = getTableLabel(order, tablesById)
+                          const tableLabel = getTableLabel(order, tablesById, tCommon)
                           const itemsCount = order.items.reduce((acc, item) => acc + item.quantity, 0)
 
                           return (
@@ -331,7 +334,7 @@ export function OrdersPanel() {
                               <header className="flex flex-wrap items-center gap-3">
                                 <div className="flex flex-col">
                                   <span className="text-xs font-light uppercase tracking-wide text-muted-foreground dark:text-zinc-400">
-                                    Pedido #{order.id}
+                                    {tCommon('order')} #{order.id}
                                   </span>
                                   <div className="flex items-center gap-2 text-sm font-light dark:text-zinc-100">
                                     <span>{tableLabel}</span>
@@ -339,7 +342,7 @@ export function OrdersPanel() {
                                       variant={ORDER_STATUS_BADGE_VARIANT[order.status]}
                                       className="capitalize font-light"
                                     >
-                                      {ORDER_STATUS_LABELS[order.status]}
+                                      {t(`orderStatus.${order.status}`)}
                                     </Badge>
                                   </div>
                                 </div>
@@ -347,26 +350,26 @@ export function OrdersPanel() {
                                   variant={PAYMENT_STATUS_BADGE_VARIANT[order.paymentStatus]}
                                   className="capitalize"
                                 >
-                                  {PAYMENT_STATUS_LABELS[order.paymentStatus]}
+                                  {t(`paymentStatus.${order.paymentStatus}`)}
                                 </Badge>
                                 <span className="ml-auto text-xs text-muted-foreground">
-                                  Creado {formatRelativeTime(order.createdAt)}
+                                  {tCommon('created')} {formatRelativeTime(order.createdAt)}
                                 </span>
                               </header>
 
                               <dl className="mt-3 flex flex-wrap gap-x-4 gap-y-2 text-sm text-muted-foreground">
                                 <div>
-                                  <dt className="sr-only">Articulos</dt>
-                                  <dd>{itemsCount} items</dd>
+                                  <dt className="sr-only">{tCommon('items')}</dt>
+                                  <dd>{itemsCount} {tCommon('items')}</dd>
                                 </div>
                                 <div>
-                                  <dt className="sr-only">Total</dt>
-                                  <dd>Total {currencyFormatter.format(order.total / 100)}</dd>
+                                  <dt className="sr-only">{tCommon('total')}</dt>
+                                  <dd>{tCommon('total')} {currencyFormatter.format(order.total / 100)}</dd>
                                 </div>
                                 {order.payment?.amountCents ? (
                                   <div>
-                                    <dt className="sr-only">Pago registrado</dt>
-                                    <dd>Pagado {currencyFormatter.format(order.payment.amountCents / 100)}</dd>
+                                    <dt className="sr-only">{tCommon('paid')}</dt>
+                                    <dd>{tCommon('paid')} {currencyFormatter.format(order.payment.amountCents / 100)}</dd>
                                   </div>
                                 ) : null}
                               </dl>
@@ -382,14 +385,14 @@ export function OrdersPanel() {
                                 ))}
                                 {order.items.length > ITEMS_PREVIEW_LIMIT ? (
                                   <li className="text-xs text-muted-foreground">
-                                    +{order.items.length - ITEMS_PREVIEW_LIMIT} items adicionales
+                                    {tCommon('additionalItems', { count: order.items.length - ITEMS_PREVIEW_LIMIT })}
                                   </li>
                                 ) : null}
                               </ul>
 
                               {order.notes ? (
                                 <p className="mt-3 rounded-md bg-muted px-3 py-2 text-xs text-muted-foreground">
-                                  Nota del cliente: {order.notes}
+                                  {tCommon('customerNote')}: {order.notes}
                                 </p>
                               ) : null}
 
@@ -404,7 +407,7 @@ export function OrdersPanel() {
                                   disabled={order.paymentStatus === 'pagado'}
                                 >
                                   <CreditCard className="mr-2 h-4 w-4" />
-                                  {order.paymentStatus === 'pagado' ? 'Pagado' : 'Pagar'}
+                                  {order.paymentStatus === 'pagado' ? tCommon('paid') : tCommon('pay')}
                                 </Button>
                               </div>
                             </article>
@@ -425,7 +428,7 @@ export function OrdersPanel() {
           onOpenChange={setPaymentModalOpen}
           order={{
             id: selectedOrder.id,
-            tableId: getTableLabel(selectedOrder, tablesById),
+            tableId: getTableLabel(selectedOrder, tablesById, tCommon),
             items: selectedOrder.items.map(item => ({
               name: item.name,
               quantity: item.quantity,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import {
   Sheet,
   SheetContent,
@@ -60,6 +61,8 @@ export function QrCartSheet({
   onClear,
   trigger,
 }: QrCartSheetProps) {
+  const t = useTranslations('customer')
+  const tCommon = useTranslations('common')
   const [isOpen, setIsOpen] = useState(false)
   const [viewMode, setViewMode] = useState<ViewMode>('cart')
   const [confirmationState, setConfirmationState] = useState<ConfirmationState | null>(null)
@@ -119,7 +122,7 @@ export function QrCartSheet({
           <Button
             size="lg"
             className="fixed bottom-6 right-6 h-16 w-16 rounded-full shadow-lg z-50 hover:scale-110 transition-transform"
-            aria-label={`Carrito: ${itemCount} ${itemCount === 1 ? 'artículo' : 'artículos'}`}
+            aria-label={`${t('cart')}: ${itemCount} ${itemCount === 1 ? t('item') : t('items')}`}
           >
             <div className="relative">
               <ShoppingCart className="size-6" aria-hidden="true" />
@@ -146,22 +149,22 @@ export function QrCartSheet({
           <>
             <SheetHeader className="px-6 pt-6 pb-4 border-b">
               <SheetTitle className="flex items-center justify-between">
-                <span>Tu pedido</span>
+                <span>{t('yourOrder')}</span>
                 {items.length > 0 && (
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={onClear}
                     className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                    aria-label="Vaciar carrito"
+                    aria-label={t('clearCart')}
                   >
                     <Trash2 className="size-4 mr-1" aria-hidden="true" />
-                    Vaciar
+                    {t('emptyCartAction')}
                   </Button>
                 )}
               </SheetTitle>
               <SheetDescription id="cart-description">
-                Mesa {tableNumber ?? tableId} • {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+                {t('table')} {tableNumber ?? tableId} • {itemCount} {itemCount === 1 ? t('item') : t('items')}
               </SheetDescription>
             </SheetHeader>
 
@@ -170,8 +173,8 @@ export function QrCartSheet({
                 <div className="text-center text-muted-foreground space-y-4">
                   <ShoppingCart className="size-16 mx-auto opacity-20" aria-hidden="true" />
                   <div>
-                    <p className="text-lg font-medium">Tu carrito está vacío</p>
-                    <p className="text-sm mt-2">Agrega platos del menú para comenzar</p>
+                    <p className="text-lg font-medium">{t('cartEmpty')}</p>
+                    <p className="text-sm mt-2">{t('startAddingItems')}</p>
                   </div>
                 </div>
               </div>
@@ -226,7 +229,7 @@ export function QrCartSheet({
                               size="sm"
                               className="h-8 w-8 p-0 text-destructive hover:text-destructive hover:bg-destructive/10"
                               onClick={() => onRemove(entry.customizationId)}
-                              aria-label={`Eliminar ${entry.item.name}`}
+                              aria-label={t('removeItem', { item: entry.item.name })}
                             >
                               <X className="size-4" aria-hidden="true" />
                             </Button>
@@ -240,7 +243,7 @@ export function QrCartSheet({
                                 size="sm"
                                 className="h-9 w-9 p-0 rounded-full"
                                 onClick={() => onDecrement(entry.customizationId)}
-                                aria-label="Disminuir cantidad"
+                                aria-label={t('decreaseQuantity')}
                               >
                                 <Minus className="size-4" aria-hidden="true" />
                               </Button>
@@ -252,7 +255,7 @@ export function QrCartSheet({
                                 size="sm"
                                 className="h-9 w-9 p-0 rounded-full"
                                 onClick={() => onIncrement(entry.customizationId)}
-                                aria-label="Aumentar cantidad"
+                                aria-label={t('increaseQuantity')}
                               >
                                 <Plus className="size-4" aria-hidden="true" />
                               </Button>
@@ -270,13 +273,13 @@ export function QrCartSheet({
                 {/* Footer with Total and Checkout Button */}
                 <div className="border-t bg-muted/30 p-6 space-y-4">
                   <div className="flex justify-between items-baseline">
-                    <span className="text-lg font-bold">Total</span>
+                    <span className="text-lg font-bold">{t('total')}</span>
                     <div className="text-right">
                       <span className="text-3xl font-bold">
                         {currencyFormatter.format(totalCents / 100)}
                       </span>
                       <p className="text-xs text-muted-foreground mt-0.5">
-                        {itemCount} {itemCount === 1 ? 'artículo' : 'artículos'}
+                        {itemCount} {itemCount === 1 ? t('item') : t('items')}
                       </p>
                     </div>
                   </div>
@@ -285,7 +288,7 @@ export function QrCartSheet({
                     className="w-full h-14 text-lg font-semibold"
                     onClick={handleCheckout}
                   >
-                    Continuar al pago
+                    {t('continueToPayment')}
                   </Button>
                 </div>
               </>
@@ -297,9 +300,9 @@ export function QrCartSheet({
         {viewMode === 'checkout' && (
           <>
             <SheetHeader className="px-6 pt-6 pb-4 border-b">
-              <SheetTitle>Finalizar pedido</SheetTitle>
+              <SheetTitle>{t('finishOrder')}</SheetTitle>
               <SheetDescription>
-                Completa los datos para enviar tu pedido a la cocina
+                {t('completeDataToSend')}
               </SheetDescription>
             </SheetHeader>
 
@@ -330,7 +333,7 @@ export function QrCartSheet({
                   onClick={handleBackToCart}
                   disabled={isSubmitting}
                 >
-                  ← Volver al carrito
+                  ← {t('backToCart')}
                 </Button>
               </div>
             </ScrollArea>

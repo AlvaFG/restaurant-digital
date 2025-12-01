@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { cn } from "@/lib/utils"
 import { Check, MapPin } from "lucide-react"
+import { useTranslations } from "next-intl"
 import type { Database } from "@/lib/supabase/database.types"
 
 type Zone = Database['public']['Tables']['zones']['Row']
@@ -24,6 +25,7 @@ export function ZoneFilter({
   tableCountByZone = {},
   className 
 }: ZoneFilterProps) {
+  const tCommon = useTranslations('common')
   
   const toggleZone = (zoneId: string) => {
     if (selectedZones.includes(zoneId)) {
@@ -56,11 +58,11 @@ export function ZoneFilter({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <MapPin className="h-4 w-4 text-muted-foreground" />
-          <span className="text-sm font-medium">Filtrar por zona:</span>
+          <span className="text-sm font-medium">{tCommon('filterByZone')}</span>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="secondary" className="text-xs">
-            {selectedZones.length} de {zones.length} seleccionadas
+            {selectedZones.length} de {zones.length} {tCommon('selected')}
           </Badge>
           {zones.length > 0 && (
             <Button
@@ -69,7 +71,7 @@ export function ZoneFilter({
               onClick={toggleAll}
               className="h-7 text-xs"
             >
-              {allSelected ? 'Deseleccionar todas' : 'Seleccionar todas'}
+              {allSelected ? tCommon('deselectAll') : tCommon('selectAll')}
             </Button>
           )}
         </div>
@@ -77,8 +79,8 @@ export function ZoneFilter({
 
       {zones.length === 0 ? (
         <div className="text-center py-8 text-muted-foreground text-sm">
-          <p>No hay zonas creadas.</p>
-          <p className="text-xs mt-1">Crea una zona para comenzar a organizar tus mesas.</p>
+          <p>{tCommon('noZonesCreated')}</p>
+          <p className="text-xs mt-1">{tCommon('createZoneToStart')}</p>
         </div>
       ) : (
         <ScrollArea className="w-full">

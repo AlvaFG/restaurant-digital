@@ -2,6 +2,7 @@
 
 import { useState } from "react"
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import type { MenuAllergen, MenuItem } from "@/lib/mock-data"
@@ -13,7 +14,7 @@ import { AlertTriangle, Edit3, Minus, Plus } from "lucide-react"
 const ItemCustomizationModal = dynamic(
   () => import("./item-customization-modal").then((mod) => mod.ItemCustomizationModal),
   {
-    loading: () => <div className="animate-pulse">Cargando...</div>,
+    loading: () => <div className="animate-pulse">Loading...</div>,
     ssr: false,
   }
 )
@@ -37,6 +38,7 @@ export function QrMenuItemCard({
   onIncrement,
   onDecrement,
 }: QrMenuItemCardProps) {
+  const t = useTranslations('customer')
   const [showCustomization, setShowCustomization] = useState(false)
   const price = currencyFormatter.format(item.priceCents / 100)
   const isUnavailable = item.available === false
@@ -73,10 +75,10 @@ export function QrMenuItemCard({
             {isUnavailable ? (
               <Badge variant="destructive" className="mt-1 flex items-center gap-1">
                 <AlertTriangle className="size-3" aria-hidden="true" />
-                No disponible
+                {t('notAvailable')}
               </Badge>
             ) : (
-              <Badge variant="secondary" className="mt-1">Disponible</Badge>
+              <Badge variant="secondary" className="mt-1">{t('available')}</Badge>
             )}
           </div>
         </header>
@@ -90,9 +92,9 @@ export function QrMenuItemCard({
               const notes: string[] = []
 
               if (allergen.contains) {
-                notes.push("Contiene")
+                notes.push(t('contains'))
               } else if (allergen.traces) {
-                notes.push("Trazas")
+                notes.push(t('traces'))
               }
 
               if (definition?.description) {
@@ -130,7 +132,7 @@ export function QrMenuItemCard({
                 variant="ghost"
                 className="size-8 rounded-full"
                 onClick={onDecrement}
-                aria-label={`Quitar una unidad de ${item.name}`}
+                aria-label={t('removeUnit', { item: item.name })}
               >
                 <Minus className="size-4" aria-hidden="true" />
               </Button>
@@ -141,7 +143,7 @@ export function QrMenuItemCard({
                 variant="ghost"
                 className="size-8 rounded-full"
                 onClick={onIncrement}
-                aria-label={`Agregar una unidad de ${item.name}`}
+                aria-label={t('addUnit', { item: item.name })}
                 disabled={isUnavailable}
               >
                 <Plus className="size-4" aria-hidden="true" />
@@ -149,7 +151,7 @@ export function QrMenuItemCard({
             </div>
           ) : (
             <div aria-live="polite" className="text-sm text-muted-foreground">
-              {isUnavailable ? "Este plato no esta disponible por el momento." : "Agrega este plato a tu pedido."}
+              {isUnavailable ? t('dishNotAvailableNow') : t('addDishToOrder')}
             </div>
           )}
 
@@ -162,10 +164,10 @@ export function QrMenuItemCard({
             {hasModifiers ? (
               <>
                 <Edit3 className="mr-2 size-4" aria-hidden="true" />
-                Personalizar
+                {t('customize')}
               </>
             ) : (
-              "Agregar"
+              t('add')
             )}
           </Button>
         </div>

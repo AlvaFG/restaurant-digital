@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import type React from "react"
 
 import { useState } from "react"
@@ -23,6 +24,7 @@ interface Integration {
 }
 
 export function IntegrationsPanel() {
+  const tCommon = useTranslations('common')
   const { tenant, updateTenant } = useAuth()
   const { toast } = useToast()
 
@@ -110,7 +112,7 @@ export function IntegrationsPanel() {
                     <CardTitle className="text-lg">{integration.name}</CardTitle>
                   </div>
                   <Badge variant={integration.enabled ? "default" : "secondary"}>
-                    {integration.enabled ? "Activo" : "Inactivo"}
+                    {integration.enabled ? tCommon('active') : tCommon('inactive')}
                   </Badge>
                 </div>
                 <CardDescription>{integration.description}</CardDescription>

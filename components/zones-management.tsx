@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useState, forwardRef, useImperativeHandle } from 'react'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -50,7 +50,11 @@ interface ZoneFormState {
 
 type FormMode = 'create' | 'edit'
 
-export function ZonesManagement() {
+export interface ZonesManagementRef {
+  openCreateModal: () => void
+}
+
+export const ZonesManagement = forwardRef<ZonesManagementRef>((props, ref) => {
   const { toast } = useToast()
   const { zones, loading: isLoading, createZone, updateZone, deleteZone } = useZones()
   const { tables } = useTables()
@@ -77,6 +81,11 @@ export function ZonesManagement() {
     setFormState({ name: '' })
     setShowForm(true)
   }
+
+  // Exponer el método al padre
+  useImperativeHandle(ref, () => ({
+    openCreateModal
+  }))
 
   const openEditModal = (zone: ZoneWithStats) => {
     setFormMode('edit')
@@ -171,19 +180,6 @@ export function ZonesManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-semibold tracking-tight">Zonas del restaurante</h2>
-          <p className="text-sm text-muted-foreground">
-            Organiza tus mesas por zonas para encontrarlas mas rapido.
-          </p>
-        </div>
-        <Button onClick={openCreateModal}>
-          <Plus className="mr-2 h-4 w-4" />
-          Crear zona
-        </Button>
-      </div>
-
       <Card>
         <CardHeader>
           <CardTitle>Listado de zonas</CardTitle>
@@ -334,7 +330,9 @@ export function ZonesManagement() {
       </AlertDialog>
     </div>
   )
-}
+})
+
+ZonesManagement.displayName = 'ZonesManagement'
 
 
 

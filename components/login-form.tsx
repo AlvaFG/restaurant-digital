@@ -4,6 +4,7 @@ import type React from "react"
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -16,6 +17,9 @@ import { Separator } from "@/components/ui/separator"
 type AuthMode = "login" | "register"
 
 export function LoginForm() {
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  
   const [mode, setMode] = useState<AuthMode>("login")
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
@@ -58,7 +62,7 @@ export function LoginForm() {
         const data = await response.json()
 
         if (!response.ok) {
-          const errorMsg = data.error?.message || data.error || "Error al crear cuenta"
+          const errorMsg = data.error?.message || data.error || tErrors('createAccountError')
           throw new Error(errorMsg)
         }
         
@@ -137,12 +141,12 @@ export function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
+            {mode === "login" ? tCommon('signIn') : tCommon('createAccount')}
           </CardTitle>
           <CardDescription>
             {mode === "login"
               ? "Ingresa tus credenciales para acceder"
-              : "Completa el formulario para crear tu cuenta"}
+              : tCommon('createAccountHelp')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -245,7 +249,7 @@ export function LoginForm() {
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "login" ? "Iniciar Sesión" : "Crear Cuenta"}
+              {mode === "login" ? tCommon('signIn') : tCommon('createAccount')}
             </Button>
           </form>
 

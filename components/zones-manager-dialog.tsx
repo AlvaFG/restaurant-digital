@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -37,6 +38,8 @@ interface ZonesManagerDialogProps {
 }
 
 export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: ZonesManagerDialogProps) {
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const { toast } = useToast()
   const { zones, loading: zonesLoading, createZone, updateZone, deleteZone } = useZones()
   const { tables } = useTables()
@@ -77,7 +80,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
       onZonesUpdated?.()
     } catch (error) {
       toast({
-        title: 'Error al crear zona',
+        title: tErrors('createZoneError'),
         description: error instanceof Error ? error.message : 'Intenta nuevamente.',
         variant: 'destructive',
       })
@@ -130,7 +133,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
     
     if (tableCount > 0) {
       toast({
-        title: 'No se puede eliminar',
+        title: tErrors('cannotDelete'),
         description: `La zona tiene ${tableCount} mesa(s) asignada(s). Reasígnalas primero.`,
         variant: 'destructive',
       })
@@ -152,7 +155,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
       onZonesUpdated?.()
     } catch (error) {
       toast({
-        title: 'Error al eliminar zona',
+        title: tErrors('deleteZoneError'),
         description: error instanceof Error ? error.message : 'Intenta nuevamente.',
         variant: 'destructive',
       })
@@ -182,7 +185,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
               <CardContent className="pt-6">
                 <div className="space-y-4">
                   <Label htmlFor="new-zone-name" className="text-base font-semibold">
-                    Crear nueva zona
+                    {tCommon('createNewZone')}
                   </Label>
                   <div className="flex gap-2">
                     <div className="flex-1">
@@ -205,7 +208,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
                       disabled={isSubmitting || !newZoneName.trim()}
                     >
                       <Plus className="mr-2 h-4 w-4" />
-                      Crear
+                      {tCommon('create')}
                     </Button>
                   </div>
                 </div>
@@ -315,7 +318,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
       <AlertDialog open={!!zoneToDelete} onOpenChange={(open) => !open && setZoneToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar zona "{zoneToDelete?.name}"?</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon('confirmDeleteZone', { name: zoneToDelete?.name ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. La zona será eliminada permanentemente.
               {zoneToDelete && getTableCount(zoneToDelete.id) > 0 && (
@@ -332,7 +335,7 @@ export function ZonesManagerDialog({ open, onOpenChange, onZonesUpdated }: Zones
               disabled={isSubmitting || (zoneToDelete ? getTableCount(zoneToDelete.id) > 0 : false)}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {isSubmitting ? "Eliminando..." : "Eliminar zona"}
+              {isSubmitting ? tCommon('deleting') : tCommon('deleteZone')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

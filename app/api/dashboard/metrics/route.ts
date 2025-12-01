@@ -206,9 +206,7 @@ export async function GET(request: Request) {
       activeOrders: activeOrdersCount,
       totalOrdersToday,
       tablesByStatus,
-      topDishes: topDishes.length > 0 ? topDishes : [
-        { name: 'Sin ventas hoy', orders: 0 }
-      ],
+      topDishes: topDishes.length > 0 ? topDishes : [],
       salesGrowth,
       ticketGrowth,
     }

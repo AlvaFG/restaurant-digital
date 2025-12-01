@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { LoadingSpinner } from "@/components/loading-spinner"
 
@@ -16,12 +17,14 @@ const AnalyticsDashboard = dynamic(
 )
 
 export default function AnaliticaPage() {
+  const t = useTranslations('common')
+  
   return (
     <DashboardLayout requiredRole="admin">
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-light tracking-tight">Analítica</h1>
-          <p className="text-muted-foreground font-light">Reportes y análisis del restaurante</p>
+          <h1 className="text-3xl font-light tracking-tight">{t('analyticsTitle')}</h1>
+          <p className="text-muted-foreground font-light">{t('analyticsDescription')}</p>
         </div>
 
         <AnalyticsDashboard />

@@ -1,10 +1,12 @@
 "use client"
 
-import { useState, useMemo, useCallback, useEffect } from "react"
+import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 import { TableMap } from "@/components/table-map"
 import { TableList, type TableListRef } from "@/components/table-list"
 import { ZoneFilter } from "@/components/zone-filter"
+import { ZonesManagement, type ZonesManagementRef } from "@/components/zones-management"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -59,13 +61,15 @@ export function UnifiedSalonView({
   onManageZones,
 }: UnifiedSalonViewProps) {
   const router = useRouter()
+  const tCommon = useTranslations('common')
   const { user } = useAuth()
   const { tables, loading: tablesLoading } = useTables()
   const { zones, loading: zonesLoading } = useZones()
   
-  const [currentView, setCurrentView] = useState<'map' | 'list'>(defaultView)
+  const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
+  const zonesRef = useRef<ZonesManagementRef>(null)
   
   const canEdit = user?.role === "admin" && allowEditing
   const isLoading = tablesLoading || zonesLoading
@@ -152,35 +156,35 @@ export function UnifiedSalonView({
         <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-950 dark:to-blue-900 border-blue-200 dark:border-blue-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="text-xl sm:text-2xl font-bold text-blue-700 dark:text-blue-300">{tableStats.total}</div>
-            <p className="text-xs text-blue-600 dark:text-blue-400">Total de mesas</p>
+            <p className="text-xs text-blue-600 dark:text-blue-400">{tCommon('totalTables')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-950 dark:to-green-900 border-green-200 dark:border-green-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="text-xl sm:text-2xl font-bold text-green-700 dark:text-green-300">{tableStats.libre}</div>
-            <p className="text-xs text-green-600 dark:text-green-400">Libres</p>
+            <p className="text-xs text-green-600 dark:text-green-400">{tCommon('free')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-red-50 to-red-100 dark:from-red-950 dark:to-red-900 border-red-200 dark:border-red-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="text-xl sm:text-2xl font-bold text-red-700 dark:text-red-300">{tableStats.ocupada}</div>
-            <p className="text-xs text-red-600 dark:text-red-400">Ocupadas</p>
+            <p className="text-xs text-red-600 dark:text-red-400">{tCommon('occupied')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-yellow-50 to-yellow-100 dark:from-yellow-950 dark:to-yellow-900 border-yellow-200 dark:border-yellow-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="text-xl sm:text-2xl font-bold text-yellow-700 dark:text-yellow-300">{tableStats.reservada}</div>
-            <p className="text-xs text-yellow-600 dark:text-yellow-400">Reservadas</p>
+            <p className="text-xs text-yellow-600 dark:text-yellow-400">{tCommon('reserved')}</p>
           </CardContent>
         </Card>
         
         <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800">
           <CardContent className="pt-4 sm:pt-6">
             <div className="text-xl sm:text-2xl font-bold text-purple-700 dark:text-purple-300">{tableStats.limpieza}</div>
-            <p className="text-xs text-purple-600 dark:text-purple-400">En limpieza</p>
+            <p className="text-xs text-purple-600 dark:text-purple-400">{tCommon('cleaning')}</p>
           </CardContent>
         </Card>
       </div>
@@ -190,35 +194,42 @@ export function UnifiedSalonView({
         {/* Toggle de vista */}
         <Tabs 
           value={currentView} 
-          onValueChange={(v) => setCurrentView(v as 'map' | 'list')} 
+          onValueChange={(v) => setCurrentView(v as 'map' | 'list' | 'zones')} 
           className="w-auto"
-          aria-label="Selector de vista del salón"
+          aria-label={tCommon('managementTools')}
         >
           <TabsList role="tablist">
             <TabsTrigger 
               value="map" 
               className="gap-2"
-              aria-label="Vista de mapa visual (atajo: M)"
-              title="Atajo: tecla M"
+              aria-label={tCommon('viewMapShortcut')}
+              title={tCommon('shortcutM')}
             >
               <LayoutGrid className="h-4 w-4" aria-hidden="true" />
-              Mapa visual
+              {tCommon('visualMap')}
             </TabsTrigger>
             <TabsTrigger 
               value="list" 
               className="gap-2"
-              aria-label="Vista de lista detallada (atajo: L)"
-              title="Atajo: tecla L"
+              aria-label={tCommon('viewListShortcut')}
+              title={tCommon('shortcutL')}
             >
               <List className="h-4 w-4" aria-hidden="true" />
-              Lista
+              {tCommon('list')}
+            </TabsTrigger>
+            <TabsTrigger 
+              value="zones" 
+              className="gap-2"
+            >
+              <Settings2 className="h-4 w-4" aria-hidden="true" />
+              {tCommon('zones')}
             </TabsTrigger>
           </TabsList>
         </Tabs>
 
         {/* Acciones */}
         {showManagement && (
-          <div className="flex flex-wrap gap-2" role="toolbar" aria-label="Herramientas de gestión del salón">
+          <div className="flex flex-wrap gap-2" role="toolbar" aria-label={tCommon('managementTools')}>
             {canEdit && currentView === 'map' && (
               <Button
                 variant={isEditMode ? "default" : "outline"}
@@ -226,32 +237,20 @@ export function UnifiedSalonView({
                 onClick={handleToggleEditMode}
                 className={cn(isEditMode && "bg-blue-600 hover:bg-blue-700")}
                 aria-pressed={isEditMode}
-                aria-label={isEditMode ? "Salir del modo edición (atajo: E)" : "Activar modo edición (atajo: E)"}
-                title={isEditMode ? "Salir del modo edición - Atajo: E" : "Editar layout del salón - Atajo: E"}
+                aria-label={isEditMode ? tCommon('exitEditMode') : tCommon('enterEditMode')}
+                title={isEditMode ? tCommon('exitEditMode') : tCommon('enterEditMode')}
               >
                 {isEditMode ? (
                   <>
                     <Eye className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Ver modo
+                    {tCommon('viewMode')}
                   </>
                 ) : (
                   <>
                     <Edit className="mr-2 h-4 w-4" aria-hidden="true" />
-                    Editar layout
+                    {tCommon('editLayout')}
                   </>
                 )}
-              </Button>
-            )}
-            
-            {onManageZones && (
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={onManageZones}
-                aria-label="Gestionar zonas del restaurante"
-              >
-                <Settings2 className="mr-2 h-4 w-4" aria-hidden="true" />
-                Gestionar zonas
               </Button>
             )}
             
@@ -259,10 +258,10 @@ export function UnifiedSalonView({
               <Button 
                 size="sm" 
                 onClick={onAddTable}
-                aria-label="Agregar nueva mesa al salón"
+                aria-label={tCommon('addTableLabel')}
               >
                 <Plus className="mr-2 h-4 w-4" aria-hidden="true" />
-                Agregar mesa
+                {tCommon('addTable')}
               </Button>
             )}
           </div>
@@ -271,12 +270,11 @@ export function UnifiedSalonView({
 
       {/* Keyboard shortcuts help (screen reader only) */}
       <div className="sr-only" aria-live="polite">
-        {canEdit && "Atajos de teclado disponibles: M para mapa, L para lista, E para editar"}
-        {!canEdit && "Atajos de teclado disponibles: M para mapa, L para lista"}
+        {canEdit ? tCommon('keyboardShortcutsHelp') : tCommon('keyboardShortcutsAvailable')}
       </div>
 
-      {/* Filtro de zonas (siempre visible) */}
-      {!isLoading && zones.length > 0 && (
+      {/* Filtro de zonas (visible solo en map y list) */}
+      {!isLoading && zones.length > 0 && currentView !== 'zones' && (
         <ZoneFilter
           zones={zones}
           selectedZones={selectedZoneIds}
@@ -294,9 +292,9 @@ export function UnifiedSalonView({
                 <CardContent className="pt-6">
                   <div className="flex items-center gap-2 text-sm text-blue-700 dark:text-blue-300">
                     <Edit className="h-4 w-4" />
-                    <span className="font-medium">Modo edición activado</span>
+                    <span className="font-medium">{tCommon('editModeActivated')}</span>
                     <span className="text-blue-600 dark:text-blue-400">
-                      - Arrastra las mesas para reposicionarlas y ajusta sus propiedades
+                      - {tCommon('editModeInstructions2')}
                     </span>
                   </div>
                 </CardContent>
@@ -308,8 +306,10 @@ export function UnifiedSalonView({
               editable={isEditMode}
             />
           </div>
-        ) : (
+        ) : currentView === 'list' ? (
           <TableList />
+        ) : (
+          <ZonesManagement ref={zonesRef} />
         )}
       </div>
 
@@ -320,10 +320,10 @@ export function UnifiedSalonView({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2 text-sm">
                 <Badge variant="secondary" className="bg-amber-200 text-amber-900 dark:bg-amber-800 dark:text-amber-100">
-                  Modo edición
+                  {tCommon('editMode')}
                 </Badge>
                 <span className="text-amber-700 dark:text-amber-300">
-                  Los cambios se guardarán automáticamente
+                  {tCommon('changesWillBeSaved')}
                 </span>
               </div>
               <Button
@@ -333,7 +333,7 @@ export function UnifiedSalonView({
                 className="border-amber-300 dark:border-amber-700"
               >
                 <Eye className="mr-2 h-4 w-4" />
-                Salir del modo edición
+                {tCommon('exitEditModeShort')}
               </Button>
             </div>
           </CardContent>

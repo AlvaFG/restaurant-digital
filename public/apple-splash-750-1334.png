@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="750" height="1334" viewBox="0 0 750 1334" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <defs>
+    <linearGradient id="splashGrad-750x1334" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#764ba2;stop-opacity:1" />
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="8" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+  
+  <rect width="750" height="1334" fill="url(#splashGrad-750x1334)" />
+  
+  <!-- Logo circle -->
+  <circle 
+    cx="375" 
+    cy="667" 
+    r="93.75" 
+    fill="rgba(255,255,255,0.15)" 
+    filter="url(#glow)"
+  />
+  
+  <!-- Logo letter -->
+  <text 
+    x="375" 
+    y="667" 
+    font-family="Arial, sans-serif" 
+    font-size="112.5" 
+    font-weight="bold" 
+    fill="white" 
+    text-anchor="middle" 
+    dominant-baseline="central"
+  >R</text>
+  
+  <!-- App name -->
+  <text 
+    x="375" 
+    y="820.75" 
+    font-family="Arial, sans-serif" 
+    font-size="32" 
+    font-weight="600" 
+    fill="white" 
+    text-anchor="middle"
+  >Restaurant QR</text>
+  
+  <!-- Subtitle -->
+  <text 
+    x="375" 
+    y="860.75" 
+    font-family="Arial, sans-serif" 
+    font-size="18" 
+    fill="rgba(255,255,255,0.8)" 
+    text-anchor="middle"
+  >Sistema de Gestión</text>
+  
+  <!-- Loading indicator -->
+  <circle 
+    cx="375" 
+    cy="1234" 
+    r="20" 
+    fill="none" 
+    stroke="white" 
+    stroke-width="3" 
+    stroke-dasharray="100" 
+    opacity="0.5"
+  >
+    <animateTransform
+      attributeName="transform"
+      type="rotate"
+      from="0 375 1234"
+      to="360 375 1234"
+      dur="1s"
+      repeatCount="indefinite"
+    />
+  </circle>
+</svg>

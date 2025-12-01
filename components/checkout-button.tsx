@@ -15,6 +15,7 @@
 
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { usePayment } from '@/hooks/use-payment';
@@ -49,6 +50,7 @@ export function CheckoutButton({
   onSuccess,
   onError,
 }: CheckoutButtonProps) {
+  const tCommon = useTranslations('common');
   const { createPayment, isLoading } = usePayment();
   const { toast } = useToast();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -60,7 +62,7 @@ export function CheckoutButton({
       const payment = await createPayment(orderId, amount);
 
       if (!payment) {
-        throw new Error('No se pudo crear el pago');
+        throw new Error(tErrors('createPaymentFailed'));
       }
 
       if (!payment.checkoutUrl) {
@@ -92,7 +94,7 @@ export function CheckoutButton({
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Error al procesar el pago';
       toast({
-        title: 'Error',
+        title: tCommon('error'),
         description: message,
         variant: 'destructive',
       });

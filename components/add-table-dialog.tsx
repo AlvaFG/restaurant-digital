@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -42,6 +43,8 @@ interface FormErrors {
 }
 
 export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableDialogProps) {
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const { toast } = useToast()
   const { createTable } = useTables()
   const { zones, loading: loadingZones, error: zonesError } = useZones()
@@ -97,9 +100,9 @@ export function AddTableDialog({ open, onOpenChange, onTableCreated }: AddTableD
       onOpenChange(false)
       onTableCreated()
     } catch (error) {
-      logger.error('Error al crear mesa', error as Error)
+      logger.error(tErrors('createTableError'), error as Error)
       toast({
-        title: 'No se pudo crear la mesa',
+        title: tErrors('createTableFailed'),
         description: error instanceof Error ? error.message : 'Intenta nuevamente más tarde.',
         variant: 'destructive',
       })

@@ -233,7 +233,7 @@ export function TableMapControls({
         <Card className="border-blue-200 dark:border-blue-800">
           <CardHeader className="pb-3">
             <CardTitle className="text-sm flex items-center justify-between">
-              <span>Editar Mesa {selectedTable.number}</span>
+              <span>{tCommon('editTable', { number: selectedTable.number })}</span>
               <Badge variant="secondary">Seleccionada</Badge>
             </CardTitle>
           </CardHeader>
@@ -388,7 +388,7 @@ export function TableMapControls({
             <div className="flex items-start gap-3 text-sm text-muted-foreground">
               <Info className="h-4 w-4 flex-shrink-0 mt-0.5" />
               <p>
-                Haz clic en una mesa del mapa para editar sus propiedades o agrega una nueva
+                {tCommon('editTableHelp')}
                 mesa desde el selector de arriba.
               </p>
             </div>

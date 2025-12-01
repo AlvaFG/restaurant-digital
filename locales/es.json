@@ -1,0 +1,10 @@
+{
+  "common": {
+    "welcome": "Bienvenido",
+    "start_order": "Comenzar pedido",
+    "menu": "Menú",
+    "cart": "Carrito",
+    "language": "Idioma",
+    "loading": "Cargando..."
+  }
+}

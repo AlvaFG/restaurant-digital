@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -48,6 +49,7 @@ export function QrCheckoutForm({
   onSubmit,
   isSubmitting = false,
 }: QrCheckoutFormProps) {
+  const t = useTranslations('customer')
   const [customerName, setCustomerName] = useState("")
   const [customerNotes, setCustomerNotes] = useState("")
   const [paymentMethod, setPaymentMethod] = useState<'cash' | 'card' | 'mercadopago'>('cash')
@@ -57,11 +59,11 @@ export function QrCheckoutForm({
     const newErrors: Record<string, string> = {}
 
     if (!customerName.trim()) {
-      newErrors.customerName = "Por favor ingresa tu nombre"
+      newErrors.customerName = t('pleaseEnterName')
     }
 
     if (items.length === 0) {
-      newErrors.items = "El carrito está vacío"
+      newErrors.items = t('cartIsEmpty')
     }
 
     setErrors(newErrors)
@@ -116,23 +118,23 @@ export function QrCheckoutForm({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <User className="size-5" aria-hidden="true" />
-            Información del cliente
+            {t('customerInfo')}
           </CardTitle>
           <CardDescription>
-            Para que el staff pueda identificar tu pedido
+            {t('customerInfoDesc')}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="customerName">
-              Nombre <span className="text-destructive">*</span>
+              {t('yourName')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="customerName"
               type="text"
               value={customerName}
               onChange={(e) => setCustomerName(e.target.value)}
-              placeholder="Tu nombre"
+              placeholder={t('yourName')}
               disabled={isSubmitting}
               aria-required="true"
               aria-invalid={!!errors.customerName}
@@ -149,13 +151,13 @@ export function QrCheckoutForm({
           <div className="space-y-2">
             <Label htmlFor="customerNotes" className="flex items-center gap-2">
               <MessageSquare className="size-4" aria-hidden="true" />
-              Notas adicionales (opcional)
+              {t('additionalNotes')}
             </Label>
             <Textarea
               id="customerNotes"
               value={customerNotes}
               onChange={(e) => setCustomerNotes(e.target.value)}
-              placeholder="Ej: Alérgico a frutos secos, sin cebolla, etc."
+              placeholder={t('additionalNotesPlaceholder')}
               disabled={isSubmitting}
               rows={3}
               className="resize-none"
@@ -169,10 +171,10 @@ export function QrCheckoutForm({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CreditCard className="size-5" aria-hidden="true" />
-            Método de pago
+            {t('paymentMethod')}
           </CardTitle>
           <CardDescription>
-            Selecciona cómo deseas pagar
+            {t('selectPayment')}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -184,9 +186,9 @@ export function QrCheckoutForm({
             <div className="flex items-center space-x-3 rounded-lg border border-input p-4 hover:bg-accent/50 transition-colors">
               <RadioGroupItem value="cash" id="cash" />
               <Label htmlFor="cash" className="flex-1 cursor-pointer font-normal">
-                💵 Efectivo
+                💵 {t('cash')}
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Paga al finalizar tu comida
+                  {t('cashDesc')}
                 </span>
               </Label>
             </div>
@@ -194,9 +196,9 @@ export function QrCheckoutForm({
             <div className="flex items-center space-x-3 rounded-lg border border-input p-4 hover:bg-accent/50 transition-colors">
               <RadioGroupItem value="card" id="card" />
               <Label htmlFor="card" className="flex-1 cursor-pointer font-normal">
-                💳 Tarjeta
+                💳 {t('card')}
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Débito o crédito
+                  {t('cardDesc')}
                 </span>
               </Label>
             </div>
@@ -204,9 +206,9 @@ export function QrCheckoutForm({
             <div className="flex items-center space-x-3 rounded-lg border border-input p-4 hover:bg-accent/50 transition-colors">
               <RadioGroupItem value="mercadopago" id="mercadopago" />
               <Label htmlFor="mercadopago" className="flex-1 cursor-pointer font-normal">
-                🔵 MercadoPago
+                🔵 {t('mercadopago')}
                 <span className="block text-xs text-muted-foreground mt-0.5">
-                  Pago digital instantáneo
+                  {t('mercadopagoDesc')}
                 </span>
               </Label>
             </div>
@@ -217,7 +219,7 @@ export function QrCheckoutForm({
       {/* Order Summary */}
       <Card>
         <CardHeader>
-          <CardTitle>Resumen del pedido</CardTitle>
+          <CardTitle>{t('orderSummary')}</CardTitle>
           <CardDescription>
             Mesa {tableNumber ?? tableId} • {items.length} {items.length === 1 ? 'item' : 'items'}
           </CardDescription>
@@ -255,7 +257,7 @@ export function QrCheckoutForm({
           <Separator />
 
           <div className="flex justify-between items-center pt-2">
-            <p className="text-lg font-bold">Total</p>
+            <p className="text-lg font-bold">{t('total')}</p>
             <p className="text-2xl font-bold">
               {currencyFormatter.format(totalCents / 100)}
             </p>
@@ -271,10 +273,10 @@ export function QrCheckoutForm({
             {isSubmitting ? (
               <>
                 <Loader2 className="mr-2 size-5 animate-spin" aria-hidden="true" />
-                Enviando pedido...
+                {t('sendingOrder')}
               </>
             ) : (
-              `Confirmar pedido • ${currencyFormatter.format(totalCents / 100)}`
+              `${t('confirmOrder')} • ${currencyFormatter.format(totalCents / 100)}`
             )}
           </Button>
         </CardFooter>
@@ -283,7 +285,7 @@ export function QrCheckoutForm({
       {/* Info Badge */}
       <div className="flex justify-center">
         <Badge variant="outline" className="text-xs">
-          🔒 Tu pedido será enviado de forma segura
+          {t('secureOrder')}
         </Badge>
       </div>
     </form>

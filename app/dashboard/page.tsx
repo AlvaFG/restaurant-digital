@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from 'next-intl'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -26,6 +27,7 @@ interface Metrics {
 }
 
 export default function DashboardPage() {
+  const t = useTranslations('dashboard')
   const { user } = useAuth()
   const [metrics, setMetrics] = useState<Metrics>({
     totalOrders: 0,
@@ -140,8 +142,8 @@ export default function DashboardPage() {
         <div className="space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-light tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground font-light">Resumen del estado actual del restaurante</p>
+          <h1 className="text-3xl font-light tracking-tight">{t('dashboardTitle')}</h1>
+          <p className="text-muted-foreground font-light">{t('dashboardSubtitle')}</p>
         </div>
 
         {/* KPI Cards - Diseño moderno con iconos destacados */}
@@ -150,7 +152,7 @@ export default function DashboardPage() {
           <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">
-                Ventas del Día
+                {t('salesOfDay')}
               </CardTitle>
               <div className="rounded-full bg-primary/10 p-2 border-2 border-primary/30 dark:bg-zinc-800 dark:border-zinc-600">
                 <DollarSign className="h-4 w-4 text-primary dark:text-emerald-400" />
@@ -165,7 +167,7 @@ export default function DashboardPage() {
           <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">
-                Ticket Promedio
+                {t('averageTicketLabel')}
               </CardTitle>
               <div className="rounded-full bg-chart-2/10 p-2 border-2 border-chart-2/30 dark:bg-zinc-800 dark:border-zinc-600">
                 <TrendingUp className="h-4 w-4 text-chart-2 dark:text-cyan-400" />
@@ -180,7 +182,7 @@ export default function DashboardPage() {
           <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">
-                Ocupación
+                {t('occupancy')}
               </CardTitle>
               <div className="rounded-full bg-chart-3/10 p-2 border-2 border-chart-3/30 dark:bg-zinc-800 dark:border-zinc-600">
                 <Users className="h-4 w-4 text-chart-3 dark:text-purple-400" />
@@ -189,7 +191,7 @@ export default function DashboardPage() {
             <CardContent>
               <div className="text-4xl font-light tracking-tight dark:text-zinc-100">{metrics.occupancyRate}%</div>
               <p className="text-xs text-muted-foreground font-light mt-1 dark:text-zinc-400">
-                {metrics.occupiedTables} de {metrics.totalTables} mesas
+                {t('occupancyDetails', { occupied: metrics.occupiedTables, total: metrics.totalTables })}
               </p>
             </CardContent>
           </Card>
@@ -198,7 +200,7 @@ export default function DashboardPage() {
           <Card className="border-2 border-border shadow-lg hover:shadow-xl transition-all dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl dark:hover:shadow-zinc-900/50 dark:hover:border-zinc-600">
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-light text-muted-foreground dark:text-zinc-400">
-                Cubiertos del Día
+                {t('coversOfDay')}
               </CardTitle>
               <div className="rounded-full bg-chart-4/10 p-2 border-2 border-chart-4/30 dark:bg-zinc-800 dark:border-zinc-600">
                 <UtensilsCrossed className="h-4 w-4 text-chart-4 dark:text-orange-400" />
@@ -206,7 +208,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-light tracking-tight dark:text-zinc-100">{metrics.totalCovers}</div>
-              <p className="text-xs text-muted-foreground font-light mt-1 dark:text-zinc-400">Personas atendidas hoy</p>
+              <p className="text-xs text-muted-foreground font-light mt-1 dark:text-zinc-400">{t('peopleServedToday')}</p>
             </CardContent>
           </Card>
         </div>
@@ -219,9 +221,9 @@ export default function DashboardPage() {
                 <div>
                   <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
                     <AlertCircle className="h-5 w-5" />
-                    Alertas Pendientes
+                    {t('pendingAlerts')}
                   </CardTitle>
-                  <CardDescription className="font-light dark:text-zinc-400">Alertas que requieren atención inmediata</CardDescription>
+                  <CardDescription className="font-light dark:text-zinc-400">{t('alertsNeedAttention')}</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -281,21 +283,15 @@ export default function DashboardPage() {
           {/* Estado de Mesas */}
           <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
             <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
-              <CardTitle className="font-light dark:text-zinc-100">Estado de Mesas</CardTitle>
-              <CardDescription className="font-light dark:text-zinc-400">Distribución actual por estado</CardDescription>
+              <CardTitle className="font-light dark:text-zinc-100">{t('tableStatus')}</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">{t('currentDistribution')}</CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {Object.entries(metrics.tablesByStatus).map(([status, count]) => (
                   <div key={status} className="flex justify-between items-center p-2 rounded-lg bg-accent/30 border border-border/50 dark:bg-zinc-800/30 dark:border-transparent">
                     <span className="capitalize text-sm font-light dark:text-zinc-300">
-                      {status === "libre"
-                        ? "Libre"
-                        : status === "ocupada"
-                          ? "Ocupada"
-                          : status === "reservada"
-                            ? "Reservada"
-                            : status.replace("_", " ")}
+                      {status === "libre" ? t('available') : status === "ocupada" ? t('occupied') : status === "reservada" ? t('reserved') : status.replace("_", " ")}
                     </span>
                     <Badge variant="secondary" className="font-light shadow-sm dark:bg-zinc-700 dark:text-zinc-100 dark:border dark:border-zinc-600">
                       {count}
@@ -309,12 +305,13 @@ export default function DashboardPage() {
           {/* Platos Más Pedidos */}
           <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
             <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
-              <CardTitle className="font-light dark:text-zinc-100">Platos Más Pedidos</CardTitle>
-              <CardDescription className="font-light dark:text-zinc-400">Top 5 del día</CardDescription>
+              <CardTitle className="font-light dark:text-zinc-100">{t('topDishes')}</CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">{t('top5Day')}</CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {metrics.topDishes.map((dish, index) => (
+              {metrics.topDishes.length > 0 ? (
+                <div className="space-y-3">
+                  {metrics.topDishes.map((dish, index) => (
                   <div key={dish.name} className="flex justify-between items-center p-2 rounded-lg bg-accent/30 border border-border/50 dark:bg-zinc-800/30 dark:border-transparent">
                     <div className="flex items-center gap-3">
                       <Badge
@@ -335,8 +332,13 @@ export default function DashboardPage() {
                       {dish.orders}
                     </Badge>
                   </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-8 text-center">
+                  <p className="text-sm text-muted-foreground font-light dark:text-zinc-400">{t('noData')}</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </div>

@@ -35,6 +35,7 @@ npm run dev
 
 ## 🍽️ Características Principales
 
+### Core Features
 - **📋 Gestión de Pedidos**: Sistema de pedidos en tiempo real con WebSocket
 - **💳 Pagos en Línea**: Integración con MercadoPago (Checkout Pro)
 - **🪑 Administración de Mesas**: Control completo del estado de mesas y salón
@@ -44,6 +45,16 @@ npm run dev
 - **👥 Gestión de Usuarios**: Control de roles y permisos
 - **🎨 Tematización**: Personalización de marca y colores
 - **🔐 Autenticación**: Integración con Supabase Auth
+
+### 📱 PWA Features (Fase 6 - NEW!)
+- **📵 Modo Offline**: Funciona sin conexión a internet
+- **🔄 Sincronización Automática**: Background sync con resolución de conflictos
+- **🔔 Push Notifications**: Notificaciones en tiempo real (5 tipos configurables)
+- **📲 Instalable**: Instala como app nativa en Android, iOS y Desktop
+- **💾 Almacenamiento Local**: IndexedDB con Dexie.js (5 tablas)
+- **🚀 Performance**: Service Worker con cache strategies optimizadas
+- **🍎 iOS Support**: Splash screens y apple-touch-icons para 9 dispositivos
+- **⚡ Fast**: Bundle optimizado (90.1 KB shared JS)
 
 ## 🚀 Inicio Rápido
 
@@ -80,9 +91,10 @@ npm run dev
 **Backend:** Supabase (PostgreSQL) • Supabase Auth • RLS  
 **State:** React Query v5 • Optimistic Updates  
 **Pagos:** MercadoPago Checkout Pro  
-**Testing:** Vitest • Playwright • 168 tests
+**PWA:** Workbox • Dexie.js • Web Push API • Service Workers  
+**Testing:** Vitest • Playwright • React Testing Library • 100+ tests
 
-Ver [documentación completa](./docs/docs_index.md) para detalles técnicos.
+Ver [documentación completa](./DOCS_INDEX.md) para detalles técnicos.
 
 ---
 

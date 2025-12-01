@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
 
 import { useMenuCatalog } from "@/app/menu/_hooks/use-menu-catalog"
 import { Button } from "@/components/ui/button"
@@ -32,6 +33,8 @@ export default function QrTablePage({ params }: PageParams) {
   const tableId = params.tableId
   const router = useRouter()
   const { toast } = useToast()
+  const t = useTranslations('customer')
+  const tCommon = useTranslations('common')
 
   // Validate QR session first
   const { 
@@ -106,8 +109,8 @@ export default function QrTablePage({ params }: PageParams) {
   useEffect(() => {
     if (isExpired) {
       toast({
-        title: "Sesión expirada",
-        description: "Por favor, escanea el código QR de tu mesa nuevamente.",
+        title: t('sessionExpired'),
+        description: t('sessionExpiredDesc'),
         variant: "destructive",
       })
       setTimeout(() => {
@@ -117,8 +120,8 @@ export default function QrTablePage({ params }: PageParams) {
 
     if (isTableMismatch && session) {
       toast({
-        title: "Mesa incorrecta",
-        description: `Esta sesión es para la mesa ${session.table?.number || session.tableId}`,
+        title: t('incorrectTable'),
+        description: t('incorrectTableDesc', { tableNumber: session.table?.number || session.tableId }),
         variant: "destructive",
       })
       setTimeout(() => {
@@ -128,15 +131,15 @@ export default function QrTablePage({ params }: PageParams) {
 
     if (sessionError && !session) {
       toast({
-        title: "Sesión no válida",
-        description: "Por favor, escanea el código QR de tu mesa.",
+        title: t('invalidSession'),
+        description: t('invalidSessionDesc'),
         variant: "destructive",
       })
       setTimeout(() => {
         router.push("/qr/validate")
       }, 2000)
     }
-  }, [isExpired, isTableMismatch, session, sessionError, router, toast])
+  }, [isExpired, isTableMismatch, session, sessionError, router, toast, t])
 
   useEffect(() => {
     if (selectedCategoryId && !categories.some((category) => category.id === selectedCategoryId)) {
@@ -169,8 +172,8 @@ export default function QrTablePage({ params }: PageParams) {
   const handleAddItem = (menuItem: MenuItem, modifiers?: CartItemModifier[], notes?: string) => {
     if (menuItem.available === false) {
       toast({
-        title: "Plato no disponible",
-        description: "Este plato no se puede agregar en este momento.",
+        title: t('dishNotAvailable'),
+        description: t('dishNotAvailableDesc'),
         variant: "destructive",
       })
       return
@@ -192,7 +195,7 @@ export default function QrTablePage({ params }: PageParams) {
       <div className="flex min-h-screen flex-col bg-background">
         <div className="mx-auto w-full max-w-screen-sm px-4 pt-20 text-center">
           <Loader2 className="mx-auto size-12 animate-spin text-primary" aria-hidden="true" />
-          <p className="mt-4 text-sm text-muted-foreground">Validando sesión...</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t('validatingSession')}</p>
         </div>
       </div>
     )
@@ -204,7 +207,7 @@ export default function QrTablePage({ params }: PageParams) {
       <div className="flex min-h-screen flex-col bg-background">
         <div className="mx-auto w-full max-w-screen-sm px-4 pt-20 text-center">
           <AlertCircle className="mx-auto size-12 text-destructive" aria-hidden="true" />
-          <p className="mt-4 text-sm text-muted-foreground">Redirigiendo...</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t('redirecting')}</p>
         </div>
       </div>
     )
@@ -226,14 +229,14 @@ export default function QrTablePage({ params }: PageParams) {
         <main className="mx-auto flex w-full max-w-screen-sm flex-1 flex-col items-center justify-center gap-6 px-4 text-center">
           <Frown className="size-16 text-muted-foreground" aria-hidden="true" />
           <div className="space-y-2">
-            <h2 className="text-xl font-semibold">No encontramos la mesa</h2>
+            <h2 className="text-xl font-semibold">{t('tableNotFound')}</h2>
             <p className="text-sm text-muted-foreground">
-              Verifica el QR o solicita ayuda al staff para escanear nuevamente.
+              {t('tableNotFoundDesc')}
             </p>
           </div>
           <Button type="button" onClick={refetchTable} className="gap-2">
             <RefreshCw className={cn("size-4", isTableRefetching && "animate-spin")} aria-hidden="true" />
-            Reintentar
+            {t('retry')}
           </Button>
         </main>
       </div>
@@ -267,9 +270,9 @@ export default function QrTablePage({ params }: PageParams) {
                     <AlertCircle className="size-5" aria-hidden="true" />
                   )
                 }
-                title="No pudimos cargar la informacion"
-                description={tableError ?? menuError ?? "Intenta nuevamente."}
-                actionLabel="Reintentar"
+                title={t('couldNotLoadInfo')}
+                description={tableError ?? menuError ?? t('tryAgain')}
+                actionLabel={t('retry')}
                 onAction={refetchAll}
                 loading={isMenuRefetching || isTableRefetching}
               />
@@ -290,8 +293,8 @@ export default function QrTablePage({ params }: PageParams) {
               {filteredItems.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-border/60 bg-muted/30 px-6 py-12 text-center text-sm text-muted-foreground">
                   {searchQuery.trim() 
-                    ? `No encontramos platos que coincidan con "${searchQuery}"`
-                    : "No encontramos platos para esta categoria."
+                    ? t('noDishesForSearch', { query: searchQuery })
+                    : t('noDishesFound')
                   }
                 </div>
               ) : (

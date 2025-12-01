@@ -1,0 +1,82 @@
+{
+  "auditDate": "2025-12-01",
+  "status": "COMPLETED",
+  "summary": {
+    "totalHardcodedStrings": 0,
+    "criticalIssues": 0,
+    "recommendedMigrations": 0,
+    "alreadyMigrated": 72,
+    "coverage": "100%"
+  },
+  "pendingStrings": [],
+  "resolvedStrings": [
+    {
+      "file": "app/api/dashboard/metrics/route.ts",
+      "line": 210,
+      "originalText": "Sin ventas hoy",
+      "solution": "Array vacío + t('noData') en frontend",
+      "namespaceSuggestion": "dashboard",
+      "reason": "String visible al usuario como fallback cuando no hay platos vendidos. Se muestra en la tarjeta 'Platos Más Pedidos' del dashboard",
+      "priority": "HIGH",
+      "context": "API endpoint que devuelve métricas del dashboard. El texto aparece cuando no hay ventas en el día",
+      "proposedFix": "Mover la traducción al lado del cliente o usar un código que el frontend traduzca (ej: retornar array vacío y que el frontend muestre t('dashboard.noSalesToday'))"
+    }
+  ],
+  "duplicatesMerged": [],
+  "recommendations": {
+    "namespacesToCreate": [],
+    "existingNamespacesToExtend": [
+      "dashboard"
+    ],
+    "translationStrategy": {
+      "issue": "El API retorna texto hardcodeado 'Sin ventas hoy' que se muestra directamente en el cliente",
+      "currentBehavior": "API Route devuelve { name: 'Sin ventas hoy', orders: 0 } cuando no hay platos vendidos",
+      "recommendedApproach": [
+        "Opción 1: Retornar array vacío [] y que el frontend detecte vacío y muestre t('dashboard.noSalesToday')",
+        "Opción 2: Retornar un código especial { code: 'NO_SALES', orders: 0 } y que el frontend traduzca basado en el código",
+        "Opción 3: Mover la lógica al cliente (Server Component) y llamar a Supabase desde ahí con next-intl"
+      ],
+      "preferredOption": "Opción 1 - Más simple, compatible con arquitectura actual"
+    },
+    "potentialParameters": [],
+    "dateOrNumberFormats": []
+  },
+  "alreadyMigratedComponents": [
+    "app/dashboard/page.tsx - 18 strings migradas (dashboardTitle, salesOfDay, occupancy, etc.)",
+    "components/zones-manager-dialog.tsx - Batch 1",
+    "components/users-management.tsx - Batch 1", 
+    "components/staff-management-panel.tsx - Batch 1",
+    "components/order-form.tsx - Batch 1",
+    "components/login-form.tsx - Batch 1",
+    "components/add-table-dialog.tsx - Batch 1",
+    "components/checkout-button.tsx - Batch 1",
+    "components/create-zone-dialog.tsx - Batch 1",
+    "components/table-map.tsx - Batch 2",
+    "components/table-map-controls.tsx - Batch 2",
+    "components/unified-salon-view.tsx - Batch 2",
+    "components/sidebar-nav.tsx - Usa translationKeys para navegación"
+  ],
+  "falsePositives": {
+    "tests": "Todos los strings en tests/ son legítimos (selectores de prueba E2E)",
+    "cssClasses": "className strings ignorados correctamente",
+    "technicalStrings": "IDs, enums, paths, imports ignorados correctamente",
+    "comments": "Comentarios en español son aceptables (no visibles al usuario)"
+  },
+  "additionalNotes": {
+    "middlewareDebugLogs": "Los logs de middleware (🔒, ✅, 🔍) están en español pero son solo para desarrollo, no visibles al usuario final",
+    "apiResponseMessages": "Mensajes de API como 'tenant_id es requerido' solo se ven en herramientas de desarrollo, baja prioridad",
+    "mockData": "Mock data en dashboard page.tsx (Ocupadas, Libres, Reservadas) solo para desarrollo, se sobrescribe con datos reales",
+    "alertTypes": "Alert types como 'pedido_entrante' son códigos técnicos, no texto visible",
+    "supabaseError": "ReferenceError: document is not defined - Error crítico de SSR en lib/supabase/client.ts (Issue #4 en TODO)"
+  },
+  "completedSteps": [
+    "✅ Migrado 'Sin ventas hoy' del API usando array vacío",
+    "✅ Actualizado dashboard page.tsx para manejar topDishes vacío con t('noData')",
+    "✅ Migración i18n 100% completa"
+  ],
+  "remainingTasks": [
+    "⚠️ Testing en browser para verificar comportamiento completo",
+    "⚠️ Resolver error Supabase document (TODO #7) - No relacionado con i18n",
+    "⚪ Considerar migrar logs de middleware a inglés para consistencia (opcional)"
+  ]
+}

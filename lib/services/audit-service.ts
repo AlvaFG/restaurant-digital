@@ -413,10 +413,14 @@ export async function getTenantAuditSummary(
 
 /**
  * Exporta historial de auditoría a CSV
+ * @param tenantId - ID del tenant
+ * @param filters - Filtros opcionales
+ * @param headers - Encabezados traducidos (opcional, por defecto en español)
  */
 export async function exportAuditToCSV(
   tenantId: string,
-  filters?: AuditFilters
+  filters?: AuditFilters,
+  headers: string[] = ['Fecha', 'Mesa', 'Estado Anterior', 'Estado Nuevo', 'Duración (min)', 'Usuario', 'Razón', 'Pedido']
 ): Promise<{ data: string | null; error: Error | null }> {
   try {
     const { data: records, error } = await getAuditRecords(tenantId, filters)
@@ -426,18 +430,7 @@ export async function exportAuditToCSV(
       throw new Error('No hay datos para exportar')
     }
 
-    // Construir CSV
-    const headers = [
-      'Fecha',
-      'Mesa',
-      'Estado Anterior',
-      'Estado Nuevo',
-      'Duración (min)',
-      'Usuario',
-      'Razón',
-      'Pedido'
-    ]
-
+    // Usar los encabezados proporcionados (ya traducidos)
     const rows = records.map((record: any) => [
       new Date(record.changed_at).toLocaleString(),
       record.table_number,

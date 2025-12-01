@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo } from "react"
+import { useTranslations } from "next-intl"
 
 import { Button } from "@/components/ui/button"
 import type { MenuCategory } from "@/lib/mock-data"
@@ -14,16 +15,17 @@ interface QrCategoryTabsProps {
 }
 
 export function QrCategoryTabs({ categories, selectedCategoryId, onSelect, className }: QrCategoryTabsProps) {
+  const t = useTranslations('customer')
   const orderedCategories = useMemo(
     () => [...categories].sort((a, b) => a.sort - b.sort),
     [categories],
   )
 
   return (
-    <nav className={cn("px-4", className)} aria-label="Categorias del menu">
+    <nav className={cn("px-4", className)} aria-label={t('categories')}>
       <div className="flex gap-2 overflow-x-auto pb-2" role="tablist">
         <CategoryPill
-          label="Todo"
+          label={t('allCategories')}
           isActive={selectedCategoryId === null}
           onClick={() => onSelect(null)}
         />

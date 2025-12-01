@@ -12,10 +12,13 @@ import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Save, Clock, Settings, AlertCircle } from "lucide-react"
+import { Save, Clock, Settings, AlertCircle, Bell } from "lucide-react"
 import { useToast } from "@/hooks/use-toast"
 import { StaffManagementPanel } from "@/components/staff-management-panel"
+import { NotificationPreferences } from "@/components/notification-preferences"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import { useTranslations } from 'next-intl'
+import { LanguageSelector } from "@/components/language-selector"
 
 // Expresiones regulares para validación
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
@@ -30,6 +33,8 @@ interface ValidationErrors {
 export function ConfigurationPanel() {
   const { tenant, updateTenant } = useAuth()
   const { toast } = useToast()
+  const t = useTranslations('config')
+  const tCommon = useTranslations('common')
 
   const [settings, setSettings] = useState({
     restaurantName: tenant?.name || "Restaurante Demo",
@@ -78,15 +83,15 @@ export function ConfigurationPanel() {
   const validateField = (field: keyof ValidationErrors, value: string): string | undefined => {
     switch (field) {
       case 'restaurantName':
-        if (!value.trim()) return 'El nombre del restaurante es obligatorio'
-        if (value.trim().length < 3) return 'El nombre debe tener al menos 3 caracteres'
+        if (!value.trim()) return t('restaurantNameRequired')
+        if (value.trim().length < 3) return t('restaurantNameMinLength')
         break
       case 'email':
-        if (!value.trim()) return 'El email es obligatorio'
-        if (!EMAIL_REGEX.test(value)) return 'Ingresa un email válido'
+        if (!value.trim()) return t('emailRequired')
+        if (!EMAIL_REGEX.test(value)) return t('emailInvalid')
         break
       case 'phone':
-        if (value && !PHONE_REGEX.test(value)) return 'El teléfono solo puede contener números, espacios y símbolos (+, -, (), )'
+        if (value && !PHONE_REGEX.test(value)) return t('phoneInvalid')
         break
     }
     return undefined
@@ -120,8 +125,8 @@ export function ConfigurationPanel() {
     // Si hay errores, no guardar
     if (Object.values(errors).some(error => error !== undefined)) {
       toast({
-        title: "Error de validación",
-        description: "Por favor corrige los errores antes de guardar",
+        title: t('validationError'),
+        description: t('fixErrorsBeforeSaving'),
         variant: "destructive",
       })
       return
@@ -135,16 +140,16 @@ export function ConfigurationPanel() {
       })
 
       toast({
-        title: "✓ Configuración guardada",
-        description: "Los cambios han sido guardados exitosamente",
+        title: "✓ " + t('configurationSaved'),
+        description: t('changesSavedSuccessfully'),
       })
       
       setHasUnsavedChanges(false)
     } catch (error) {
       console.error("[v0] Error saving configuration", error)
       toast({
-        title: "Error",
-        description: "No se pudo guardar la configuración",
+        title: t('errorSavingConfiguration'),
+        description: t('couldNotSaveConfiguration'),
         variant: "destructive",
       })
     } finally {
@@ -166,12 +171,12 @@ export function ConfigurationPanel() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-light tracking-tight">Configuración</h1>
+          <h1 className="text-3xl font-light tracking-tight">{t('configuration')}</h1>
           <p className="text-muted-foreground font-light">
-            Gestiona la configuración general del restaurante
+            {t('generalSettings')}
             {hasUnsavedChanges && (
               <span className="ml-2 text-amber-600 dark:text-amber-400 font-medium">
-                • Cambios sin guardar
+                • {t('unsavedChanges')}
               </span>
             )}
           </p>
@@ -182,7 +187,7 @@ export function ConfigurationPanel() {
           variant={hasUnsavedChanges ? "default" : "outline"}
         >
           <Save className="h-4 w-4 mr-2" />
-          {isLoading ? "Guardando..." : hasUnsavedChanges ? "Guardar Cambios" : "Guardado"}
+          {isLoading ? tCommon('saving') : hasUnsavedChanges ? tCommon('saveChanges') : tCommon('saved')}
         </Button>
       </div>
 
@@ -190,17 +195,18 @@ export function ConfigurationPanel() {
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            Hay errores en el formulario. Por favor corrígelos antes de guardar.
+            {t('fixErrorsBeforeSaving')}
           </AlertDescription>
         </Alert>
       )}
 
       <Tabs defaultValue="general" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="general">General</TabsTrigger>
-          <TabsTrigger value="schedule">Horarios</TabsTrigger>
-          <TabsTrigger value="services">Servicios</TabsTrigger>
-          <TabsTrigger value="staff">Staff</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="general">{t('generalSettings')}</TabsTrigger>
+          <TabsTrigger value="schedule">{t('schedule')}</TabsTrigger>
+          <TabsTrigger value="services">{t('services')}</TabsTrigger>
+          <TabsTrigger value="notifications">{t('notifications')}</TabsTrigger>
+          <TabsTrigger value="staff">{t('staff')}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general" className="space-y-4">
@@ -208,15 +214,18 @@ export function ConfigurationPanel() {
             <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
               <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
                 <Settings className="h-5 w-5" />
-                Información General
+                {t('generalSettings')}
               </CardTitle>
-              <CardDescription className="font-light dark:text-zinc-400">Configuración básica del restaurante</CardDescription>
+              <CardDescription className="font-light dark:text-zinc-400">{t('generalSettings')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 pt-6">
+              {/* Language selector */}
+              <LanguageSelector />
+
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="restaurantName">
-                    Nombre del Restaurante
+                    {t('restaurantName')}
                     <span className="text-destructive ml-1">*</span>
                   </Label>
                   <Input
@@ -230,7 +239,7 @@ export function ConfigurationPanel() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="phone">Teléfono</Label>
+                  <Label htmlFor="phone">{t('phone')}</Label>
                   <Input
                     id="phone"
                     value={settings.phone}
@@ -245,7 +254,7 @@ export function ConfigurationPanel() {
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="description">Descripción</Label>
+                <Label htmlFor="description">{t('description')}</Label>
                 <Textarea
                   id="description"
                   value={settings.description}
@@ -257,7 +266,7 @@ export function ConfigurationPanel() {
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
                   <Label htmlFor="email">
-                    Email
+                    {t('email')}
                     <span className="text-destructive ml-1">*</span>
                   </Label>
                   <Input
@@ -272,7 +281,7 @@ export function ConfigurationPanel() {
                   )}
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="address">Dirección</Label>
+                  <Label htmlFor="address">{t('address')}</Label>
                   <Input
                     id="address"
                     value={settings.address}
@@ -289,14 +298,14 @@ export function ConfigurationPanel() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5" />
-                Horarios de Atención
+                {t('scheduleSettings')}
               </CardTitle>
-              <CardDescription>Configura los horarios de funcionamiento del restaurante</CardDescription>
+              <CardDescription>{t('scheduleSettings')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid gap-4 md:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="openTime">Hora de Apertura</Label>
+                  <Label htmlFor="openTime">{t('openTime')}</Label>
                   <Input
                     id="openTime"
                     type="time"
@@ -305,7 +314,7 @@ export function ConfigurationPanel() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="closeTime">Hora de Cierre</Label>
+                  <Label htmlFor="closeTime">{t('closeTime')}</Label>
                   <Input
                     id="closeTime"
                     type="time"
@@ -316,7 +325,7 @@ export function ConfigurationPanel() {
               </div>
 
               <div className="space-y-2">
-                <Label>Días Cerrados</Label>
+                <Label>{t('closedDays')}</Label>
                 <div className="grid grid-cols-2 gap-2">
                   {daysOfWeek.map((day) => (
                     <div key={day.value} className="flex items-center space-x-2">
@@ -346,15 +355,15 @@ export function ConfigurationPanel() {
         <TabsContent value="services" className="space-y-4">
           <Card>
             <CardHeader>
-              <CardTitle>Servicios Disponibles</CardTitle>
-              <CardDescription>Configura qué servicios ofrece el restaurante</CardDescription>
+              <CardTitle>{t('servicesSettings')}</CardTitle>
+              <CardDescription>{t('servicesSettings')}</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-4">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="tableService">Servicio en Mesa</Label>
-                    <p className="text-sm text-muted-foreground">Atención con mozo en el local</p>
+                    <Label htmlFor="tableService">{t('tableService')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('tableServiceDesc')}</p>
                   </div>
                   <Switch
                     id="tableService"
@@ -365,8 +374,8 @@ export function ConfigurationPanel() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="takeaway">Para Llevar</Label>
-                    <p className="text-sm text-muted-foreground">Pedidos para retirar en el local</p>
+                    <Label htmlFor="takeaway">{t('takeaway')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('takeawayDesc')}</p>
                   </div>
                   <Switch
                     id="takeaway"
@@ -377,8 +386,8 @@ export function ConfigurationPanel() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="delivery">Delivery</Label>
-                    <p className="text-sm text-muted-foreground">Entrega a domicilio</p>
+                    <Label htmlFor="delivery">{t('delivery')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('deliveryDesc')}</p>
                   </div>
                   <Switch
                     id="delivery"
@@ -389,8 +398,8 @@ export function ConfigurationPanel() {
 
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label htmlFor="reservations">Reservas</Label>
-                    <p className="text-sm text-muted-foreground">Sistema de reservas de mesas</p>
+                    <Label htmlFor="reservations">{t('reservations')}</Label>
+                    <p className="text-sm text-muted-foreground">{t('reservationsDesc')}</p>
                   </div>
                   <Switch
                     id="reservations"
@@ -399,6 +408,23 @@ export function ConfigurationPanel() {
                   />
                 </div>
               </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="space-y-4">
+          <Card className="border-2 border-border shadow-lg dark:border-zinc-700 dark:bg-zinc-900 dark:shadow-2xl">
+            <CardHeader className="border-b dark:border-zinc-800 dark:bg-zinc-900/50">
+              <CardTitle className="flex items-center gap-2 font-light dark:text-zinc-100">
+                <Bell className="h-5 w-5" />
+                {t('notificationsSettings')}
+              </CardTitle>
+              <CardDescription className="font-light dark:text-zinc-400">
+                {t('notificationsSettings')}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <NotificationPreferences />
             </CardContent>
           </Card>
         </TabsContent>

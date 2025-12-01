@@ -2,9 +2,6 @@ import { randomUUID } from "node:crypto"
 
 import type { NextRequest } from "next/server"
 
-// Import edge runtime types for WebSocket
-import "@/lib/types/edge-runtime"
-
 import { AlertService, type Alert } from "@/lib/mock-data"
 import { getCurrentUser } from '@/lib/supabase/server'
 import { getOrders } from '@/lib/services/orders-service'

@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { BrandAwareBadge } from "@/components/brand-aware-badge"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -45,6 +46,7 @@ export function QrMenuHeader({
   onRefresh,
   className,
 }: QrMenuHeaderProps) {
+  const t = useTranslations('customer')
   const formattedUpdatedAt = formatUpdatedAt(updatedAt)
 
   return (
@@ -77,14 +79,14 @@ export function QrMenuHeader({
               disabled={isLoading || isRefreshing}
             >
               <RefreshCw className={cn("size-4", isRefreshing && "animate-spin")} aria-hidden="true" />
-              Actualizar
+              {t('retry')}
             </Button>
           ) : null}
         </div>
 
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <p className="text-xs uppercase tracking-wider text-muted-foreground">Mesa</p>
+            <p className="text-xs uppercase tracking-wider text-muted-foreground">{t('table')}</p>
             {isLoading ? (
               <Skeleton className="mt-1 h-8 w-24 rounded-md" />
             ) : (
@@ -95,11 +97,11 @@ export function QrMenuHeader({
             )}
           </div>
           <div className="text-right text-sm text-muted-foreground">
-            <p className="font-medium">Menu version {menuVersion ?? "-"}</p>
+            <p className="font-medium">{t('menu')} {t('version')} {menuVersion ?? "-"}</p>
             <div className="mt-1 flex items-center justify-end gap-1 text-xs">
               <CalendarClock className="size-4" aria-hidden="true" />
               <span>
-                {formattedUpdatedAt ? `Actualizado ${formattedUpdatedAt}` : "Actualizacion pendiente"}
+                {formattedUpdatedAt ? `${t('lastUpdated')} ${formattedUpdatedAt}` : t('lastUpdated')}
               </span>
             </div>
           </div>

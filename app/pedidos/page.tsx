@@ -1,6 +1,7 @@
 "use client"
 
 import dynamic from "next/dynamic"
+import { useTranslations } from "next-intl"
 import { RefreshCw } from "lucide-react"
 import { OrdersPanelProvider, useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -19,29 +20,30 @@ const OrdersPanel = dynamic(
 )
 
 function PedidosContent() {
+  const t = useTranslations('common')
   const { refetch, isRefreshing, isLoading } = useOrdersPanelContext()
   const refreshDisabled = isLoading || isRefreshing
 
   return (
     <Tabs defaultValue="panel" className="space-y-4">
       <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-light tracking-tight">Pedidos</h1>
+        <h1 className="text-3xl font-light tracking-tight">{t('ordersTitle')}</h1>
         <div className="flex items-center gap-2">
           <TabsList>
-            <TabsTrigger value="panel">Panel</TabsTrigger>
-            <TabsTrigger value="nuevo">Nuevo pedido</TabsTrigger>
+            <TabsTrigger value="panel">{t('ordersPanel')}</TabsTrigger>
+            <TabsTrigger value="nuevo">{t('newOrder')}</TabsTrigger>
           </TabsList>
           <Button
             type="button"
             onClick={() => void refetch({ silent: true })}
             variant="outline"
             size="sm"
-            aria-label="Actualizar pedidos"
+            aria-label={t('refreshOrders')}
             data-testid="orders-manual-refresh"
             disabled={refreshDisabled}
           >
             <RefreshCw className={`h-4 w-4 ${isRefreshing ? "animate-spin" : ""}`} />
-            <span className="sr-only">Actualizar pedidos</span>
+            <span className="sr-only">{t('refreshOrders')}</span>
           </Button>
         </div>
       </div>

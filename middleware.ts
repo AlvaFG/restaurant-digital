@@ -1,11 +1,29 @@
 import { NextResponse } from "next/server"
 import type { NextRequest } from "next/server"
 import { createServerClient, type CookieOptions } from "@supabase/ssr"
+import createIntlMiddleware from 'next-intl/middleware';
+import { locales } from './i18n';
+
+// Create i18n middleware
+const intlMiddleware = createIntlMiddleware({
+  locales,
+  defaultLocale: 'es',
+  localePrefix: 'as-needed',
+  localeDetection: true,
+});
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   console.log('🔒 [Middleware] Ejecutado para:', pathname)
+  
+  // First, handle i18n (this will detect and potentially redirect to locale)
+  const intlResponse = intlMiddleware(request);
+  
+  // If intl middleware wants to redirect, let it
+  if (intlResponse && intlResponse.status === 307) {
+    return intlResponse;
+  }
 
   // Permitir acceso a páginas públicas y assets
   const publicPaths = ["/login", "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/callback", "/test-error"]

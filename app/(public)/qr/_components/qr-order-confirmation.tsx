@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from 'next-intl'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +23,7 @@ export function QrOrderConfirmation({
   tableNumber,
   onBackToMenu,
 }: QrOrderConfirmationProps) {
+  const t = useTranslations('customer')
   const router = useRouter()
   const [countdown, setCountdown] = useState(estimatedMinutes)
 
@@ -42,14 +44,14 @@ export function QrOrderConfirmation({
               <CheckCircle2 className="size-16 text-green-600 dark:text-green-500" aria-hidden="true" />
             </div>
           </div>
-          <CardTitle className="text-2xl md:text-3xl">¡Pedido confirmado!</CardTitle>
-          <CardDescription className="text-base mt-2">{message}</CardDescription>
+          <CardTitle className="text-2xl md:text-3xl">{t('orderConfirmed')}</CardTitle>
+          <CardDescription className="text-base mt-2">{t('orderReceived')}</CardDescription>
         </CardHeader>
 
         <CardContent className="space-y-6 pb-6">
           {/* Order ID */}
           <div className="bg-muted rounded-lg p-4">
-            <p className="text-sm text-muted-foreground mb-1">Número de pedido</p>
+            <p className="text-sm text-muted-foreground mb-1">{t('orderNumber')}</p>
             <p className="text-2xl font-mono font-bold">{orderId.split('-').slice(-1)[0].toUpperCase()}</p>
           </div>
 
@@ -57,9 +59,9 @@ export function QrOrderConfirmation({
           <div className="flex items-center justify-center gap-3">
             <Clock className="size-5 text-muted-foreground" aria-hidden="true" />
             <div>
-              <p className="text-sm text-muted-foreground">Tiempo estimado</p>
+              <p className="text-sm text-muted-foreground">{t('estimatedTime')}</p>
               <p className="text-xl font-semibold">
-                {countdown > 0 ? `${countdown} minutos` : 'Pronto estará listo'}
+                {countdown > 0 ? `${countdown} ${t('minutes')}` : t('soonReady')}
               </p>
             </div>
           </div>
@@ -68,7 +70,7 @@ export function QrOrderConfirmation({
           <div className="flex justify-center gap-2">
             <Badge variant="outline" className="text-sm py-1.5 px-3">
               <ChefHat className="size-4 mr-1.5" aria-hidden="true" />
-              En cocina
+              {t('inKitchen')}
             </Badge>
           </div>
 
@@ -76,7 +78,7 @@ export function QrOrderConfirmation({
           {tableNumber && (
             <div className="border-t pt-4">
               <p className="text-sm text-muted-foreground">
-                Mesa <span className="font-bold text-foreground">{tableNumber}</span>
+                {t('table')} <span className="font-bold text-foreground">{tableNumber}</span>
               </p>
             </div>
           )}
@@ -84,12 +86,12 @@ export function QrOrderConfirmation({
           {/* Instructions */}
           <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-4 text-left">
             <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-2">
-              📋 Información importante
+              {t('importantInfo')}
             </p>
             <ul className="text-sm text-blue-800 dark:text-blue-200 space-y-1">
-              <li>• El staff te avisará cuando esté listo</li>
-              <li>• Puedes hacer más pedidos si lo necesitas</li>
-              <li>• El pago se realiza al finalizar tu comida</li>
+              <li>{t('staffWillNotify')}</li>
+              <li>{t('canOrderMore')}</li>
+              <li>{t('payAtEnd')}</li>
             </ul>
           </div>
         </CardContent>
@@ -102,7 +104,7 @@ export function QrOrderConfirmation({
             variant="default"
           >
             <Home className="mr-2 size-5" aria-hidden="true" />
-            Volver al menú
+            {t('backToMenu')}
           </Button>
 
           <Button
@@ -111,7 +113,7 @@ export function QrOrderConfirmation({
             variant="ghost"
             className="w-full"
           >
-            Cerrar
+            {t('close')}
           </Button>
         </CardFooter>
       </Card>

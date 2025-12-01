@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { Separator } from "@/components/ui/separator"
 import { NotificationBell } from "@/components/notification-bell"
+import { useTranslations } from 'next-intl'
 import {
   LayoutDashboard,
   MapPin,
@@ -30,7 +31,7 @@ import { usePathname } from "next/navigation"
 import { ThemeToggle } from "@/components/theme-toggle"
 
 interface NavItem {
-  title: string
+  titleKey: string
   href: string
   icon: React.ComponentType<{ className?: string }>
   roles: ("admin" | "staff" | "manager")[]
@@ -38,56 +39,50 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   {
-    title: "Dashboard",
+    titleKey: "dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
     roles: ["admin", "staff"],
   },
   {
-    title: "Salón",
+    titleKey: "salon",
     href: "/salon",
     icon: MapPin,
     roles: ["admin", "staff"],
   },
   {
-    title: "Pedidos",
+    titleKey: "orders",
     href: "/pedidos",
     icon: ShoppingCart,
     roles: ["admin", "staff"],
   },
   {
-    title: "Alertas",
+    titleKey: "alerts",
     href: "/alertas",
     icon: Bell,
     roles: ["admin", "staff"],
   },
   // Admin only sections
   {
-    title: "Menú",
+    titleKey: "menu",
     href: "/menu",
     icon: ChefHat,
     roles: ["admin"],
   },
   {
-    title: "Zonas",
-    href: "/configuracion/zonas",
-    icon: MapPinned,
-    roles: ["admin"],
-  },
-  {
-    title: "Analítica",
+    titleKey: "analytics",
     href: "/analitica",
     icon: BarChart3,
     roles: ["admin"],
   },
   {
-    title: "Integraciones",
+    titleKey: "integrations",
     href: "/integraciones",
     icon: Puzzle,
     roles: ["admin"],
   },
   {
-    title: "Configuración",
+    titleKey: "settings",
     href: "/configuracion",
     icon: Settings,
     roles: ["admin"],
@@ -97,6 +92,8 @@ const navItems: NavItem[] = [
 export function SidebarNav() {
   const { user, logout, tenant } = useAuth()
   const pathname = usePathname()
+  const t = useTranslations('dashboard')
+  const tAuth = useTranslations('auth')
 
   if (!user) return null
 
@@ -145,7 +142,7 @@ export function SidebarNav() {
                   )}
                 >
                   <item.icon className="h-4 w-4" />
-                  {item.title}
+                  {t(item.titleKey)}
                 </Button>
               </Link>
             )
@@ -168,7 +165,7 @@ export function SidebarNav() {
         <Separator className="my-2 bg-border/60 dark:bg-zinc-700" />
         <Button variant="ghost" className="w-full justify-start gap-2 h-9 font-light border border-transparent hover:bg-accent/50 hover:border-border/50 dark:hover:bg-zinc-800/50 dark:hover:border-zinc-700 dark:text-zinc-300 dark:hover:text-white" onClick={logout}>
           <LogOut className="h-4 w-4" />
-          Cerrar Sesión
+          {tAuth('logout')}
         </Button>
       </div>
     </div>

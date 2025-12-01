@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useTranslations } from "next-intl"
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react"
 import { Stage, Layer, Rect, Circle, Text, Group } from "react-konva"
 import type Konva from "konva"
@@ -70,6 +71,7 @@ function generateNodeId() {
 }
 
 export function TableMap({ onTableClick, editable = false }: TableMapProps) {
+  const tCommon = useTranslations('common')
   const { user } = useAuth()
   const { on, off, lastReadyPayload } = useSocket()
   const { toast } = useToast()
@@ -638,7 +640,7 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
                 </Button>
                 <Button onClick={saveLayout} size="sm" disabled={isSaving || !hasUnsavedChanges}>
                   {isSaving ? <LoadingSpinner size="sm" className="mr-2" /> : <Save className="mr-2 h-4 w-4" />}
-                  {isSaving ? "Guardando..." : "Guardar"}
+                  {isSaving ? tCommon('saving') : tCommon('save')}
                 </Button>
               </>
             )}
@@ -693,7 +695,7 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
                 {selectedZone && (
                   <div className="space-y-3 border-t pt-4">
                     <div className="flex items-center justify-between">
-                      <Label className="text-sm font-semibold">Editar Zona</Label>
+                      <Label className="text-sm font-semibold">{tCommon('editZone')}</Label>
                       <Badge variant="secondary">{selectedZone.name}</Badge>
                     </div>
 
@@ -782,7 +784,7 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
                       className="w-full"
                     >
                       <Trash2 className="mr-2 h-4 w-4" />
-                      Eliminar Zona
+                      {tCommon('deleteZone')}
                     </Button>
                   </div>
                 )}
@@ -838,7 +840,7 @@ export function TableMap({ onTableClick, editable = false }: TableMapProps) {
                 {/* Instrucciones para screen readers */}
                 <div id="canvas-instructions" className="sr-only">
                   {isEditing 
-                    ? "Modo de edición activado. Haz clic en una mesa para seleccionarla. Usa las flechas del teclado para mover la mesa seleccionada. Presiona Delete para eliminar. Presiona Escape para deseleccionar."
+                    ? tCommon('editModeInstructions')
                     : "Mapa visual de las mesas del restaurante. Haz clic en una mesa para ver más detalles."
                   }
                 </div>

@@ -2,16 +2,22 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTranslations } from "next-intl"
+import dynamicImport from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { UnifiedSalonView } from "@/components/unified-salon-view"
 import { AddTableDialog } from "@/components/add-table-dialog"
-import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
 import type { Table } from "@/lib/mock-data"
+
+// Dynamically import Konva-dependent component (no SSR)
+const UnifiedSalonView = dynamicImport(
+  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView),
+  { ssr: false }
+);
 
 export default function SalonPage() {
   const router = useRouter()
+  const t = useTranslations('common')
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const [showZonesManager, setShowZonesManager] = useState(false)
 
   const handleTableClick = (table: Table) => {
     router.push(`/mesas/${table.id}`)
@@ -21,17 +27,13 @@ export default function SalonPage() {
     // El componente se actualiza automáticamente con React Query
   }
 
-  const handleZonesUpdated = () => {
-    // El componente se actualiza automáticamente con React Query
-  }
-
   return (
     <DashboardLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Salón</h1>
+          <h1 className="text-3xl font-bold tracking-tight">{t('salonTitle')}</h1>
           <p className="text-muted-foreground">
-            Visualiza y administra el layout del restaurante con zonas personalizadas
+            {t('salonDescription')}
           </p>
         </div>
 
@@ -41,19 +43,12 @@ export default function SalonPage() {
           showManagement={true}
           onTableClick={handleTableClick}
           onAddTable={() => setShowAddDialog(true)}
-          onManageZones={() => setShowZonesManager(true)}
         />
 
         <AddTableDialog
           open={showAddDialog}
           onOpenChange={setShowAddDialog}
           onTableCreated={handleTableCreated}
-        />
-
-        <ZonesManagerDialog
-          open={showZonesManager}
-          onOpenChange={setShowZonesManager}
-          onZonesUpdated={handleZonesUpdated}
         />
       </div>
     </DashboardLayout>

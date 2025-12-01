@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -22,6 +23,8 @@ interface CreateZoneDialogProps {
 }
 
 export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZoneDialogProps) {
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   const { toast } = useToast()
   const { createZone } = useZones()
   const [name, setName] = useState('')
@@ -66,7 +69,7 @@ export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZo
       onZoneCreated?.()
     } catch (error) {
       toast({
-        title: 'Error al crear la zona',
+        title: tErrors('createZoneError'),
         description: error instanceof Error ? error.message : 'Intenta nuevamente mas tarde.',
         variant: 'destructive',
       })
@@ -79,7 +82,7 @@ export function CreateZoneDialog({ open, onOpenChange, onZoneCreated }: CreateZo
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Crear zona</DialogTitle>
+          <DialogTitle>{tCommon('createZone')}</DialogTitle>
           <DialogDescription>
             Defini un nombre para identificar la nueva zona del restaurante.
           </DialogDescription>

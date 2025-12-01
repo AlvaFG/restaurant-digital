@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -65,6 +66,7 @@ function getPriorityDisplay(priority: AlertPriority) {
 }
 
 export function NotificationBell() {
+  const tCommon = useTranslations('common')
   const { on, off, emit, isConnected, isReconnecting } = useSocket()
   
   // Use useAlerts hook with activeOnly option
@@ -128,7 +130,7 @@ export function NotificationBell() {
   const getTimeAgo = (dateString: string) => {
     const date = new Date(dateString)
     const minutes = Math.floor((Date.now() - date.getTime()) / 60000)
-    if (minutes < 1) return "Ahora"
+    if (minutes < 1) return tCommon('now')
     if (minutes < 60) return `${minutes}m`
     const hours = Math.floor(minutes / 60)
     if (hours < 24) return `${hours}h`
@@ -181,7 +183,7 @@ export function NotificationBell() {
           variant="ghost" 
           size="sm" 
           className="relative"
-          aria-label={`Notificaciones: ${activeAlerts.length} activas${urgentCount > 0 ? `, ${urgentCount} urgentes` : ''}`}
+          aria-label={`${tCommon('notifications')}: ${activeAlerts.length} ${tCommon('active').toLowerCase()}${urgentCount > 0 ? `, ${urgentCount} ${urgentCount > 1 ? tCommon('urgentPlural') : tCommon('urgent').toLowerCase()}` : ''}`}
         >
           <Bell className="h-5 w-5" />
           <span
@@ -189,7 +191,7 @@ export function NotificationBell() {
               "absolute -top-1 -right-1 h-2 w-2 rounded-full",
               isConnected ? "bg-emerald-500" : isReconnecting ? "bg-amber-500 animate-pulse" : "bg-muted-foreground"
             )}
-            aria-label={isConnected ? "Conectado" : isReconnecting ? "Reconectando" : "Sin conexión"}
+            aria-label={isConnected ? tCommon('connected') : isReconnecting ? tCommon('reconnecting') : tCommon('noConnection')}
           />
           {activeAlerts.length > 0 && (
             <Badge
@@ -206,15 +208,15 @@ export function NotificationBell() {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-96" role="menu">
         <DropdownMenuLabel className="flex items-center justify-between">
-          <span>Notificaciones ({activeAlerts.length})</span>
+          <span>{tCommon('notifications')} ({activeAlerts.length})</span>
           <div className="flex gap-2">
             {urgentCount > 0 && (
               <Badge variant="destructive" className="animate-pulse">
-                {urgentCount} urgente{urgentCount > 1 ? 's' : ''}
+                {urgentCount} {urgentCount > 1 ? tCommon('urgentPlural') : tCommon('urgent').toLowerCase()}
               </Badge>
             )}
             <Badge variant={isConnected ? "secondary" : "outline"} className={isReconnecting ? "animate-pulse" : undefined}>
-              {isConnected ? "En vivo" : isReconnecting ? "Reconectando" : "Sin conexión"}
+              {isConnected ? tCommon('live') : isReconnecting ? tCommon('reconnecting') : tCommon('noConnection')}
             </Badge>
           </div>
         </DropdownMenuLabel>
@@ -223,15 +225,15 @@ export function NotificationBell() {
         {recentAlerts.length === 0 ? (
           <div className="p-8 text-center">
             <CheckCircle2 className="h-12 w-12 mx-auto mb-2 text-muted-foreground" />
-            <p className="text-sm text-muted-foreground">No hay alertas activas</p>
-            <p className="text-xs text-muted-foreground mt-1">Todo está bajo control</p>
+            <p className="text-sm text-muted-foreground">{tCommon('noActiveAlerts')}</p>
+            <p className="text-xs text-muted-foreground mt-1">{tCommon('allUnderControl')}</p>
           </div>
         ) : (
           <>
             <ScrollArea className="max-h-[400px]">
               {recentAlerts.map((alert) => {
                 const tableMeta = tablesIndex.get(alert.table_id || alert.tableId || '')
-                const label = tableMeta?.number ? `Mesa ${tableMeta.number}` : `Mesa ${alert.table_id || alert.tableId || 'N/A'}`
+                const label = tableMeta?.number ? `${tCommon('table')} ${tableMeta.number}` : `${tCommon('table')} ${alert.table_id || alert.tableId || 'N/A'}`
                 const priorityDisplay = getPriorityDisplay(alert.priority)
                 const Icon = priorityDisplay.icon
                 
@@ -250,7 +252,7 @@ export function NotificationBell() {
                         <Icon className={cn("h-4 w-4", priorityDisplay.color)} aria-hidden="true" />
                         <span className="text-sm font-medium">{label}</span>
                         {alert.priority === 'critical' && (
-                          <Badge variant="destructive" className="text-xs">Urgente</Badge>
+                          <Badge variant="destructive" className="text-xs">{tCommon('urgent')}</Badge>
                         )}
                       </div>
                       <span className="text-xs text-muted-foreground">
@@ -266,7 +268,7 @@ export function NotificationBell() {
                       onClick={() => handleAcknowledge(alert.id)}
                     >
                       <CheckCircle2 className="h-3 w-3 mr-1" />
-                      Marcar como atendida
+                      {tCommon('markAsAttended')}
                     </Button>
                   </DropdownMenuItem>
                 )
@@ -276,7 +278,7 @@ export function NotificationBell() {
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <Link href="/alertas" className="w-full text-center justify-center font-medium">
-                Ver todas las alertas ({activeAlerts.length})
+                {tCommon('viewAllAlerts')} ({activeAlerts.length})
               </Link>
             </DropdownMenuItem>
           </>

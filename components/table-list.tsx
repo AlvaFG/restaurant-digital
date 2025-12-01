@@ -6,6 +6,7 @@ import { TABLE_STATE, TABLE_STATE_BADGE_VARIANT, TABLE_STATE_COLORS, TABLE_STATE
 import { useTables } from "@/hooks/use-tables"
 import { useZones } from "@/hooks/use-zones"
 import { useAuth } from "@/contexts/auth-context"
+import { useTranslations } from 'next-intl'
 import { getZoneName as getZoneNameHelper } from "@/lib/type-guards"
 
 type Table = Database['public']['Tables']['tables']['Row'] & {
@@ -48,6 +49,8 @@ export interface TableListRef {
 export const TableList = forwardRef<TableListRef>((props, ref) => {
   const { user } = useAuth()
   const { toast } = useToast()
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
   
   // Use hooks for data fetching and mutations
   const { tables, loading: tablesLoading, error: tablesError, updateStatus, deleteTable: deleteTableMutation, inviteHouse } = useTables()
@@ -165,7 +168,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       })
       toast({
         variant: "destructive",
-        title: "Error",
+        title: tCommon('error'),
         description: "No se pudo aplicar la cortesía. Intenta nuevamente.",
       })
     } finally {
@@ -205,7 +208,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
         tableNumber: selectedTable.number
       })
       toast({
-        title: "Error",
+        title: tCommon('error'),
         description: "No se pudo resetear la mesa. Intenta nuevamente.",
         variant: "destructive",
       })
@@ -240,17 +243,17 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       setShowDeleteDialog(false)
       setSelectedTableId(null)
     } catch (actionError) {
-      logger.error('Error al eliminar mesa', actionError as Error, {
+      logger.error(tErrors('deleteTableError'), actionError as Error, {
         tableId: selectedTable.id,
         tableNumber: selectedTable.number
       })
       
       const errorMessage = actionError instanceof Error 
         ? actionError.message 
-        : "No se pudo eliminar la mesa. Intenta nuevamente."
+        : tErrors('deleteTableFailed')
       
       toast({
-        title: "Error",
+        title: tCommon('error'),
         description: errorMessage,
         variant: "destructive",
       })
@@ -612,7 +615,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleInviteHouse} disabled={isProcessingAction}>
-              {isProcessingAction ? "Procesando..." : "Confirmar"}
+              {isProcessingAction ? tCommon('loading') : tCommon('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -629,7 +632,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isProcessingAction}>Cancelar</AlertDialogCancel>
             <AlertDialogAction onClick={handleResetTable} disabled={isProcessingAction}>
-              {isProcessingAction ? "Procesando..." : "Confirmar"}
+              {isProcessingAction ? tCommon('loading') : tCommon('confirm')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
@@ -638,9 +641,9 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
       <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Estás seguro que quieres eliminar la mesa?</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon('confirmDeleteTable')}</AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción eliminará permanentemente la mesa {selectedTable?.number}. 
+              {tCommon('deleteTableWarning', { number: selectedTable?.number ?? '' })} 
               Esta operación no se puede deshacer.
               {selectedTable?.status && selectedTable.status !== TABLE_STATE.FREE && (
                 <span className="block mt-2 text-destructive font-medium">
@@ -656,7 +659,7 @@ export const TableList = forwardRef<TableListRef>((props, ref) => {
               disabled={isProcessingAction}
               className="bg-destructive text-white hover:bg-destructive/90"
             >
-              {isProcessingAction ? "Eliminando..." : "Eliminar mesa"}
+              {isProcessingAction ? tCommon('deleting') : tCommon('deleteTable')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

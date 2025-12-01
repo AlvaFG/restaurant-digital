@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -62,6 +63,7 @@ export function MenuItemDialog({
   categories,
   onSave,
 }: MenuItemDialogProps) {
+  const t = useTranslations('dashboard')
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -125,8 +127,8 @@ export function MenuItemDialog({
     const trimmedName = name.trim()
     if (!trimmedName) {
       toast({
-        title: 'Nombre requerido',
-        description: 'Ingresa un nombre para el item.',
+        title: t('nameRequired'),
+        description: t('enterItemName'),
         variant: 'destructive',
       })
       return false
@@ -134,8 +136,8 @@ export function MenuItemDialog({
 
     if (trimmedName.length > 100) {
       toast({
-        title: 'Nombre muy largo',
-        description: 'El nombre no puede exceder 100 caracteres.',
+        title: t('nameTooLong'),
+        description: t('nameMaxLength'),
         variant: 'destructive',
       })
       return false
@@ -144,8 +146,8 @@ export function MenuItemDialog({
     const priceValue = parseFloat(price)
     if (isNaN(priceValue) || priceValue < 0) {
       toast({
-        title: 'Precio inválido',
-        description: 'Ingresa un precio válido mayor o igual a 0.',
+        title: t('invalidPrice'),
+        description: t('enterValidPrice'),
         variant: 'destructive',
       })
       return false
@@ -153,8 +155,8 @@ export function MenuItemDialog({
 
     if (!categoryId) {
       toast({
-        title: 'Categoría requerida',
-        description: 'Selecciona una categoría para el item.',
+        title: t('categoryRequired'),
+        description: t('selectItemCategory'),
         variant: 'destructive',
       })
       return false
@@ -162,8 +164,8 @@ export function MenuItemDialog({
 
     if (description.length > 500) {
       toast({
-        title: 'Descripción muy larga',
-        description: 'La descripción no puede exceder 500 caracteres.',
+        title: t('descriptionTooLong'),
+        description: t('descriptionMaxLength500'),
         variant: 'destructive',
       })
       return false
@@ -188,17 +190,17 @@ export function MenuItemDialog({
       })
 
       toast({
-        title: item ? 'Item actualizado' : 'Item creado',
+        title: item ? t('itemUpdated') : t('itemCreated'),
         description: item
-          ? `"${name}" fue actualizado exitosamente.`
-          : `"${name}" fue creado exitosamente.`,
+          ? t('itemUpdatedDesc', { name })
+          : t('itemCreatedDesc', { name }),
       })
 
       onOpenChange(false)
     } catch (error) {
       toast({
-        title: item ? 'Error al actualizar item' : 'Error al crear item',
-        description: error instanceof Error ? error.message : 'Intenta nuevamente.',
+        title: item ? t('errorUpdatingItem') : t('errorCreatingItem'),
+        description: error instanceof Error ? error.message : t('tryAgain'),
         variant: 'destructive',
       })
     } finally {
@@ -210,11 +212,11 @@ export function MenuItemDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{item ? 'Editar Item del Menú' : 'Nuevo Item del Menú'}</DialogTitle>
+          <DialogTitle>{item ? t('editItem') : t('addItem')}</DialogTitle>
           <DialogDescription>
             {item
-              ? 'Modifica los datos del item del menú.'
-              : 'Completa los datos para agregar un nuevo item al menú.'}
+              ? t('modifyItemData')
+              : t('fillItemData')}
           </DialogDescription>
         </DialogHeader>
 
@@ -222,36 +224,36 @@ export function MenuItemDialog({
           {/* Nombre */}
           <div className="space-y-2">
             <Label htmlFor="name">
-              Nombre <span className="text-destructive">*</span>
+              {t('itemName')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Pizza Margherita"
+              placeholder={t('itemPlaceholder')}
               maxLength={100}
               disabled={isSubmitting}
               required
             />
             <p className="text-xs text-muted-foreground">
-              {name.length}/100 caracteres
+              {name.length}/100 {t('characters')}
             </p>
           </div>
 
           {/* Descripción */}
           <div className="space-y-2">
-            <Label htmlFor="description">Descripción</Label>
+            <Label htmlFor="description">{t('itemDescription')}</Label>
             <Textarea
               id="description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe el item..."
+              placeholder={t('describeItem')}
               maxLength={500}
               rows={3}
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground">
-              {description.length}/500 caracteres
+              {description.length}/500 {t('characters')}
             </p>
           </div>
 
@@ -259,7 +261,7 @@ export function MenuItemDialog({
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="price">
-                Precio (ARS) <span className="text-destructive">*</span>
+                {t('price')} (ARS) <span className="text-destructive">*</span>
               </Label>
               <Input
                 id="price"
@@ -276,7 +278,7 @@ export function MenuItemDialog({
 
             <div className="space-y-2">
               <Label htmlFor="category">
-                Categoría <span className="text-destructive">*</span>
+                {t('category')} <span className="text-destructive">*</span>
               </Label>
               <Select
                 value={categoryId}
@@ -284,7 +286,7 @@ export function MenuItemDialog({
                 disabled={isSubmitting || categories.length === 0}
               >
                 <SelectTrigger id="category">
-                  <SelectValue placeholder="Selecciona categoría" />
+                  <SelectValue placeholder={t('selectCategory')} />
                 </SelectTrigger>
                 <SelectContent>
                   {categories.map((category) => (
@@ -299,14 +301,14 @@ export function MenuItemDialog({
 
           {/* Tags */}
           <div className="space-y-2">
-            <Label htmlFor="tags">Etiquetas (opcional)</Label>
+            <Label htmlFor="tags">{t('tags')}</Label>
             <div className="flex gap-2">
               <Input
                 id="tags"
                 value={currentTag}
                 onChange={(e) => setCurrentTag(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Ej: Vegetariano, Picante..."
+                placeholder={t('tagsPlaceholder')}
                 disabled={isSubmitting}
               />
               <Button
@@ -315,7 +317,7 @@ export function MenuItemDialog({
                 onClick={handleAddTag}
                 disabled={isSubmitting || !currentTag.trim()}
               >
-                Agregar
+                {t('add')}
               </Button>
             </div>
             {tags.length > 0 && (
@@ -340,9 +342,9 @@ export function MenuItemDialog({
           {/* Disponibilidad */}
           <div className="flex items-center justify-between">
             <div className="space-y-0.5">
-              <Label htmlFor="available">Disponible</Label>
+              <Label htmlFor="available">{t('available')}</Label>
               <p className="text-sm text-muted-foreground">
-                El item estará visible para los clientes
+                {t('itemVisibleToCustomers')}
               </p>
             </div>
             <Switch
@@ -360,11 +362,11 @@ export function MenuItemDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancelar
+            {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {item ? 'Actualizar' : 'Crear'}
+            {item ? t('update') : t('create')}
           </Button>
         </DialogFooter>
       </DialogContent>

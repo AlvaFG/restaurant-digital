@@ -10,6 +10,7 @@
 
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { useState, useEffect } from 'react';
 import {
   Dialog,
@@ -43,6 +44,7 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
+  const tCommon = useTranslations('common');
   const { payment, getPaymentStatus } = usePayment();
   const [pollInterval, setPollInterval] = useState<NodeJS.Timeout | null>(null);
 
@@ -166,7 +168,7 @@ export function PaymentModal({ open, onOpenChange, order }: PaymentModalProps) {
             onClick={() => onOpenChange(false)}
             className="w-full"
           >
-            {payment?.status === 'approved' ? 'Cerrar' : 'Cancelar'}
+            {payment?.status === 'approved' ? tCommon('close') : tCommon('cancel')}
           </Button>
         </DialogFooter>
       </DialogContent>

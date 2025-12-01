@@ -1,14 +1,22 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useState } from "react"
+import dynamicImport from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
-import { UnifiedSalonView } from "@/components/unified-salon-view"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
 import { Card, CardContent } from "@/components/ui/card"
 import { Info } from "lucide-react"
 
+// Dynamically import Konva-dependent component (no SSR)
+const UnifiedSalonView = dynamicImport(
+  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView),
+  { ssr: false }
+);
+
 export default function TableEditorPage() {
+  const tCommon = useTranslations('common')
   const [showAddDialog, setShowAddDialog] = useState(false)
   const [showZonesManager, setShowZonesManager] = useState(false)
 
@@ -40,7 +48,7 @@ export default function TableEditorPage() {
                   <li>Activa el modo edición con el botón "Editar layout"</li>
                   <li>Arrastra las mesas para reposicionarlas en el mapa</li>
                   <li>Haz clic en una mesa para editar sus propiedades (tamaño, forma, capacidad)</li>
-                  <li>Los cambios se guardan automáticamente al presionar "Guardar"</li>
+                  <li>Los cambios se guardan automáticamente al presionar "{tCommon('save')}"</li>
                   <li>Usa "Deshacer cambios" para revertir modificaciones antes de guardar</li>
                 </ul>
               </div>

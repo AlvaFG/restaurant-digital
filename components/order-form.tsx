@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 
 import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
 import { useTables } from "@/hooks/use-tables"
@@ -34,8 +35,11 @@ interface OrderItem {
 }
 
 export function OrderForm() {
-  const { tables, loading: tablesLoading, error: tablesError, refresh: refreshTables } = useTables()
-  const { items: menuItems, loading: menuItemsLoading } = useMenuItems()
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  
+  const { tables, loading: tablesLoading, error: tablesError } = useTables()
+  const { menuItems, loading: menuItemsLoading } = useMenuItems()
   const { categories, loading: categoriesLoading } = useMenuCategories()
   const { createOrder } = useOrders()
   
@@ -108,7 +112,7 @@ export function OrderForm() {
       })
       
       toast({
-        title: "Error",
+        title: tCommon('error'),
         description: "Selecciona una mesa y agrega al menos un item",
         variant: "destructive",
       })
@@ -120,7 +124,7 @@ export function OrderForm() {
     
     if (!selectedTable) {
       toast({
-        title: "Error",
+        title: tCommon('error'),
         description: "Mesa no encontrada",
         variant: "destructive",
       })
@@ -145,7 +149,7 @@ export function OrderForm() {
       })
       
       toast({
-        title: "No se puede crear el pedido",
+        title: tErrors('cannotCreateOrder'),
         description: validation.error || "Validación fallida",
         variant: "destructive",
       })
@@ -219,14 +223,14 @@ export function OrderForm() {
         await refetch({ silent: false })
       }
     } catch (error) {
-      logger.error('Error al crear pedido desde formulario', error as Error, {
+      logger.error(tErrors('createOrderError'), error as Error, {
         tableId: selectedTableId,
         itemsCount: orderItems.length
       })
       
       const message = error instanceof Error ? error.message : MENSAJES.ERRORES.GENERICO
       toast({
-        title: "❌ No se pudo crear el pedido",
+        title: tErrors('createOrderFailed'),
         description: message,
         variant: "destructive",
         duration: 7000, // Mostrar errores por más tiempo
@@ -405,7 +409,7 @@ export function OrderForm() {
 
                 <Button onClick={handleSubmit} className="w-full" disabled={isSubmitting || !selectedTableId}>
                   {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  {isSubmitting ? "Creando pedido..." : "Crear pedido"}
+                  {isSubmitting ? tCommon('creatingOrder') : tCommon('createOrder')}
                 </Button>
               </div>
             )}

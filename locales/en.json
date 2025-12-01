@@ -1,0 +1,10 @@
+{
+  "common": {
+    "welcome": "Welcome",
+    "start_order": "Start order",
+    "menu": "Menu",
+    "cart": "Cart",
+    "language": "Language",
+    "loading": "Loading..."
+  }
+}

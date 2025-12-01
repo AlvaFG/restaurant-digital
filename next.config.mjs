@@ -1,3 +1,8 @@
+import withPWA from '@ducanh2912/next-pwa';
+import createNextIntlPlugin from 'next-intl/plugin';
+
+const withNextIntl = createNextIntlPlugin('./i18n.ts');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // Build optimizations
@@ -32,6 +37,32 @@ const nextConfig = {
     optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
   },
 
+  // Webpack customization
+  webpack: (config, { isServer }) => {
+    // Exclude Konva from server-side bundle (it requires canvas which is client-only)
+    if (isServer) {
+      config.externals = [...(config.externals || []), 'canvas', 'konva'];
+    }
+
+    // Resolve canvas module for browser (Konva needs browser environment)
+    config.resolve = {
+      ...config.resolve,
+      alias: {
+        ...config.resolve?.alias,
+        canvas: false,
+      },
+      fallback: {
+        ...config.resolve?.fallback,
+        canvas: false,
+        fs: false,
+        net: false,
+        tls: false,
+      },
+    };
+
+    return config;
+  },
+
   // Security headers
   async headers() {
     return [
@@ -64,4 +95,50 @@ const nextConfig = {
   },
 }
 
-export default nextConfig
+// PWA Configuration
+const pwaConfig = {
+  dest: 'public',
+  disable: process.env.NODE_ENV === 'development',
+  register: true,
+  skipWaiting: true,
+  // Add custom service worker code for push notifications
+  sw: 'sw.js',
+  runtimeCaching: [
+    {
+      urlPattern: /^https:\/\/.*\.supabase\.co\/.*$/,
+      handler: 'NetworkFirst',
+      options: {
+        cacheName: 'supabase-api',
+        expiration: {
+          maxEntries: 200,
+          maxAgeSeconds: 60 * 60, // 1 hour
+        },
+        networkTimeoutSeconds: 3,
+      },
+    },
+    {
+      urlPattern: /\.(png|jpg|jpeg|svg|gif|webp|avif)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'images',
+        expiration: {
+          maxEntries: 100,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+        },
+      },
+    },
+    {
+      urlPattern: /\.(js|css|woff2|woff|ttf|eot)$/,
+      handler: 'CacheFirst',
+      options: {
+        cacheName: 'static-assets',
+        expiration: {
+          maxEntries: 60,
+          maxAgeSeconds: 60 * 60 * 24 * 30, // 30 days
+        },
+      },
+    },
+  ],
+};
+
+export default withNextIntl(withPWA(pwaConfig)(nextConfig));

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect } from 'react'
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -40,6 +41,7 @@ export function MenuCategoryDialog({
   category,
   onSave,
 }: MenuCategoryDialogProps) {
+  const t = useTranslations('dashboard')
   const { toast } = useToast()
   const [isSubmitting, setIsSubmitting] = useState(false)
   
@@ -73,8 +75,8 @@ export function MenuCategoryDialog({
     const trimmedName = name.trim()
     if (!trimmedName) {
       toast({
-        title: 'Nombre requerido',
-        description: 'Ingresa un nombre para la categoría.',
+        title: t('nameRequired'),
+        description: t('enterCategoryName'),
         variant: 'destructive',
       })
       return false
@@ -82,8 +84,8 @@ export function MenuCategoryDialog({
 
     if (trimmedName.length > 100) {
       toast({
-        title: 'Nombre muy largo',
-        description: 'El nombre no puede exceder 100 caracteres.',
+        title: t('nameTooLong'),
+        description: t('nameMaxLength'),
         variant: 'destructive',
       })
       return false
@@ -91,8 +93,8 @@ export function MenuCategoryDialog({
 
     if (description.length > 300) {
       toast({
-        title: 'Descripción muy larga',
-        description: 'La descripción no puede exceder 300 caracteres.',
+        title: t('descriptionTooLong'),
+        description: t('descriptionMaxLength'),
         variant: 'destructive',
       })
       return false
@@ -100,8 +102,8 @@ export function MenuCategoryDialog({
 
     if (sortOrder && (isNaN(Number(sortOrder)) || Number(sortOrder) < 0)) {
       toast({
-        title: 'Orden inválido',
-        description: 'El orden debe ser un número mayor o igual a 0.',
+        title: t('invalidOrder'),
+        description: t('orderMustBePositive'),
         variant: 'destructive',
       })
       return false
@@ -123,17 +125,17 @@ export function MenuCategoryDialog({
       })
 
       toast({
-        title: category ? 'Categoría actualizada' : 'Categoría creada',
+        title: category ? t('categoryUpdated') : t('categoryCreated'),
         description: category
-          ? `"${name}" fue actualizada exitosamente.`
-          : `"${name}" fue creada exitosamente.`,
+          ? t('categoryUpdatedDesc', { name })
+          : t('categoryCreatedDesc', { name }),
       })
 
       onOpenChange(false)
     } catch (error) {
       toast({
-        title: category ? 'Error al actualizar categoría' : 'Error al crear categoría',
-        description: error instanceof Error ? error.message : 'Intenta nuevamente.',
+        title: category ? t('errorUpdatingCategory') : t('errorCreatingCategory'),
+        description: error instanceof Error ? error.message : t('tryAgain'),
         variant: 'destructive',
       })
     } finally {
@@ -146,12 +148,12 @@ export function MenuCategoryDialog({
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {category ? 'Editar Categoría' : 'Nueva Categoría'}
+            {category ? t('editCategory') : t('addCategory')}
           </DialogTitle>
           <DialogDescription>
             {category
-              ? 'Modifica los datos de la categoría.'
-              : 'Completa los datos para agregar una nueva categoría.'}
+              ? t('modifyCategoryData')
+              : t('fillCategoryData')}
           </DialogDescription>
         </DialogHeader>
 
@@ -159,42 +161,42 @@ export function MenuCategoryDialog({
           {/* Nombre */}
           <div className="space-y-2">
             <Label htmlFor="category-name">
-              Nombre <span className="text-destructive">*</span>
+              {t('categoryName')} <span className="text-destructive">*</span>
             </Label>
             <Input
               id="category-name"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="Ej: Entradas, Pizzas, Postres..."
+              placeholder={t('categoryPlaceholder')}
               maxLength={100}
               disabled={isSubmitting}
               required
             />
             <p className="text-xs text-muted-foreground">
-              {name.length}/100 caracteres
+              {name.length}/100 {t('characters')}
             </p>
           </div>
 
           {/* Descripción */}
           <div className="space-y-2">
-            <Label htmlFor="category-description">Descripción (opcional)</Label>
+            <Label htmlFor="category-description">{t('categoryDescription')}</Label>
             <Textarea
               id="category-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe la categoría..."
+              placeholder={t('describeCategory')}
               maxLength={300}
               rows={3}
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground">
-              {description.length}/300 caracteres
+              {description.length}/300 {t('characters')}
             </p>
           </div>
 
           {/* Orden */}
           <div className="space-y-2">
-            <Label htmlFor="category-order">Orden de visualización (opcional)</Label>
+            <Label htmlFor="category-order">{t('displayOrder')}</Label>
             <Input
               id="category-order"
               type="number"
@@ -205,7 +207,7 @@ export function MenuCategoryDialog({
               disabled={isSubmitting}
             />
             <p className="text-xs text-muted-foreground">
-              Número menor aparece primero en el menú
+              {t('lowerNumberFirst')}
             </p>
           </div>
         </div>
@@ -216,11 +218,11 @@ export function MenuCategoryDialog({
             onClick={() => onOpenChange(false)}
             disabled={isSubmitting}
           >
-            Cancelar
+            {t('cancel')}
           </Button>
           <Button onClick={handleSubmit} disabled={isSubmitting}>
             {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            {category ? 'Actualizar' : 'Crear'}
+            {category ? t('update') : t('create')}
           </Button>
         </DialogFooter>
       </DialogContent>

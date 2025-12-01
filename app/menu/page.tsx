@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import type { MenuItem, MenuCategory } from "@/lib/types/menu"
 import { DashboardLayout } from "@/components/dashboard-layout"
@@ -24,6 +25,8 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function MenuPage() {
+  const t = useTranslations('common')
+  const tDash = useTranslations('dashboard')
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const { toast } = useToast()
   
@@ -65,15 +68,15 @@ export default function MenuPage() {
     try {
       await deleteItem(itemToDelete.id)
       toast({
-        title: "Item eliminado",
-        description: `"${itemToDelete.name}" fue eliminado exitosamente.`,
+        title: t('itemDeleted'),
+        description: t('itemDeletedDescription', { name: itemToDelete.name }),
       })
       setItemToDelete(null)
       setShowDeleteDialog(false)
     } catch (error) {
       toast({
-        title: "Error al eliminar item",
-        description: error instanceof Error ? error.message : 'Intenta nuevamente.',
+        title: t('errorDeletingItem'),
+        description: error instanceof Error ? error.message : t('tryAgain'),
         variant: "destructive",
       })
     } finally {
@@ -107,8 +110,8 @@ export default function MenuPage() {
     refreshItems()
     refreshCategories()
     toast({
-      title: "Menú actualizado",
-      description: "Los datos del menú se han actualizado correctamente.",
+      title: t('menuUpdated'),
+      description: t('menuUpdatedDescription'),
     })
   }
 
@@ -128,17 +131,17 @@ export default function MenuPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-light tracking-tight">Menú</h1>
-            <p className="text-muted-foreground font-light">Gestión del menú del restaurante</p>
+            <h1 className="text-3xl font-light tracking-tight">{t('menuTitle')}</h1>
+            <p className="text-muted-foreground font-light">{t('menuDescription')}</p>
           </div>
           <div className="flex gap-2">
             <Button variant="outline" size="sm" onClick={handleRefresh} disabled={isLoading}>
               <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Actualizar
+              {t('refresh')}
             </Button>
             <Button size="sm" onClick={handleAddItem}>
               <Plus className="h-4 w-4 mr-2" />
-              Agregar Item
+              {t('addItem')}
             </Button>
           </div>
         </div>
@@ -152,9 +155,9 @@ export default function MenuPage() {
             <aside className="space-y-4">
               <Card>
                 <CardHeader>
-                  <CardTitle className="font-light">Categorías</CardTitle>
+                  <CardTitle className="font-light">{t('categories')}</CardTitle>
                   <CardDescription className="font-light">
-                    Filtra por categoría
+                    {t('filterByCategory')}
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-2">
@@ -163,7 +166,7 @@ export default function MenuPage() {
                     className="w-full justify-start"
                     onClick={() => setSelectedCategory(null)}
                   >
-                    Todas ({items.length})
+                    {t('all')} ({items.length})
                   </Button>
                   {categories.map((category: any) => {
                     const itemCount = items.filter(
@@ -186,7 +189,7 @@ export default function MenuPage() {
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-sm font-light">Gestión</CardTitle>
+                  <CardTitle className="text-sm font-light">{t('management')}</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-2">
                   <Button 
@@ -196,7 +199,7 @@ export default function MenuPage() {
                     onClick={handleAddCategory}
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    Nueva Categoría
+                    {t('newCategory')}
                   </Button>
                 </CardContent>
               </Card>
@@ -207,7 +210,7 @@ export default function MenuPage() {
                 <Card>
                   <CardContent className="py-12 text-center">
                     <p className="text-muted-foreground font-light">
-                      No hay items en esta categoría
+                      {t('noItemsInCategory')}
                     </p>
                     <Button 
                       variant="outline" 
@@ -215,7 +218,7 @@ export default function MenuPage() {
                       onClick={handleAddItem}
                     >
                       <Plus className="h-4 w-4 mr-2" />
-                      Agregar primer item
+                      {t('addFirstItem')}
                     </Button>
                   </CardContent>
                 </Card>
@@ -232,7 +235,7 @@ export default function MenuPage() {
                             </CardDescription>
                           </div>
                           <Badge variant={item.available ? "default" : "secondary"}>
-                            {item.available ? "Disponible" : "No disponible"}
+                            {item.available ? tDash('available') : tDash('notAvailable')}
                           </Badge>
                         </div>
                       </CardHeader>
@@ -257,7 +260,7 @@ export default function MenuPage() {
                             onClick={() => handleEditItem(item)}
                           >
                             <Edit className="h-4 w-4 mr-2" />
-                            Editar
+                            {t('edit')}
                           </Button>
                           <Button 
                             variant="outline" 
@@ -281,7 +284,7 @@ export default function MenuPage() {
       <MenuItemDialog
         open={showItemDialog}
         onOpenChange={setShowItemDialog}
-        item={editingItem}
+        item={editingItem ?? undefined}
         categories={categories}
         onSave={handleSaveItem}
       />
@@ -299,22 +302,22 @@ export default function MenuPage() {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
-              ¿Eliminar "{itemToDelete?.name}"?
+              {t('deleteItem', { name: itemToDelete?.name || '' })}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Esta acción no se puede deshacer. El item será eliminado permanentemente del menú.
+              {t('deleteItemDescription')}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isDeleting}>
-              Cancelar
+              {t('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmDeleteItem}
               disabled={isDeleting}
               className="bg-destructive hover:bg-destructive/90"
             >
-              {isDeleting ? "Eliminando..." : "Eliminar item"}
+              {isDeleting ? t('deleting') : t('deleteItemButton')}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

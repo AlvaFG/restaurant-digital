@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -33,6 +34,8 @@ import { useUsers, useUserStats, useCreateUser, useUpdateUser, useToggleUserActi
 import { LoadingSpinner } from "@/components/loading-spinner"
 
 export function UsersManagement() {
+  const tCommon = useTranslations('common')
+  
   // Hooks for Supabase operations
   const { data: users = [], isLoading, error } = useUsers()
   const { data: stats } = useUserStats()
@@ -200,9 +203,9 @@ export function UsersManagement() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingUser ? "Editar Usuario" : "Crear Nuevo Usuario"}</DialogTitle>
+              <DialogTitle>{editingUser ? tCommon('editUser') : tCommon('createNewUser')}</DialogTitle>
               <DialogDescription>
-                {editingUser ? "Modifica los datos del usuario" : "Completa los datos para crear un nuevo usuario"}
+                {editingUser ? tCommon('editUserDescription') : tCommon('createUserDescription')}
               </DialogDescription>
             </DialogHeader>
 
@@ -254,7 +257,7 @@ export function UsersManagement() {
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="staff">Staff</SelectItem>
+                    <SelectItem value="staff">{tCommon('staff')}</SelectItem>
                     <SelectItem value="manager">Manager</SelectItem>
                     <SelectItem value="admin">Administrador</SelectItem>
                   </SelectContent>
@@ -280,7 +283,7 @@ export function UsersManagement() {
                 disabled={createUserMutation.isPending || updateUserMutation.isPending || !formData.name || !formData.email || (!editingUser && !formData.password)}
               >
                 {(createUserMutation.isPending || updateUserMutation.isPending) && <LoadingSpinner />}
-                {editingUser ? "Actualizar" : "Crear"}
+                {editingUser ? tCommon('update') : tCommon('create')}
               </Button>
             </DialogFooter>
           </DialogContent>
@@ -366,7 +369,7 @@ export function UsersManagement() {
                   </TableCell>
                   <TableCell>
                     <Badge variant={user.role === "admin" ? "default" : "secondary"}>
-                      {user.role === "admin" ? "Administrador" : user.role === "manager" ? "Manager" : "Staff"}
+                      {user.role === "admin" ? "Administrador" : user.role === "manager" ? "Manager" : tCommon('staff')}
                     </Badge>
                   </TableCell>
                   <TableCell>
@@ -377,7 +380,7 @@ export function UsersManagement() {
                         disabled={toggleActiveMutation.isPending}
                       />
                       <Badge variant={user.active ? "default" : "secondary"}>
-                        {user.active ? "Activo" : "Inactivo"}
+                        {user.active ? tCommon('active') : tCommon('inactive')}
                       </Badge>
                     </div>
                   </TableCell>
@@ -416,7 +419,7 @@ export function UsersManagement() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDeleteUser}>Eliminar</AlertDialogAction>
+            <AlertDialogAction onClick={handleDeleteUser}>{tCommon('delete')}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

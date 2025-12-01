@@ -19,6 +19,9 @@ yarn-error.log*
 # env files
 .env*
 
+# VAPID keys (push notifications)
+vapid-keys.json
+
 # vercel
 .vercel
 

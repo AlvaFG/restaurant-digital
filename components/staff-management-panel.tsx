@@ -1,5 +1,7 @@
 "use client"
 
+import { useTranslations } from "next-intl"
+
 /**
  * Panel de gestion de usuarios staff.
  * Solo accesible para usuarios con rol administrador.
@@ -55,6 +57,9 @@ interface StaffUser {
 const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
 export function StaffManagementPanel() {
+  const tCommon = useTranslations('common')
+  const tErrors = useTranslations('errors')
+  
   const { user } = useAuth()
   const [staffList, setStaffList] = useState<StaffUser[]>([])
   const [isLoading, setIsLoading] = useState(true)
@@ -156,7 +161,7 @@ export function StaffManagementPanel() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error?.message ?? data.error ?? 'No se pudo crear el usuario')
+        throw new Error(data.error?.message ?? data.error ?? tErrors('createUserFailed'))
       }
 
       setSuccessMessage('Usuario staff creado correctamente.')
@@ -164,8 +169,8 @@ export function StaffManagementPanel() {
       resetForm()
       await loadStaff()
     } catch (error) {
-      logger.error('Error al crear staff', error as Error)
-      setFormError(error instanceof Error ? error.message : 'No se pudo crear el usuario.')
+      logger.error(tErrors('createStaffError'), error as Error)
+      setFormError(error instanceof Error ? error.message : tErrors('createUserError'))
     } finally {
       setIsCreating(false)
     }
@@ -186,15 +191,15 @@ export function StaffManagementPanel() {
       const response = await fetch(`/api/auth/staff/${staffToDelete.id}`, { method: 'DELETE' })
 
       if (!response.ok) {
-        throw new Error('No se pudo eliminar el usuario staff.')
+        throw new Error(tErrors('deleteStaffFailed'))
       }
 
       setSuccessMessage('Usuario staff eliminado correctamente.')
       await loadStaff()
       setStaffToDelete(null)
     } catch (error) {
-      logger.error('Error al eliminar staff', error as Error)
-      setGlobalError(error instanceof Error ? error.message : 'No se pudo eliminar el usuario.')
+      logger.error(tErrors('deleteStaffError'), error as Error)
+      setGlobalError(error instanceof Error ? error.message : tErrors('deleteUserFailed'))
       setStaffToDelete(null)
     } finally {
       setIsDeleting(false)
@@ -260,7 +265,7 @@ export function StaffManagementPanel() {
           <DialogTrigger asChild>
             <Button>
               <UserPlus className="mr-2 h-4 w-4" />
-              Crear usuario
+              {tCommon('createUser')}
             </Button>
           </DialogTrigger>
           <DialogContent>
@@ -397,7 +402,7 @@ export function StaffManagementPanel() {
                     <TableCell>{staff.email}</TableCell>
                     <TableCell>
                       <Badge variant={staff.active ? 'default' : 'secondary'}>
-                        {staff.active ? 'Activo' : 'Inactivo'}
+                        {staff.active ? tCommon('active') : tCommon('inactive')}
                       </Badge>
                     </TableCell>
                     <TableCell>
@@ -437,7 +442,7 @@ export function StaffManagementPanel() {
       <AlertDialog open={!!staffToDelete} onOpenChange={(open) => !open && setStaffToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>¿Eliminar usuario "{staffToDelete?.email}"?</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon('confirmDeleteUser', { email: staffToDelete?.email ?? '' })}</AlertDialogTitle>
             <AlertDialogDescription>
               Esta acción no se puede deshacer. El usuario será eliminado permanentemente del sistema.
             </AlertDialogDescription>
@@ -455,7 +460,7 @@ export function StaffManagementPanel() {
                   Eliminando...
                 </>
               ) : (
-                'Eliminar'
+                tCommon('delete')
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

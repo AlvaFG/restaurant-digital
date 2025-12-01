@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useState } from "react"
+import { useTranslations } from 'next-intl'
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Checkbox } from "@/components/ui/checkbox"
@@ -29,6 +30,7 @@ export function ItemCustomizationModal({
   onAddToCart,
   currencyFormatter,
 }: ItemCustomizationModalProps) {
+  const t = useTranslations('customer')
   const [selections, setSelections] = useState<ModifierSelection[]>([])
   const [notes, setNotes] = useState<string>("")
   
@@ -105,7 +107,7 @@ export function ItemCustomizationModal({
         <DialogHeader>
           <DialogTitle className="text-xl">{item.name}</DialogTitle>
           <DialogDescription className="text-sm">
-            Personaliza tu pedido antes de agregarlo al carrito
+            {t('customizeOrder')}
           </DialogDescription>
         </DialogHeader>
 
@@ -125,18 +127,18 @@ export function ItemCustomizationModal({
           {/* Special Notes */}
           <div className="space-y-2">
             <Label htmlFor="special-notes" className="text-sm font-medium">
-              Instrucciones especiales (opcional)
+              {t('specialInstructions')}
             </Label>
             <Textarea
               id="special-notes"
-              placeholder="Ej: Sin cebolla, bien cocido, etc."
+              placeholder={t('specialInstructionsPlaceholder')}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
               maxLength={200}
               className="resize-none text-sm"
             />
-            <p className="text-xs text-muted-foreground">{notes.length}/200 caracteres</p>
+            <p className="text-xs text-muted-foreground">{notes.length}/200 {t('characters')}</p>
           </div>
 
           {/* Validation Warnings */}
@@ -156,7 +158,7 @@ export function ItemCustomizationModal({
 
         <DialogFooter className="flex-col gap-3 border-t border-border/60 pt-4">
           <div className="flex w-full items-center justify-between text-sm font-semibold">
-            <span>Total</span>
+            <span>{t('total')}</span>
             <span className="text-lg">{currencyFormatter.format(totalPrice / 100)}</span>
           </div>
 
@@ -167,12 +169,12 @@ export function ItemCustomizationModal({
             disabled={!validation.isValid}
           >
             <ShoppingCart className="size-4" aria-hidden="true" />
-            <span>Agregar al carrito</span>
+            <span>{t('addToCart')}</span>
           </Button>
 
           {!validation.isValid && Object.keys(validation.errors).length > 0 ? (
             <p className="text-center text-xs text-destructive">
-              Completa las opciones requeridas para continuar
+              {t('completeRequired')}
             </p>
           ) : null}
         </DialogFooter>
@@ -196,6 +198,7 @@ function ModifierGroupSection({
   currencyFormatter,
   error,
 }: ModifierGroupSectionProps) {
+  const t = useTranslations('customer')
   const selectedIds =
     selections.find((s) => s.groupId === group.id)?.selectedOptionIds ?? []
   const isSingleSelection = group.maxSelection === 1
@@ -213,14 +216,14 @@ function ModifierGroupSection({
           ) : null}
           <p className="text-xs text-muted-foreground">
             {group.maxSelection === 1
-              ? "Elige una opción"
-              : `Elige hasta ${group.maxSelection} opciones`}
+              ? t('chooseOne')
+              : t('chooseUpTo', { max: group.maxSelection })}
           </p>
         </div>
 
         {selectedIds.length > 0 ? (
           <Badge variant="secondary" className="shrink-0">
-            {selectedIds.length} seleccionada{selectedIds.length > 1 ? "s" : ""}
+            {selectedIds.length} {t('selected')}{selectedIds.length > 1 ? "s" : ""}
           </Badge>
         ) : null}
       </div>
@@ -262,7 +265,7 @@ function ModifierGroupSection({
                         <p className="text-xs text-muted-foreground">{option.description}</p>
                       ) : null}
                       {!option.available ? (
-                        <p className="text-xs text-destructive">No disponible</p>
+                        <p className="text-xs text-destructive">{t('notAvailable')}</p>
                       ) : null}
                     </div>
                     {option.priceCents !== 0 ? (
@@ -311,7 +314,7 @@ function ModifierGroupSection({
                           <p className="text-xs text-muted-foreground">{option.description}</p>
                         ) : null}
                         {!option.available ? (
-                          <p className="text-xs text-destructive">No disponible</p>
+                          <p className="text-xs text-destructive">{t('notAvailable')}</p>
                         ) : null}
                       </div>
                       {isSelected ? (
