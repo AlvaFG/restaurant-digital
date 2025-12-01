@@ -1,4 +1,5 @@
-import type React from "react"
+import type React from "next"
+import type { Viewport } from "next"
 import { Inter, JetBrains_Mono } from "next/font/google"
 import { Analytics } from "@vercel/analytics/next"
 import { AuthProvider } from "@/contexts/auth-context"
@@ -85,17 +86,6 @@ export async function generateMetadata({ params }: { params: { locale: string } 
     formatDetection: {
       telephone: false,
     },
-    viewport: {
-      width: "device-width",
-      initialScale: 1,
-      maximumScale: 5,
-      userScalable: true,
-      viewportFit: "cover",
-    },
-    themeColor: [
-      { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-      { media: "(prefers-color-scheme: dark)", color: "#000000" },
-    ],
     icons: {
       apple: [
         { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
@@ -105,6 +95,18 @@ export async function generateMetadata({ params }: { params: { locale: string } 
       ],
     },
   };
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+  userScalable: true,
+  viewportFit: "cover",
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
+    { media: "(prefers-color-scheme: dark)", color: "#000000" },
+  ],
 }
 
 export default async function LocaleLayout({
