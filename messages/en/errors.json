@@ -64,5 +64,9 @@
   "createOrderError": "Error creating order from form",
   "createOrderFailed": "❌ Could not create the order",
   "createAccountError": "Error creating account",
-  "createPaymentFailed": "Could not create the payment"
+  "createPaymentFailed": "Could not create the payment",
+  "continueWithGoogle": "Continue with Google",
+  "googleAuthError": "Error signing in with Google",
+  "invalidEmail": "Invalid email format",
+  "connectionError": "Error connecting to server"
 }

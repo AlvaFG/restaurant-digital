@@ -18,6 +18,7 @@ type AuthMode = "login" | "register"
 
 export function LoginForm() {
   const tCommon = useTranslations('common')
+  const tAuth = useTranslations('auth')
   const tErrors = useTranslations('errors')
   
   const [mode, setMode] = useState<AuthMode>("login")
@@ -41,15 +42,15 @@ export function LoginForm() {
       if (mode === "register") {
         // Validar contraseñas
         if (password !== confirmPassword) {
-          throw new Error("Las contraseñas no coinciden")
+          throw new Error(tAuth('passwordMismatch'))
         }
 
         if (password.length < 6) {
-          throw new Error("La contraseña debe tener al menos 6 caracteres")
+          throw new Error(tAuth('passwordTooShort'))
         }
 
         if (!name.trim()) {
-          throw new Error("El nombre es requerido")
+          throw new Error(tAuth('nameRequired'))
         }
 
         // Llamar a API de registro
@@ -86,23 +87,23 @@ export function LoginForm() {
         router.push("/dashboard")
       }
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : "Error en la operación"
+      const errorMessage = err instanceof Error ? err.message : tAuth('operationError')
       
       // Traducir mensajes de error comunes de Supabase
       let friendlyError = errorMessage
       
       if (errorMessage.includes("Invalid login credentials")) {
-        friendlyError = "Correo o contraseña incorrectos"
+        friendlyError = tAuth('invalidCredentials')
       } else if (errorMessage.includes("Email not confirmed")) {
-        friendlyError = "Debes confirmar tu email antes de iniciar sesión"
+        friendlyError = tAuth('emailNotConfirmed')
       } else if (errorMessage.includes("User already registered")) {
-        friendlyError = "Este email ya está registrado"
+        friendlyError = tAuth('emailAlreadyExists')
       } else if (errorMessage.includes("Unable to validate email address")) {
-        friendlyError = "El formato del email es inválido"
+        friendlyError = tErrors('invalidEmail')
       } else if (errorMessage.includes("Network request failed")) {
-        friendlyError = "Error de conexión. Verifica tu internet e intenta nuevamente"
+        friendlyError = tErrors('networkError')
       } else if (errorMessage.includes("Failed to fetch")) {
-        friendlyError = "Error al conectar con el servidor. Intenta nuevamente"
+        friendlyError = tErrors('connectionError')
       }
       
       setError(friendlyError)
@@ -123,7 +124,7 @@ export function LoginForm() {
       const data = await response.json()
 
       if (!response.ok) {
-        throw new Error(data.error?.message || "Error al iniciar sesión con Google")
+        throw new Error(data.error?.message || tErrors('googleAuthError'))
       }
 
       // Redirigir a la URL de autorización de Google
@@ -141,51 +142,51 @@ export function LoginForm() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold">
-            {mode === "login" ? tCommon('signIn') : tCommon('createAccount')}
+            {mode === "login" ? tAuth('loginTitle') : tAuth('registerTitle')}
           </CardTitle>
           <CardDescription>
             {mode === "login"
-              ? "Ingresa tus credenciales para acceder"
-              : tCommon('createAccountHelp')}
+              ? tAuth('loginDescription')
+              : tAuth('registerDescription')}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
               <div className="space-y-2">
-                <Label htmlFor="name">Nombre completo</Label>
+                <Label htmlFor="name">{tAuth('firstName')}</Label>
                 <Input
                   id="name"
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  placeholder="Juan Pérez"
+                  placeholder={tAuth('firstNamePlaceholder')}
                   required
                 />
               </div>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{tAuth('email')}</Label>
               <Input
                 id="email"
                 type="email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                placeholder="tu@email.com"
+                placeholder={tAuth('emailPlaceholder')}
                 required
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password">{tAuth('password')}</Label>
               <div className="relative">
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
+                  placeholder={tAuth('passwordPlaceholder')}
                   required
                   minLength={6}
                   className="pr-10"
@@ -202,21 +203,21 @@ export function LoginForm() {
                   ) : (
                     <Eye className="h-4 w-4 text-muted-foreground" />
                   )}
-                  <span className="sr-only">{showPassword ? "Ocultar contraseña" : "Mostrar contraseña"}</span>
+                  <span className="sr-only">{showPassword ? tAuth('hidePassword') : tAuth('showPassword')}</span>
                 </Button>
               </div>
             </div>
 
             {mode === "register" && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmar contraseña</Label>
+                <Label htmlFor="confirmPassword">{tAuth('confirmPassword')}</Label>
                 <div className="relative">
                   <Input
                     id="confirmPassword"
                     type={showConfirmPassword ? "text" : "password"}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    placeholder="••••••••"
+                    placeholder={tAuth('passwordPlaceholder')}
                     required
                     minLength={6}
                     className="pr-10"
@@ -234,7 +235,7 @@ export function LoginForm() {
                       <Eye className="h-4 w-4 text-muted-foreground" />
                     )}
                     <span className="sr-only">
-                      {showConfirmPassword ? "Ocultar contraseña" : "Mostrar contraseña"}
+                      {showConfirmPassword ? tAuth('hidePassword') : tAuth('showPassword')}
                     </span>
                   </Button>
                 </div>
@@ -249,7 +250,7 @@ export function LoginForm() {
 
             <Button type="submit" className="w-full" disabled={isLoading}>
               {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {mode === "login" ? tCommon('signIn') : tCommon('createAccount')}
+              {mode === "login" ? tAuth('loginButton') : tAuth('registerButton')}
             </Button>
           </form>
 
@@ -280,7 +281,7 @@ export function LoginForm() {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                 />
               </svg>
-              Continuar con Google
+              {tErrors('continueWithGoogle')}
             </Button>
           </div>
 
@@ -294,7 +295,7 @@ export function LoginForm() {
                 setError("")
               }}
             >
-              {mode === "login" ? "¿No tienes cuenta? Créala aquí" : "¿Ya tienes cuenta? Inicia sesión"}
+              {mode === "login" ? tAuth('dontHaveAccount') : tAuth('alreadyHaveAccount')}
             </Button>
           </div>
         </CardContent>

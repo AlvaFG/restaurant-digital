@@ -64,5 +64,9 @@
   "createOrderError": "Error al crear pedido desde formulario",
   "createOrderFailed": "❌ No se pudo crear el pedido",
   "createAccountError": "Error al crear cuenta",
-  "createPaymentFailed": "No se pudo crear el pago"
+  "createPaymentFailed": "No se pudo crear el pago",
+  "continueWithGoogle": "Continuar con Google",
+  "googleAuthError": "Error al iniciar sesión con Google",
+  "invalidEmail": "El formato del email es inválido",
+  "connectionError": "Error al conectar con el servidor"
 }
