@@ -41,13 +41,21 @@ export function createBrowserClient() {
   client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
       getAll() {
+        // Only access document.cookie in browser context
+        if (typeof document === 'undefined') {
+          return []
+        }
         // Get all cookies from document.cookie
-        return document.cookie.split('; ').map(cookie => {
+        return document.cookie.split('; ').filter(Boolean).map(cookie => {
           const [name, value] = cookie.split('=')
-          return { name, value: decodeURIComponent(value) }
+          return { name, value: decodeURIComponent(value || '') }
         })
       },
       setAll(cookies) {
+        // Only set cookies in browser context
+        if (typeof document === 'undefined') {
+          return
+        }
         // Set all cookies to document.cookie
         cookies.forEach(({ name, value, options }) => {
           const cookieValue = encodeURIComponent(value)
