@@ -29,11 +29,6 @@ const nextConfig = {
   // Compression
   compress: true,
 
-  // PWA & Service Worker support
-  experimental: {
-    optimizePackageImports: ['lucide-react', '@radix-ui/react-icons'],
-  },
-
   // Webpack customization
   webpack: (config, { isServer }) => {
     // Exclude Konva from server-side bundle (it requires canvas which is client-only)
