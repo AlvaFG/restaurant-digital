@@ -4,6 +4,9 @@ import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
+// Force dynamic rendering for this page since it uses searchParams
+export const dynamic = 'force-dynamic';
+
 function QRValidateContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
