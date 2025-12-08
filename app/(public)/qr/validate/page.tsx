@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export default function QRValidatePage() {
+function QRValidateContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const [status, setStatus] = useState<'validating' | 'success' | 'error'>('validating');
@@ -115,5 +115,17 @@ export default function QRValidatePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function QRValidatePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <Loader2 className="h-16 w-16 animate-spin text-primary" />
+      </div>
+    }>
+      <QRValidateContent />
+    </Suspense>
   );
 }
