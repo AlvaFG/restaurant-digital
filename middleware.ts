@@ -17,21 +17,26 @@ export async function middleware(request: NextRequest) {
 
   console.log('🔒 [Middleware] Ejecutado para:', pathname)
   
-  // Permitir acceso a páginas públicas y assets
-  const publicPaths = ["/", "/es", "/en", "/login", "/es/login", "/en/login", "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/callback", "/test-error"]
-  const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
-  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon")
+  // Skip middleware for static assets and API routes
+  const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon") || pathname.includes(".")
   const isApiRoute = pathname.startsWith("/api")
   
-  // Permitir todos los assets estáticos y rutas de API sin validación
   if (isStaticAsset) {
     return NextResponse.next()
   }
   
-  // Permitir rutas públicas sin validación
+  // Handle i18n routing first (this will add locale prefix if missing)
+  const intlResponse = intlMiddleware(request);
+  
+  // Check if the path is public (landing page or login)
+  const pathnameWithoutLocale = pathname.replace(/^\/(es|en)/, '') || '/'
+  const publicPaths = ["/", "/login"]
+  const isPublicPath = publicPaths.includes(pathnameWithoutLocale) || isApiRoute
+  
+  // Allow public paths without auth validation
   if (isPublicPath) {
-    console.log('✅ [Middleware] Ruta pública, permitiendo acceso sin validación')
-    return NextResponse.next()
+    console.log('✅ [Middleware] Ruta pública:', pathnameWithoutLocale)
+    return intlResponse
   }
 
   // Verificar que las variables de entorno estén configuradas
