@@ -48,7 +48,6 @@ export async function middleware(request: NextRequest) {
   }
 
   // 5. All other routes require auth
-  // 5. All other routes require auth
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
