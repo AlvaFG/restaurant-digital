@@ -9,6 +9,7 @@
     "badge": "Sistema de gestión todo en uno",
     "title": "Gestión inteligente para tu restaurante",
     "subtitle": "Administra mesas, pedidos, menú y personal en tiempo real desde cualquier dispositivo. Optimiza tu operación y mejora la experiencia de tus clientes.",
+    "cta": "Empezar ahora",
     "ctaPrimary": "Empezar ahora",
     "ctaSecondary": "Saber más"
   },
@@ -23,6 +24,10 @@
       "title": "Mapa de Mesas",
       "description": "Visualiza el estado de todas las mesas en tiempo real. Organiza zonas y optimiza la distribución del salón."
     },
+    "alerts": {
+      "title": "Notificaciones en Tiempo Real",
+      "description": "Alertas instantáneas para el personal. Mantén al equipo informado sobre nuevos pedidos y cambios de estado."
+    },
     "notifications": {
       "title": "Notificaciones Instantáneas",
       "description": "La cocina recibe los pedidos al instante. Notificaciones push para mantener al equipo sincronizado."
@@ -35,6 +40,10 @@
       "title": "Modo Offline",
       "description": "Funciona incluso sin conexión a Internet. Los datos se sincronizan automáticamente cuando vuelves a estar en línea."
     },
+    "menu": {
+      "title": "Gestión de Menú",
+      "description": "Administra tu carta digital de forma simple. Actualiza precios, platos y disponibilidad en tiempo real."
+    },
     "staff": {
       "title": "Gestión de Personal",
       "description": "Roles y permisos personalizados. Control total sobre quién puede hacer qué en el sistema."
@@ -42,6 +51,20 @@
   },
   "benefits": {
     "title": "¿Por qué elegir Restaurante Digital?",
+    "subtitle": "Un sistema diseñado para optimizar cada aspecto de tu operación diaria",
+    "efficiency": {
+      "title": "Máxima eficiencia operativa",
+      "description": "Automatiza procesos, reduce errores y optimiza el flujo de trabajo entre salón y cocina."
+    },
+    "time": {
+      "title": "Ahorra tiempo valioso",
+      "description": "Elimina tareas repetitivas y permite que tu equipo se enfoque en brindar un mejor servicio."
+    },
+    "experience": {
+      "title": "Mejora la experiencia del cliente",
+      "description": "Menos esperas, más autonomía y un servicio más ágil que tus clientes van a valorar."
+    },
+    "imageAlt": "Ilustración del sistema de gestión de restaurante",
     "items": {
       "saveTime": {
         "title": "Ahorra tiempo y reduce errores",
@@ -72,6 +95,7 @@
     "button": "Comenzar ahora"
   },
   "footer": {
+    "copyright": "© 2025 Restaurante Digital",
     "rights": "Todos los derechos reservados"
   }
 }

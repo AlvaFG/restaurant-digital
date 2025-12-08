@@ -35,8 +35,13 @@ export async function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // 3. Apply i18n to everything else
+  // 3. Apply i18n middleware first (handles locale redirection)
   const intlResponse = intlMiddleware(request)
+  
+  // If intl middleware returns a redirect (e.g., / -> /es), honor it immediately
+  if (intlResponse.status === 307 || intlResponse.status === 308) {
+    return intlResponse
+  }
   
   // Extract pathname without locale prefix so we can evaluate public routes
   const localePrefixRegex = new RegExp(`^/(${locales.join('|')})(?=/|$)`)

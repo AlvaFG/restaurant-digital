@@ -1,8 +1,8 @@
 "use client"
 
 import Link from "next/link"
-import { useTranslations } from "next-intl"
-import { useI18n } from "@/contexts/i18n-context"
+import { useRouter } from "next/navigation"
+import { useLocale, useTranslations } from "next-intl"
 import { 
   QrCode, 
   LayoutGrid, 
@@ -21,7 +21,13 @@ import { Button } from "@/components/ui/button"
 
 export default function HomePage() {
   const t = useTranslations('landing')
-  const { locale, setLocale } = useI18n()
+  const locale = useLocale()
+  const router = useRouter()
+
+  const toggleLocale = () => {
+    const newLocale = locale === 'es' ? 'en' : 'es'
+    router.push(`/${newLocale}`)
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -52,14 +58,14 @@ export default function HomePage() {
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setLocale(locale === 'es' ? 'en' : 'es')}
+              onClick={toggleLocale}
               className="h-9 w-9"
               aria-label="Toggle language"
             >
               <Globe className="h-4 w-4" />
             </Button>
 
-            <Link href="/login" prefetch={true}>
+            <Link href={`/${locale}/login`} prefetch={true}>
               <Button className="touch-manipulation">
                 {t('nav.login')}
               </Button>
@@ -82,7 +88,7 @@ export default function HomePage() {
             {t('hero.subtitle')}
           </p>
           <div className="flex flex-col items-center justify-center gap-4 sm:flex-row">
-            <Link href="/login" prefetch={true}>
+            <Link href={`/${locale}/login`} prefetch={true}>
               <Button size="lg" className="gap-2 touch-manipulation">
                 {t('hero.cta')}
                 <ArrowRight className="h-4 w-4" />

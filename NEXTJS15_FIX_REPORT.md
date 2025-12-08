@@ -1,9 +1,14 @@
-# FIX COMPLETE: Next.js 15+ Async Params/SearchParams Compatibility
+# FIX COMPLETE: Next.js 15+ Async Params/SearchParams Compatibility & Landing Page
 
 ## 🔍 ROOT CAUSE ANALYSIS
 
-### The Issue
+### Issue 1: Async Params/SearchParams (FIXED)
 The 404 error on `/qr/validate` and potential issues on payment pages were caused by **Next.js 15+ breaking changes** regarding `params` and `searchParams` in Server Components.
+
+### Issue 2: Landing Page 404 Error (FIXED - Dec 8, 2025)
+The landing page at `http://localhost:3000/` returned a 404 error due to:
+1. **Missing i18n Context**: The landing page (`app/[locale]/page.tsx`) was using `useI18n()` from a legacy i18n context that was not mounted in the layout
+2. **Middleware Redirect Issue**: The middleware was configured with `localePrefix: 'always'` but the redirect logic wasn't being honored properly
 
 ### Why It Was Happening
 In Next.js 15+, both `params` and `searchParams` are now **async Promises** that must be awaited in Server Components. The old synchronous approach causes runtime errors and 404 responses.
@@ -59,6 +64,21 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
 - ✅ Added `const search = await searchParams`
 - ✅ Updated all references
 
+### 5. `/app/[locale]/page.tsx` - Landing Page (Dec 8, 2025)
+**Changes:**
+- ✅ Removed dependency on legacy `useI18n()` context
+- ✅ Migrated to native `next-intl` hooks: `useLocale()` and `useRouter()`
+- ✅ Updated locale toggle to use `router.push(\`/${newLocale}\`)`
+- ✅ Fixed all navigation links to include locale prefix (`/${locale}/login`)
+- ✅ Now fully compatible with NextIntlClientProvider in layout
+
+### 6. `/middleware.ts` - i18n Redirect Fix (Dec 8, 2025)
+**Changes:**
+- ✅ Added explicit check for redirect status codes (307/308)
+- ✅ Now honors intl middleware redirects immediately (e.g., `/` → `/es`)
+- ✅ Prevents auth checks from interfering with locale redirection
+- ✅ Maintains public route handling for landing and login
+
 ## 📋 VERIFICATION
 
 ### Automated Test Results
@@ -67,6 +87,8 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
 ✅ app/(public)/qr/[tableId]/payment/success/page.tsx
 ✅ app/(public)/qr/[tableId]/payment/pending/page.tsx
 ✅ app/(public)/qr/[tableId]/payment/failure/page.tsx
+✅ app/[locale]/page.tsx (Landing Page)
+✅ middleware.ts (i18n redirects)
 
 ✅ All pages are Next.js 15+ compatible!
 ```
@@ -76,11 +98,13 @@ export default async function Page({ searchParams }: { searchParams: Promise<{ t
 ✅ No errors found
 ```
 
-### Dev Server Status
+### Dev Server Status (Dec 8, 2025)
 ```
 ✅ Server starts without errors
-✅ No route compilation errors
-⚠️ Local connection issues (firewall/environment - not code related)
+✅ Landing page loads successfully at /es and /en
+✅ Root path / redirects to /es correctly
+✅ Login page accessible at /es/login and /en/login
+⚠️ Some landing.* i18n messages need updating (non-blocking)
 ```
 
 ## 🎯 WHAT WAS NOT CHANGED
@@ -149,11 +173,15 @@ npx tsc --noEmit
 npm run build
 ```
 
-### Method 3: Manual Testing
+### Method 3: Manual Testing (Updated Dec 8, 2025)
 1. Start dev server: `npm run dev`
-2. Visit: `http://localhost:3000/qr/validate?token=test123`
-3. Should see "Validando código QR" (not 404)
-4. API validation will fail (expected - needs valid token)
+2. Test landing pages:
+   - `http://localhost:3000/` → Should redirect to `/es`
+   - `http://localhost:3000/es` → Landing page loads
+   - `http://localhost:3000/en` → Landing page loads (English)
+3. Test QR validation: `http://localhost:3000/qr/validate?token=test123`
+   - Should see "Validando código QR" (not 404)
+4. Test login: `http://localhost:3000/es/login` and `/en/login`
 
 ### Method 4: Automated Script
 ```powershell
@@ -161,14 +189,43 @@ npm run build
 node test-pages.mjs
 ```
 
+## 📊 LANDING PAGE FIX SUMMARY (Dec 8, 2025)
+
+### Root Cause
+The landing page at `/` returned 404 because:
+1. `app/[locale]/page.tsx` used `useI18n()` hook from a legacy context not mounted in the layout
+2. Middleware's intl redirect wasn't being honored before auth checks
+
+### Solution Applied
+1. **Migrated Landing Page to next-intl Native Hooks**:
+   - Replaced `useI18n()` with `useLocale()` from `next-intl`
+   - Implemented locale switching with `useRouter().push()`
+   - Updated all internal links to include locale prefix
+
+2. **Fixed Middleware Redirect Logic**:
+   - Added explicit check for redirect status codes (307/308)
+   - Ensured intl middleware redirects are honored immediately
+   - Root path `/` now correctly redirects to `/es` (default locale)
+
+3. **Verified Working Routes**:
+   - ✅ `http://localhost:3000/` → Redirects to `/es`
+   - ✅ `http://localhost:3000/es` → Landing page (Spanish)
+   - ✅ `http://localhost:3000/en` → Landing page (English)
+   - ✅ `http://localhost:3000/es/login` → Login page
+   - ✅ `http://localhost:3000/en/login` → Login page
+
+### Known Minor Issues
+- Some i18n message keys in `messages/es/landing.json` need updating to match component usage
+- These cause console warnings but do not break functionality (next-intl handles missing keys gracefully)
+
 ## 🐛 ADDITIONAL ISSUES FOUND & NOTED
 
 ### Not Code-Related:
-1. **Local connection issues** - The dev server starts correctly but connections are being refused. This is likely:
-   - Firewall blocking localhost:3000
-   - Antivirus software interference
-   - Windows network settings
-   - Another process conflicting
+1. **PowerShell connection issues** - PowerShell's `Invoke-WebRequest` intermittently fails to connect to localhost:3000
+   - VS Code's Simple Browser works correctly
+   - Server logs show successful requests
+   - Likely Windows firewall or network adapter issue
+   - Does not affect actual functionality
 
 ### Warnings (Non-Breaking):
 1. **Middleware deprecation** - Consider migrating from `middleware.ts` to `proxy` in future

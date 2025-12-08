@@ -9,6 +9,7 @@
     "badge": "All-in-one management system",
     "title": "Smart management for your restaurant",
     "subtitle": "Manage tables, orders, menu and staff in real time from any device. Optimize your operation and improve your customers' experience.",
+    "cta": "Get started",
     "ctaPrimary": "Get started",
     "ctaSecondary": "Learn more"
   },
@@ -23,6 +24,10 @@
       "title": "Table Map",
       "description": "Visualize all table statuses in real time. Organize zones and optimize floor distribution."
     },
+    "alerts": {
+      "title": "Real-time Alerts",
+      "description": "Instant alerts for staff. Keep the team informed about new orders and status changes."
+    },
     "notifications": {
       "title": "Instant Notifications",
       "description": "Kitchen receives orders instantly. Push notifications to keep the team synchronized."
@@ -35,6 +40,10 @@
       "title": "Offline Mode",
       "description": "Works even without internet connection. Data syncs automatically when you're back online."
     },
+    "menu": {
+      "title": "Menu Management",
+      "description": "Manage your digital menu easily. Update prices, dishes and availability in real time."
+    },
     "staff": {
       "title": "Staff Management",
       "description": "Custom roles and permissions. Full control over who can do what in the system."
@@ -42,6 +51,20 @@
   },
   "benefits": {
     "title": "Why choose Digital Restaurant?",
+    "subtitle": "A system designed to optimize every aspect of your daily operations",
+    "efficiency": {
+      "title": "Maximum operational efficiency",
+      "description": "Automate processes, reduce errors and optimize workflow between floor and kitchen."
+    },
+    "time": {
+      "title": "Save valuable time",
+      "description": "Eliminate repetitive tasks and let your team focus on providing better service."
+    },
+    "experience": {
+      "title": "Improve customer experience",
+      "description": "Less waiting, more autonomy and faster service that your customers will value."
+    },
+    "imageAlt": "Restaurant management system illustration",
     "items": {
       "saveTime": {
         "title": "Save time and reduce errors",
@@ -72,6 +95,7 @@
     "button": "Get started now"
   },
   "footer": {
+    "copyright": "© 2025 Digital Restaurant",
     "rights": "All rights reserved"
   }
 }
