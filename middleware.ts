@@ -17,16 +17,8 @@ export async function middleware(request: NextRequest) {
 
   console.log('🔒 [Middleware] Ejecutado para:', pathname)
   
-  // First, handle i18n (this will detect and potentially redirect to locale)
-  const intlResponse = intlMiddleware(request);
-  
-  // If intl middleware wants to redirect, let it
-  if (intlResponse && intlResponse.status === 307) {
-    return intlResponse;
-  }
-
   // Permitir acceso a páginas públicas y assets
-  const publicPaths = ["/", "/login", "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/callback", "/test-error"]
+  const publicPaths = ["/", "/es", "/en", "/login", "/es/login", "/en/login", "/api/auth/login", "/api/auth/register", "/api/auth/google", "/api/auth/callback", "/test-error"]
   const isPublicPath = publicPaths.some(path => pathname.startsWith(path))
   const isStaticAsset = pathname.startsWith("/_next") || pathname.startsWith("/favicon")
   const isApiRoute = pathname.startsWith("/api")
