@@ -8,16 +8,18 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 interface PageProps {
-  params: { tableId: string }
-  searchParams: {
+  params: Promise<{ tableId: string }>
+  searchParams: Promise<{
     payment_id?: string
     external_reference?: string
     order_id?: string
-  }
+  }>
 }
 
-export default function PaymentPendingPage({ params, searchParams }: PageProps) {
-  const orderId = searchParams.external_reference || searchParams.order_id
+export default async function PaymentPendingPage({ params, searchParams }: PageProps) {
+  const { tableId } = await params;
+  const search = await searchParams;
+  const orderId = search.external_reference || search.order_id
   const displayOrderId = orderId?.slice(0, 8).toUpperCase()
 
   return (
@@ -82,7 +84,7 @@ export default function PaymentPendingPage({ params, searchParams }: PageProps) 
         {/* Actions */}
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-600">
           <Button asChild className="w-full" size="lg">
-            <Link href={`/qr/${params.tableId}`}>
+            <Link href={`/qr/${tableId}`}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Volver al menú
             </Link>

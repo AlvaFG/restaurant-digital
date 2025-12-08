@@ -8,19 +8,21 @@ import { Button } from '@/components/ui/button'
 import Link from 'next/link'
 
 interface PageProps {
-  params: { tableId: string }
-  searchParams: {
+  params: Promise<{ tableId: string }>
+  searchParams: Promise<{
     payment_id?: string
     external_reference?: string
     order_id?: string
     collection_id?: string
     collection_status?: string
     preference_id?: string
-  }
+  }>
 }
 
-export default function PaymentSuccessPage({ params, searchParams }: PageProps) {
-  const orderId = searchParams.external_reference || searchParams.order_id
+export default async function PaymentSuccessPage({ params, searchParams }: PageProps) {
+  const { tableId } = await params;
+  const search = await searchParams;
+  const orderId = search.external_reference || search.order_id
   const displayOrderId = orderId?.slice(0, 8).toUpperCase()
 
   return (
@@ -62,17 +64,17 @@ export default function PaymentSuccessPage({ params, searchParams }: PageProps) 
         )}
 
         {/* Payment Details (if available) */}
-        {searchParams.payment_id && (
+        {search.payment_id && (
           <div className="bg-muted/30 p-4 rounded-lg space-y-2 text-sm animate-in fade-in slide-in-from-bottom-4 duration-500 delay-400">
             <div className="flex justify-between">
               <span className="text-muted-foreground">ID de pago:</span>
-              <span className="font-mono">{searchParams.payment_id}</span>
+              <span className="font-mono">{search.payment_id}</span>
             </div>
-            {searchParams.collection_status && (
+            {search.collection_status && (
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Estado:</span>
                 <span className="font-medium text-green-600 capitalize">
-                  {searchParams.collection_status}
+                  {search.collection_status}
                 </span>
               </div>
             )}
@@ -82,7 +84,7 @@ export default function PaymentSuccessPage({ params, searchParams }: PageProps) 
         {/* Actions */}
         <div className="space-y-3 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-500">
           <Button asChild className="w-full" size="lg">
-            <Link href={`/qr/${params.tableId}`}>
+            <Link href={`/qr/${tableId}`}>
               <ArrowLeft className="mr-2 h-4 w-4" />
               Volver al menú
             </Link>

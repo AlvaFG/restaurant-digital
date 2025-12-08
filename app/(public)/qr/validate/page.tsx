@@ -4,11 +4,12 @@ import QRValidateContent from './validate-content';
 export const dynamic = 'force-dynamic';
 
 interface PageProps {
-  searchParams: {
+  searchParams: Promise<{
     token?: string;
-  };
+  }>;
 }
 
-export default function QRValidatePage({ searchParams }: PageProps) {
-  return <QRValidateContent token={searchParams.token} />;
+export default async function QRValidatePage({ searchParams }: PageProps) {
+  const params = await searchParams;
+  return <QRValidateContent token={params.token} />;
 }
