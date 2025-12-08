@@ -30,12 +30,13 @@ export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }
 
-export async function generateMetadata({ params }: { params: { locale: string } }) {
+export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
   return {
-    title: params.locale === 'en' 
+    title: locale === 'en' 
       ? "Restaurant Demo - Management System" 
       : "Restaurante Demo - Sistema de Gestión",
-    description: params.locale === 'en'
+    description: locale === 'en'
       ? "Restaurant management system with staff and admin roles"
       : "Sistema de gestión para restaurantes con roles de staff y administrador",
     generator: "v0.app",
@@ -114,10 +115,11 @@ export default async function LocaleLayout({
   params
 }: Readonly<{
   children: React.ReactNode
-  params: { locale: string }
+  params: Promise<{ locale: string }>
 }>) {
   // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(params.locale as any)) {
+  const { locale } = await params;
+  if (!locales.includes(locale as any)) {
     notFound();
   }
 
@@ -125,7 +127,7 @@ export default async function LocaleLayout({
   const messages = await getMessages();
 
   return (
-    <html lang={params.locale} suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <body className={`font-sans ${inter.variable} ${jetbrainsMono.variable}`}>
         <NextIntlClientProvider messages={messages}>
           <ErrorBoundary>
