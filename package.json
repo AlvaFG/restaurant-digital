@@ -95,6 +95,8 @@
     "zod": "3.25.67"
   },
   "devDependencies": {
+    "@eslint/config-array": "^0.23.0",
+    "@eslint/object-schema": "^3.0.0",
     "@playwright/test": "^1.56.0",
     "@tailwindcss/postcss": "^4.1.9",
     "@testing-library/jest-dom": "^6.9.1",
@@ -108,7 +110,7 @@
     "@types/react-dom": "^18",
     "@vitest/coverage-v8": "^3.2.4",
     "dotenv": "^17.2.3",
-    "eslint": "^8.57.0",
+    "eslint": "^9.39.1",
     "eslint-config-next": "^15.5.3",
     "jsdom": "^27.0.0",
     "postcss": "^8.5",
