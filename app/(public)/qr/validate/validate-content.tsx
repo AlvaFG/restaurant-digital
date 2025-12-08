@@ -1,18 +1,19 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Loader2, AlertCircle, CheckCircle2 } from 'lucide-react';
 
-export default function QRValidateContent() {
-  const searchParams = useSearchParams();
+interface QRValidateContentProps {
+  token?: string;
+}
+
+export default function QRValidateContent({ token }: QRValidateContentProps) {
   const router = useRouter();
   const [status, setStatus] = useState<'validating' | 'success' | 'error'>('validating');
   const [error, setError] = useState<string>('');
 
   useEffect(() => {
-    const token = searchParams.get('token');
-
     if (!token) {
       setStatus('error');
       setError('No se proporcionó un código QR válido');
@@ -62,7 +63,7 @@ export default function QRValidateContent() {
     }
 
     validateToken(token);
-  }, [searchParams, router]);
+  }, [token, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
