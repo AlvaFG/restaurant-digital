@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import type { ReactNode } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter, useParams } from "next/navigation"
 import { useTranslations } from "next-intl"
 
 import { useMenuCatalog } from "@/app/[locale]/menu/_hooks/use-menu-catalog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"
-import type { MenuAllergen, MenuItem } from "@/lib/mock-data"
+import { MenuAllergen, MenuItem } from "@/lib/mock-data"
 import { cn } from "@/lib/utils"
 import { AlertCircle, Frown, Loader2, RefreshCw, WifiOff } from "lucide-react"
 
@@ -23,14 +23,9 @@ import { useQrSession } from "../_hooks/use-qr-session"
 import { useQrTable } from "../_hooks/use-qr-table"
 import type { CartItemModifier } from "../_types/modifiers"
 
-interface PageParams {
-  params: {
-    tableId: string
-  }
-}
-
-export default function QrTablePage({ params }: PageParams) {
-  const tableId = params.tableId
+export default function QrTablePage() {
+  const params = useParams()
+  const tableId = params.tableId as string
   const router = useRouter()
   const { toast } = useToast()
   const t = useTranslations('customer')
