@@ -1,0 +1,77 @@
+{
+  "brandName": "Restaurante Digital",
+  "nav": {
+    "features": "Características",
+    "benefits": "Beneficios",
+    "login": "Iniciar Sesión"
+  },
+  "hero": {
+    "badge": "Sistema de gestión todo en uno",
+    "title": "Gestión inteligente para tu restaurante",
+    "subtitle": "Administra mesas, pedidos, menú y personal en tiempo real desde cualquier dispositivo. Optimiza tu operación y mejora la experiencia de tus clientes.",
+    "ctaPrimary": "Empezar ahora",
+    "ctaSecondary": "Saber más"
+  },
+  "features": {
+    "title": "Todo lo que necesitas en un solo lugar",
+    "subtitle": "Un sistema completo diseñado específicamente para las necesidades de tu restaurante",
+    "qr": {
+      "title": "Gestión de QR",
+      "description": "Menús digitales y pedidos directos. Los clientes escanean el código QR de su mesa y ordenan sin esperas."
+    },
+    "tables": {
+      "title": "Mapa de Mesas",
+      "description": "Visualiza el estado de todas las mesas en tiempo real. Organiza zonas y optimiza la distribución del salón."
+    },
+    "notifications": {
+      "title": "Notificaciones Instantáneas",
+      "description": "La cocina recibe los pedidos al instante. Notificaciones push para mantener al equipo sincronizado."
+    },
+    "analytics": {
+      "title": "Analítica Avanzada",
+      "description": "Métricas de ventas, rendimiento y tendencias. Toma decisiones basadas en datos reales."
+    },
+    "offline": {
+      "title": "Modo Offline",
+      "description": "Funciona incluso sin conexión a Internet. Los datos se sincronizan automáticamente cuando vuelves a estar en línea."
+    },
+    "staff": {
+      "title": "Gestión de Personal",
+      "description": "Roles y permisos personalizados. Control total sobre quién puede hacer qué en el sistema."
+    }
+  },
+  "benefits": {
+    "title": "¿Por qué elegir Restaurante Digital?",
+    "items": {
+      "saveTime": {
+        "title": "Ahorra tiempo y reduce errores",
+        "description": "Automatiza la toma de pedidos y elimina los errores de comunicación entre salón y cocina."
+      },
+      "increaseSales": {
+        "title": "Incrementa tus ventas",
+        "description": "Los clientes pueden ordenar más rápido y explorar todo el menú desde su teléfono."
+      },
+      "improveExperience": {
+        "title": "Mejora la experiencia del cliente",
+        "description": "Menos esperas, más autonomía y un servicio más ágil que tus clientes van a valorar."
+      },
+      "realTimeControl": {
+        "title": "Control total en tiempo real",
+        "description": "Monitorea el estado de todas las mesas, pedidos y pagos desde cualquier dispositivo."
+      }
+    },
+    "stats": {
+      "waitTime": "Tiempo de espera",
+      "efficiency": "Eficiencia operativa",
+      "satisfaction": "Satisfacción del equipo"
+    }
+  },
+  "cta": {
+    "title": "¿Listo para transformar tu restaurante?",
+    "subtitle": "Únete a los restaurantes que ya están optimizando su operación con Restaurante Digital.",
+    "button": "Comenzar ahora"
+  },
+  "footer": {
+    "rights": "Todos los derechos reservados"
+  }
+}

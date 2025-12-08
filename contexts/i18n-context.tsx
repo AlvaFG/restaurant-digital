@@ -22,6 +22,8 @@ import validationsEn from "@/messages/en/validations.json"
 import validationsEs from "@/messages/es/validations.json"
 import analyticsEn from "@/messages/en/analytics.json"
 import analyticsEs from "@/messages/es/analytics.json"
+import landingEn from "@/messages/en/landing.json"
+import landingEs from "@/messages/es/landing.json"
 
 type Locale = "en" | "es"
 
@@ -41,6 +43,7 @@ const nextIntlMessages: Record<Locale, any> = {
     errors: errorsEn,
     validations: validationsEn,
     analytics: analyticsEn,
+    landing: landingEn,
   },
   es: {
     common: commonEs,
@@ -51,6 +54,7 @@ const nextIntlMessages: Record<Locale, any> = {
     errors: errorsEs,
     validations: validationsEs,
     analytics: analyticsEs,
+    landing: landingEs,
   },
 }
 

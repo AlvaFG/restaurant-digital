@@ -1,4 +1,5 @@
 {
+  "brandName": "Digital Restaurant",
   "common": {
     "welcome": "Welcome",
     "start_order": "Start order",
@@ -6,5 +7,81 @@
     "cart": "Cart",
     "language": "Language",
     "loading": "Loading..."
+  },
+  "landing": {
+    "nav": {
+      "features": "Features",
+      "benefits": "Benefits",
+      "login": "Log In"
+    },
+    "hero": {
+      "badge": "All-in-one management system",
+      "title": "Smart management for your restaurant",
+      "subtitle": "Manage tables, orders, menu and staff in real time from any device. Optimize your operation and improve your customers' experience.",
+      "ctaPrimary": "Get started",
+      "ctaSecondary": "Learn more"
+    },
+    "features": {
+      "title": "Everything you need in one place",
+      "subtitle": "A complete system designed specifically for your restaurant's needs",
+      "qr": {
+        "title": "QR Management",
+        "description": "Digital menus and direct ordering. Customers scan their table's QR code and order without waiting."
+      },
+      "tables": {
+        "title": "Table Map",
+        "description": "Visualize all table statuses in real time. Organize zones and optimize floor distribution."
+      },
+      "notifications": {
+        "title": "Instant Notifications",
+        "description": "Kitchen receives orders instantly. Push notifications to keep the team synchronized."
+      },
+      "analytics": {
+        "title": "Advanced Analytics",
+        "description": "Sales metrics, performance and trends. Make decisions based on real data."
+      },
+      "offline": {
+        "title": "Offline Mode",
+        "description": "Works even without internet connection. Data syncs automatically when you're back online."
+      },
+      "staff": {
+        "title": "Staff Management",
+        "description": "Custom roles and permissions. Full control over who can do what in the system."
+      }
+    },
+    "benefits": {
+      "title": "Why choose Restaurant Digital?",
+      "items": {
+        "saveTime": {
+          "title": "Save time and reduce errors",
+          "description": "Automate order taking and eliminate communication errors between floor and kitchen."
+        },
+        "increaseSales": {
+          "title": "Increase your sales",
+          "description": "Customers can order faster and explore the entire menu from their phone."
+        },
+        "improveExperience": {
+          "title": "Improve customer experience",
+          "description": "Less waiting, more autonomy and faster service that your customers will value."
+        },
+        "realTimeControl": {
+          "title": "Total real-time control",
+          "description": "Monitor the status of all tables, orders and payments from any device."
+        }
+      },
+      "stats": {
+        "waitTime": "Wait time",
+        "efficiency": "Operational efficiency",
+        "satisfaction": "Team satisfaction"
+      }
+    },
+    "cta": {
+      "title": "Ready to transform your restaurant?",
+      "subtitle": "Join the restaurants already optimizing their operations with Restaurant Digital.",
+      "button": "Get started now"
+    },
+    "footer": {
+      "rights": "All rights reserved"
+    }
   }
 }

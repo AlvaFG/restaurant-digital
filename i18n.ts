@@ -19,6 +19,7 @@ export default getRequestConfig(async ({ locale }) => {
       errors: (await import(`./messages/${locale}/errors.json`)).default,
       validations: (await import(`./messages/${locale}/validations.json`)).default,
       analytics: (await import(`./messages/${locale}/analytics.json`)).default,
+      landing: (await import(`./messages/${locale}/landing.json`)).default,
     },
     timeZone: 'America/Argentina/Buenos_Aires',
     now: new Date(),

@@ -11,8 +11,9 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { useAuth } from "@/contexts/auth-context"
-import { Loader2, Eye, EyeOff } from "lucide-react"
+import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
+import Link from "next/link"
 
 type AuthMode = "login" | "register"
 
@@ -139,17 +140,28 @@ export function LoginForm() {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <CardTitle className="text-2xl font-bold">
-            {mode === "login" ? tAuth('loginTitle') : tAuth('registerTitle')}
-          </CardTitle>
-          <CardDescription>
-            {mode === "login"
-              ? tAuth('loginDescription')
-              : tAuth('registerDescription')}
-          </CardDescription>
-        </CardHeader>
+      <div className="w-full max-w-md">
+        {/* Botón de volver a la landing page */}
+        <div className="mb-4">
+          <Link href="/">
+            <Button variant="ghost" size="sm" className="gap-2">
+              <ArrowLeft className="h-4 w-4" />
+              {tAuth('backToHome')}
+            </Button>
+          </Link>
+        </div>
+        
+        <Card className="w-full">
+          <CardHeader className="text-center">
+            <CardTitle className="text-2xl font-bold">
+              {mode === "login" ? tAuth('loginTitle') : tAuth('registerTitle')}
+            </CardTitle>
+            <CardDescription>
+              {mode === "login"
+                ? tAuth('loginDescription')
+                : tAuth('registerDescription')}
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
@@ -300,6 +312,7 @@ export function LoginForm() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   )
 }
