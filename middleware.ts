@@ -8,7 +8,7 @@ import { locales } from './i18n';
 const intlMiddleware = createIntlMiddleware({
   locales,
   defaultLocale: 'es',
-  localePrefix: 'as-needed',
+  localePrefix: 'always',
   localeDetection: true,
 });
 
@@ -38,10 +38,15 @@ export async function middleware(request: NextRequest) {
   // 3. Apply i18n to everything else
   const intlResponse = intlMiddleware(request)
   
-  // Extract pathname without locale
-  const localeMatch = pathname.match(/^\/(es|en)/)
-  const pathnameWithoutLocale = localeMatch ? pathname.slice(3) : pathname
-  
+  // Extract pathname without locale prefix so we can evaluate public routes
+  const localePrefixRegex = new RegExp(`^/(${locales.join('|')})(?=/|$)`)
+  const localePrefixMatch = pathname.match(localePrefixRegex)
+  let pathnameWithoutLocale = pathname
+  if (localePrefixMatch) {
+    const trimmed = pathname.slice(localePrefixMatch[0].length)
+    pathnameWithoutLocale = trimmed.length > 0 ? trimmed : "/"
+  }
+
   // 4. Public routes with locale (landing + login)
   if (pathnameWithoutLocale === "/" || pathnameWithoutLocale === "/login") {
     return intlResponse

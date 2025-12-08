@@ -6,20 +6,21 @@ export const locales = ['en', 'es'] as const;
 export type Locale = (typeof locales)[number];
 
 export default getRequestConfig(async ({ locale }) => {
-  // Validate that the incoming `locale` parameter is valid
-  if (!locales.includes(locale as Locale)) notFound();
+  const resolvedLocale = (locale ?? 'es') as Locale;
+  if (!locales.includes(resolvedLocale)) notFound();
 
   return {
+    locale: resolvedLocale,
     messages: {
-      common: (await import(`./messages/${locale}/common.json`)).default,
-      customer: (await import(`./messages/${locale}/customer.json`)).default,
-      config: (await import(`./messages/${locale}/config.json`)).default,
-      dashboard: (await import(`./messages/${locale}/dashboard.json`)).default,
-      auth: (await import(`./messages/${locale}/auth.json`)).default,
-      errors: (await import(`./messages/${locale}/errors.json`)).default,
-      validations: (await import(`./messages/${locale}/validations.json`)).default,
-      analytics: (await import(`./messages/${locale}/analytics.json`)).default,
-      landing: (await import(`./messages/${locale}/landing.json`)).default,
+      common: (await import(`./messages/${resolvedLocale}/common.json`)).default,
+      customer: (await import(`./messages/${resolvedLocale}/customer.json`)).default,
+      config: (await import(`./messages/${resolvedLocale}/config.json`)).default,
+      dashboard: (await import(`./messages/${resolvedLocale}/dashboard.json`)).default,
+      auth: (await import(`./messages/${resolvedLocale}/auth.json`)).default,
+      errors: (await import(`./messages/${resolvedLocale}/errors.json`)).default,
+      validations: (await import(`./messages/${resolvedLocale}/validations.json`)).default,
+      analytics: (await import(`./messages/${resolvedLocale}/analytics.json`)).default,
+      landing: (await import(`./messages/${resolvedLocale}/landing.json`)).default,
     },
     timeZone: 'America/Argentina/Buenos_Aires',
     now: new Date(),
