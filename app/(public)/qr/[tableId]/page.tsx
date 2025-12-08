@@ -5,7 +5,7 @@ import type { ReactNode } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
 
-import { useMenuCatalog } from "@/app/menu/_hooks/use-menu-catalog"
+import { useMenuCatalog } from "@/app/[locale]/menu/_hooks/use-menu-catalog"
 import { Button } from "@/components/ui/button"
 import { Skeleton } from "@/components/ui/skeleton"
 import { useToast } from "@/hooks/use-toast"

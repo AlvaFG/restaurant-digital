@@ -13,10 +13,10 @@
 "use client"
 
 import { useState, useEffect, lazy, Suspense } from 'react'
-import { SalesMetricsCards } from '@/app/analitica/_components/sales-metrics-cards'
-import { DateRangePicker } from '@/app/analitica/_components/date-range-picker'
-import { FiltersSidebar } from '@/app/analitica/_components/filters-sidebar'
-import { ExportButton } from '@/app/analitica/_components/export-button'
+import { SalesMetricsCards } from '@/app/[locale]/analitica/_components/sales-metrics-cards'
+import { DateRangePicker } from '@/app/[locale]/analitica/_components/date-range-picker'
+import { FiltersSidebar } from '@/app/[locale]/analitica/_components/filters-sidebar'
+import { ExportButton } from '@/app/[locale]/analitica/_components/export-button'
 import type { DateRangePreset, DashboardAnalytics } from '@/lib/analytics-types'
 import type { AnalyticsFilters } from '@/lib/types/analytics-extended'
 import { Alert, AlertDescription } from '@/components/ui/alert'
@@ -27,13 +27,13 @@ import { Button } from '@/components/ui/button'
 import { logger } from '@/lib/logger'
 
 // Lazy load heavy chart components (Recharts adds ~100KB)
-const RevenueChart = lazy(() => import('@/app/analitica/_components/revenue-chart').then(m => ({ default: m.RevenueChart })))
-const CategoryChart = lazy(() => import('@/app/analitica/_components/category-chart').then(m => ({ default: m.CategoryChart })))
-const PopularItemsList = lazy(() => import('@/app/analitica/_components/popular-items-list').then(m => ({ default: m.PopularItemsList })))
-const QrUsageStats = lazy(() => import('@/app/analitica/_components/qr-usage-stats').then(m => ({ default: m.QrUsageStats })))
-const CoversMetrics = lazy(() => import('@/app/analitica/_components/covers-metrics').then(m => ({ default: m.CoversMetrics })))
-const TableRotationChart = lazy(() => import('@/app/analitica/_components/table-rotation-chart').then(m => ({ default: m.TableRotationChart })))
-const StaffPerformanceTable = lazy(() => import('@/app/analitica/_components/staff-performance-table').then(m => ({ default: m.StaffPerformanceTable })))
+const RevenueChart = lazy(() => import('@/app/[locale]/analitica/_components/revenue-chart').then(m => ({ default: m.RevenueChart })))
+const CategoryChart = lazy(() => import('@/app/[locale]/analitica/_components/category-chart').then(m => ({ default: m.CategoryChart })))
+const PopularItemsList = lazy(() => import('@/app/[locale]/analitica/_components/popular-items-list').then(m => ({ default: m.PopularItemsList })))
+const QrUsageStats = lazy(() => import('@/app/[locale]/analitica/_components/qr-usage-stats').then(m => ({ default: m.QrUsageStats })))
+const CoversMetrics = lazy(() => import('@/app/[locale]/analitica/_components/covers-metrics').then(m => ({ default: m.CoversMetrics })))
+const TableRotationChart = lazy(() => import('@/app/[locale]/analitica/_components/table-rotation-chart').then(m => ({ default: m.TableRotationChart })))
+const StaffPerformanceTable = lazy(() => import('@/app/[locale]/analitica/_components/staff-performance-table').then(m => ({ default: m.StaffPerformanceTable })))
 
 // Chart loading skeleton
 const ChartSkeleton = () => (

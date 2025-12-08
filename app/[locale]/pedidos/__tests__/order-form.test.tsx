@@ -19,7 +19,7 @@ vi.mock("@/lib/table-service", () => ({
   fetchTables: tableServiceMock.mockFetchTables,
 }))
 
-vi.mock("@/app/pedidos/_providers/orders-panel-provider", () => ({
+vi.mock("@/app/[locale]/pedidos/_providers/orders-panel-provider", () => ({
   useOrdersPanelContext: () => ({
     refetch: mockRefetch,
   }),

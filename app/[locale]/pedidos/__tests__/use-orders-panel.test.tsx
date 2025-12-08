@@ -73,7 +73,7 @@ vi.mock("@/hooks/use-socket", () => ({
 }))
 
 describe("useOrdersPanel", () => {
-  let useOrdersPanel: typeof import("@/app/pedidos/_hooks/use-orders-panel")['useOrdersPanel']
+  let useOrdersPanel: typeof import("@/app/[locale]/pedidos/_hooks/use-orders-panel")['useOrdersPanel']
 
   beforeEach(async () => {
     mockFetchOrders.mockReset()
@@ -126,7 +126,7 @@ describe("useOrdersPanel", () => {
     offMock.mockReset()
     Object.keys(socketHandlers).forEach((key) => delete socketHandlers[key])
 
-    const hookModule = await import("@/app/pedidos/_hooks/use-orders-panel")
+    const hookModule = await import("@/app/[locale]/pedidos/_hooks/use-orders-panel")
     useOrdersPanel = hookModule.useOrdersPanel
   })
 

@@ -4,7 +4,7 @@ import { useMemo, useState } from "react"
 import { useTranslations } from 'next-intl'
 import { Search, CreditCard } from "lucide-react"
 
-import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
+import { useOrdersPanelContext } from "@/app/[locale]/pedidos/_providers/orders-panel-provider"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { PaymentModal } from "@/components/payment-modal"
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"

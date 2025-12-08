@@ -2,7 +2,7 @@
 
 import { createContext, useContext, type PropsWithChildren } from "react"
 
-import { useOrdersPanel, type UseOrdersPanelResult } from "@/app/pedidos/_hooks/use-orders-panel"
+import { useOrdersPanel, type UseOrdersPanelResult } from "@/app/[locale]/pedidos/_hooks/use-orders-panel"
 
 const OrdersPanelContext = createContext<UseOrdersPanelResult | null>(null)
 

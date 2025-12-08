@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 
-import { useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
+import { useOrdersPanelContext } from "@/app/[locale]/pedidos/_providers/orders-panel-provider"
 import { useTables } from "@/hooks/use-tables"
 import { useMenuItems, useMenuCategories } from "@/hooks/use-menu"
 import { useOrders } from "@/hooks/use-orders"

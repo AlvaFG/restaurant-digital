@@ -3,7 +3,7 @@
 import dynamic from "next/dynamic"
 import { useTranslations } from "next-intl"
 import { RefreshCw } from "lucide-react"
-import { OrdersPanelProvider, useOrdersPanelContext } from "@/app/pedidos/_providers/orders-panel-provider"
+import { OrdersPanelProvider, useOrdersPanelContext } from "@/app/[locale]/pedidos/_providers/orders-panel-provider"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
