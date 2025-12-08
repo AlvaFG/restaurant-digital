@@ -16,6 +16,10 @@ import { notFound } from 'next/navigation';
 import { locales } from '@/i18n';
 import "../globals.css"
 
+// Force dynamic rendering to prevent build-time issues
+export const dynamic = 'force-dynamic';
+export const dynamicParams = true;
+
 const inter = Inter({
   subsets: ["latin", "latin-ext"],
   variable: "--font-sans",

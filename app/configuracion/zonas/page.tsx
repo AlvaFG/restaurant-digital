@@ -1,5 +1,8 @@
 "use client"
 
+// Force dynamic rendering
+export const dynamic = 'force-dynamic';
+
 import { useRef } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"

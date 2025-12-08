@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 
-// Root layout required by Next.js
-// This is a minimal layout that just wraps the locale-specific layouts
-// Force dynamic rendering for all routes to avoid prerendering issues
+// Minimal root layout - actual content is in [locale]/layout.tsx
+// Force all routes to be dynamic to prevent prerendering issues
 export const dynamic = 'force-dynamic';
 
 export default function RootLayout({
