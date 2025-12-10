@@ -75,8 +75,18 @@ export function UnifiedSalonView({
   onAddTable,
   onManageZones,
 }: UnifiedSalonViewProps) {
-  // Guard against SSR - React Query hooks MUST run on client only
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const [isClient, setIsClient] = useState(false)
+  const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
+  const [isEditMode, setIsEditMode] = useState(false)
+  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
+  const zonesRef = useRef<ZonesManagementRef>(null)
+  
+  const router = useRouter()
+  const tCommon = useTranslations('common')
+  const { user } = useAuth()
+  const { tables = [], loading: tablesLoading, error: tablesError } = useTables()
+  const { zones = [], loading: zonesLoading, error: zonesError } = useZones()
   
   useEffect(() => {
     setIsClient(true)
@@ -93,60 +103,6 @@ export function UnifiedSalonView({
       </div>
     )
   }
-  
-  // Safe hooks with fallbacks - only run on client
-  let router, tCommon, user, tables, tablesLoading, tablesError, zones, zonesLoading, zonesError
-  
-  try {
-    router = useRouter()
-  } catch (error) {
-    console.error('UnifiedSalonView: useRouter error', error)
-    router = { push: () => {} } as any
-  }
-  
-  try {
-    tCommon = useTranslations('common')
-  } catch (error) {
-    console.error('UnifiedSalonView: useTranslations error', error)
-    tCommon = (key: string) => key
-  }
-  
-  try {
-    const auth = useAuth()
-    user = auth.user
-  } catch (error) {
-    console.error('UnifiedSalonView: useAuth error', error)
-    user = null
-  }
-  
-  try {
-    const tablesData = useTables()
-    tables = tablesData.tables || []
-    tablesLoading = tablesData.loading || false
-    tablesError = tablesData.error
-  } catch (error) {
-    console.error('UnifiedSalonView: useTables error', error)
-    tables = []
-    tablesLoading = false
-    tablesError = error
-  }
-  
-  try {
-    const zonesData = useZones()
-    zones = zonesData.zones || []
-    zonesLoading = zonesData.loading || false
-    zonesError = zonesData.error
-  } catch (error) {
-    console.error('UnifiedSalonView: useZones error', error)
-    zones = []
-    zonesLoading = false
-    zonesError = error
-  }
-  
-  const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
-  const [isEditMode, setIsEditMode] = useState(false)
-  const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
-  const zonesRef = useRef<ZonesManagementRef>(null)
   
   const canEdit = user?.role === "admin" && allowEditing
   const isLoading = tablesLoading || zonesLoading
