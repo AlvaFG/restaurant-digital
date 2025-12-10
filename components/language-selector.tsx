@@ -4,7 +4,6 @@ import { useLocale, useTranslations } from 'next-intl';
 import { useRouter, usePathname } from 'next/navigation';
 import { Label } from "@/components/ui/label"
 import { useTransition } from 'react';
-import { useI18n } from '@/contexts/i18n-context';
 
 const LANGUAGE_OPTIONS = [
   { value: 'es', label: '🇪🇸 Español', flag: '🇪🇸' },
@@ -17,16 +16,15 @@ export function LanguageSelector() {
   const router = useRouter();
   const pathname = usePathname();
   const [isPending, startTransition] = useTransition();
-  const { setLocale } = useI18n();
 
   function onSelectChange(newLocale: string) {
     if (newLocale !== locale) {
       startTransition(() => {
-        // 1. Update context (saves to localStorage and cookie)
-        setLocale(newLocale as 'en' | 'es');
+        // Get current path without locale prefix
+        const pathWithoutLocale = pathname.replace(/^\/[a-z]{2}/, '') || '/';
         
-        // 2. Refresh to reload messages
-        router.refresh();
+        // Navigate to the same path with new locale
+        router.push(`/${newLocale}${pathWithoutLocale}`);
       });
     }
   }
