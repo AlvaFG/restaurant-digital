@@ -31,9 +31,15 @@ const nextConfig = {
 
   // Webpack customization
   webpack: (config, { isServer }) => {
-    // Exclude Konva from server-side bundle (it requires canvas which is client-only)
+    // Exclude Konva and react-konva from server-side bundle (they require canvas which is client-only)
     if (isServer) {
-      config.externals = [...(config.externals || []), 'canvas', 'konva'];
+      config.externals = [
+        ...(config.externals || []),
+        'canvas',
+        'konva',
+        'react-konva',
+        { 'react-konva': 'react-konva' }
+      ];
     }
 
     // Resolve canvas module for browser (Konva needs browser environment)
@@ -41,7 +47,11 @@ const nextConfig = {
       ...config.resolve,
       alias: {
         ...config.resolve?.alias,
-        canvas: false,
+        ...(isServer ? {
+          'react-konva': false,
+          'konva': false,
+          'canvas': false,
+        } : {}),
       },
       fallback: {
         ...config.resolve?.fallback,

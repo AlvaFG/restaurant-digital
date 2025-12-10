@@ -2,8 +2,8 @@
 
 import { memo, useEffect, useMemo, useState } from "react"
 import { Bell, ShoppingCart } from "lucide-react"
-import dynamic from "next/dynamic"
 
+import { TableMapClient } from "@/components/table-map-client"
 import { Badge } from "@/components/ui/badge"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { LoadingSpinner } from "@/components/loading-spinner"
@@ -16,24 +16,11 @@ import { deserializeAlert, deserializeOrderToMock, getReadyAlerts } from "@/lib/
 import { useSocket } from "@/hooks/use-socket"
 import type { SocketEventPayload } from "@/lib/socket"
 
-// Dynamically import TableMap to avoid SSR issues with Konva
-const TableMap = dynamic(
-  () => import("@/components/table-map").then(mod => mod.TableMap),
-  { 
-    ssr: false,
-    loading: () => (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    )
-  }
-)
-
 export function SalonLiveView() {
   return (
     <div className="grid gap-6 lg:grid-cols-4">
       <div className="space-y-4 lg:col-span-3">
-        <TableMap editable={false} />
+        <TableMapClient editable={false} />
       </div>
       <div className="space-y-4">
         <LiveAlertsPanel />
