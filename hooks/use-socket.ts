@@ -22,8 +22,13 @@ export function useSocket() {
       return
     }
 
-    activeSubscribers += 1
-    socketClient.connect()
+    try {
+      activeSubscribers += 1
+      socketClient.connect()
+    } catch (error) {
+      console.warn('Socket connection failed:', error)
+      return
+    }
 
     const unsubscribeState = socketClient.subscribeState((next) => {
       setState(next)

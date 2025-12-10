@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl"
 import dynamicImport from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
+import { ErrorBoundary } from "@/components/error-boundary"
 import type { Table } from "@/lib/mock-data"
 
 // Dynamically import Konva-dependent component (no SSR)
@@ -29,28 +30,30 @@ export default function SalonPage() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t('salonTitle')}</h1>
-          <p className="text-muted-foreground">
-            {t('salonDescription')}
-          </p>
+      <ErrorBoundary>
+        <div className="space-y-6">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">{t('salonTitle')}</h1>
+            <p className="text-muted-foreground">
+              {t('salonDescription')}
+            </p>
+          </div>
+
+          <UnifiedSalonView
+            defaultView="map"
+            allowEditing={true}
+            showManagement={true}
+            onTableClick={handleTableClick}
+            onAddTable={() => setShowAddDialog(true)}
+          />
+
+          <AddTableDialog
+            open={showAddDialog}
+            onOpenChange={setShowAddDialog}
+            onTableCreated={handleTableCreated}
+          />
         </div>
-
-        <UnifiedSalonView
-          defaultView="map"
-          allowEditing={true}
-          showManagement={true}
-          onTableClick={handleTableClick}
-          onAddTable={() => setShowAddDialog(true)}
-        />
-
-        <AddTableDialog
-          open={showAddDialog}
-          onOpenChange={setShowAddDialog}
-          onTableCreated={handleTableCreated}
-        />
-      </div>
+      </ErrorBoundary>
     </DashboardLayout>
   )
 }

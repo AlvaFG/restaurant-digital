@@ -456,5 +456,6 @@ export function ConfigurationPanel() {
   )
 }
 
+ConfigurationPanel.displayName = 'ConfigurationPanel'
 export default ConfigurationPanel
 

@@ -17,7 +17,14 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children, requiredRole }: DashboardLayoutProps) {
-  const { on, off } = useSocket()
+  // Try to initialize socket, but don't crash if it fails
+  let socketHook = { on: () => {}, off: () => {} }
+  try {
+    socketHook = useSocket()
+  } catch (error) {
+    console.warn('Socket initialization failed (non-critical):', error)
+  }
+  const { on, off } = socketHook
   const { toast } = useToast()
 
   useEffect(() => {

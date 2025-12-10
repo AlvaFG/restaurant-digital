@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Badge } from "@/components/ui/badge"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { 
   LayoutGrid, 
   List, 
@@ -20,7 +21,8 @@ import {
   Save,
   Undo2,
   Eye,
-  RefreshCw
+  RefreshCw,
+  AlertCircle
 } from "lucide-react"
 import { useTables } from "@/hooks/use-tables"
 import { useZones } from "@/hooks/use-zones"
@@ -63,8 +65,8 @@ export function UnifiedSalonView({
   const router = useRouter()
   const tCommon = useTranslations('common')
   const { user } = useAuth()
-  const { tables, loading: tablesLoading } = useTables()
-  const { zones, loading: zonesLoading } = useZones()
+  const { tables = [], loading: tablesLoading, error: tablesError } = useTables()
+  const { zones = [], loading: zonesLoading, error: zonesError } = useZones()
   
   const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
   const [isEditMode, setIsEditMode] = useState(false)
@@ -73,6 +75,29 @@ export function UnifiedSalonView({
   
   const canEdit = user?.role === "admin" && allowEditing
   const isLoading = tablesLoading || zonesLoading
+  const hasError = tablesError || zonesError
+
+  // Show error state if queries failed
+  if (hasError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error cargando datos</AlertTitle>
+        <AlertDescription>
+          No se pudieron cargar los datos del salón. Por favor, recarga la página.
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2"
+            onClick={() => window.location.reload()}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Recargar
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
 
   // Estadísticas de mesas
   const tableStats = useMemo(() => {
