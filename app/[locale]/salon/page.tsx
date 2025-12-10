@@ -3,15 +3,15 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import dynamicImport from 'next/dynamic'
+import dynamic from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ErrorBoundary } from "@/components/error-boundary"
 import type { Table } from "@/lib/mock-data"
 
 // Dynamically import Konva-dependent component (no SSR)
-const UnifiedSalonView = dynamicImport(
-  () => import('@/components/unified-salon-view').then(mod => ({ default: mod.UnifiedSalonView })),
+const UnifiedSalonView = dynamic(
+  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView),
   { 
     ssr: false,
     loading: () => (
