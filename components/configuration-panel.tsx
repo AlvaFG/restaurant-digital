@@ -69,7 +69,7 @@ export function ConfigurationPanel() {
     setIsMounted(true)
   }, [])
 
-  const [settings, setSettings] = useState({
+  const initialSettings = {
     restaurantName: tenant?.name || "Restaurante Demo",
     description: "Restaurante familiar con comida casera",
     phone: "+54 11 1234-5678",
@@ -86,9 +86,10 @@ export function ConfigurationPanel() {
     takeawayEnabled: true,
     deliveryEnabled: false,
     reservationsEnabled: true,
-  })
+  }
   
-  const [originalSettings] = useState(settings)
+  const [settings, setSettings] = useState(initialSettings)
+  const [originalSettings] = useState(initialSettings)
   const [isLoading, setIsLoading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
@@ -113,6 +114,8 @@ export function ConfigurationPanel() {
 
   // Advertir antes de salir con cambios no guardados
   useEffect(() => {
+    if (typeof window === 'undefined') return
+    
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (hasUnsavedChanges) {
         e.preventDefault()
