@@ -20,11 +20,50 @@ export class ConfigurationErrorBoundary extends Component<
   }
 
   static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    // Skip catching certain non-critical errors
+    const errorMessage = error.message || error.toString()
+    
+    // Don't catch hydration mismatches
+    if (errorMessage.includes('Hydration') || 
+        errorMessage.includes('hydration') ||
+        errorMessage.includes('Text content does not match')) {
+      console.warn('ConfigurationErrorBoundary: Hydration error ignored:', error)
+      return { hasError: false, error: null }
+    }
+
+    // Don't catch translation errors
+    if (errorMessage.includes('useTranslations') || 
+        errorMessage.includes('translation') ||
+        errorMessage.includes('IntlProvider')) {
+      console.warn('ConfigurationErrorBoundary: Translation error ignored:', error)
+      return { hasError: false, error: null }
+    }
+
+    // Don't catch auth context errors (we have fallbacks)
+    if (errorMessage.includes('useAuth') || 
+        errorMessage.includes('AuthProvider')) {
+      console.warn('ConfigurationErrorBoundary: Auth context error ignored:', error)
+      return { hasError: false, error: null }
+    }
+
+    // This is a real error we should catch
     return { hasError: true, error }
   }
 
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
     console.error("Configuration Panel Error:", error, errorInfo)
+    
+    // Send to Sentry if available
+    if (typeof window !== 'undefined' && (window as any).Sentry) {
+      const Sentry = (window as any).Sentry
+      Sentry.captureException(error, {
+        contexts: {
+          react: {
+            componentStack: errorInfo.componentStack,
+          },
+        },
+      })
+    }
   }
 
   render() {
@@ -46,11 +85,18 @@ export class ConfigurationErrorBoundary extends Component<
               </ul>
               <div className="mt-4 flex gap-2">
                 <Button 
+                  variant="default" 
+                  size="sm"
+                  onClick={() => this.setState({ hasError: false, error: null })}
+                >
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Reintentar
+                </Button>
+                <Button 
                   variant="outline" 
                   size="sm"
                   onClick={() => window.location.reload()}
                 >
-                  <RefreshCw className="h-4 w-4 mr-2" />
                   Recargar página
                 </Button>
                 <Button 

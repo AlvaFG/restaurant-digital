@@ -7,11 +7,28 @@ import dynamicImport from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ErrorBoundary } from "@/components/error-boundary"
+import { useAuth } from "@/contexts/auth-context"
 import type { Table } from "@/lib/mock-data"
 
 // Dynamically import Konva-dependent component (no SSR)
 const UnifiedSalonView = dynamicImport(
-  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView),
+  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView).catch(err => {
+    console.error('Failed to load UnifiedSalonView:', err)
+    return () => (
+      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+        <h2 className="text-lg font-semibold text-destructive mb-2">Error al cargar el salón</h2>
+        <p className="text-sm text-muted-foreground mb-4">
+          No se pudo cargar la vista del salón. Por favor, recarga la página.
+        </p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+        >
+          Recargar
+        </button>
+      </div>
+    )
+  }),
   { ssr: false }
 );
 
@@ -19,6 +36,7 @@ export default function SalonPage() {
   const router = useRouter()
   const t = useTranslations('common')
   const [showAddDialog, setShowAddDialog] = useState(false)
+  const { isHydrated } = useAuth()
 
   const handleTableClick = (table: Table) => {
     router.push(`/mesas/${table.id}`)
@@ -26,6 +44,20 @@ export default function SalonPage() {
 
   const handleTableCreated = () => {
     // El componente se actualiza automáticamente con React Query
+  }
+
+  // Wait for auth to hydrate before rendering
+  if (!isHydrated) {
+    return (
+      <DashboardLayout>
+        <div className="flex h-[400px] items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-muted-foreground">Cargando...</p>
+          </div>
+        </div>
+      </DashboardLayout>
+    )
   }
 
   return (

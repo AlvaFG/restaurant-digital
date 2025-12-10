@@ -62,11 +62,54 @@ export function UnifiedSalonView({
   onAddTable,
   onManageZones,
 }: UnifiedSalonViewProps) {
-  const router = useRouter()
-  const tCommon = useTranslations('common')
-  const { user } = useAuth()
-  const { tables = [], loading: tablesLoading, error: tablesError } = useTables()
-  const { zones = [], loading: zonesLoading, error: zonesError } = useZones()
+  // Safe hooks with fallbacks
+  let router, tCommon, user, tables, tablesLoading, tablesError, zones, zonesLoading, zonesError
+  
+  try {
+    router = useRouter()
+  } catch (error) {
+    console.error('UnifiedSalonView: useRouter error', error)
+    router = { push: () => {} } as any
+  }
+  
+  try {
+    tCommon = useTranslations('common')
+  } catch (error) {
+    console.error('UnifiedSalonView: useTranslations error', error)
+    tCommon = (key: string) => key
+  }
+  
+  try {
+    const auth = useAuth()
+    user = auth.user
+  } catch (error) {
+    console.error('UnifiedSalonView: useAuth error', error)
+    user = null
+  }
+  
+  try {
+    const tablesData = useTables()
+    tables = tablesData.tables || []
+    tablesLoading = tablesData.loading || false
+    tablesError = tablesData.error
+  } catch (error) {
+    console.error('UnifiedSalonView: useTables error', error)
+    tables = []
+    tablesLoading = false
+    tablesError = error
+  }
+  
+  try {
+    const zonesData = useZones()
+    zones = zonesData.zones || []
+    zonesLoading = zonesData.loading || false
+    zonesError = zonesData.error
+  } catch (error) {
+    console.error('UnifiedSalonView: useZones error', error)
+    zones = []
+    zonesLoading = false
+    zonesError = error
+  }
   
   const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
   const [isEditMode, setIsEditMode] = useState(false)

@@ -7,7 +7,27 @@ import { ConfigurationErrorBoundary } from "@/components/configuration-panel-wra
 import { Suspense } from "react"
 
 const ConfigurationPanel = dynamic(
-  () => import("@/components/configuration-panel"),
+  () => import("@/components/configuration-panel").catch(err => {
+    console.error('Failed to load ConfigurationPanel:', err)
+    return {
+      default: () => (
+        <div className="container mx-auto max-w-2xl py-8">
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+            <h2 className="text-lg font-semibold text-destructive mb-2">Error al cargar la configuración</h2>
+            <p className="text-sm text-muted-foreground mb-4">
+              No se pudo cargar el panel de configuración. Por favor, recarga la página.
+            </p>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            >
+              Recargar
+            </button>
+          </div>
+        </div>
+      )
+    }
+  }),
   { 
     loading: () => <div className="flex h-[400px] items-center justify-center"><LoadingSpinner /></div>,
     ssr: false 

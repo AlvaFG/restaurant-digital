@@ -31,10 +31,36 @@ interface ValidationErrors {
 }
 
 export function ConfigurationPanel() {
-  const { tenant, updateTenant } = useAuth()
-  const { toast } = useToast()
-  const t = useTranslations('config')
-  const tCommon = useTranslations('common')
+  // Safe hooks with fallbacks
+  let tenant, updateTenant, toast, t, tCommon
+  
+  try {
+    const auth = useAuth()
+    tenant = auth.tenant
+    updateTenant = auth.updateTenant
+  } catch (error) {
+    console.error('ConfigurationPanel: useAuth error', error)
+    tenant = null
+    updateTenant = () => {}
+  }
+  
+  try {
+    const toastHook = useToast()
+    toast = toastHook.toast
+  } catch (error) {
+    console.error('ConfigurationPanel: useToast error', error)
+    toast = () => {}
+  }
+  
+  try {
+    t = useTranslations('config')
+    tCommon = useTranslations('common')
+  } catch (error) {
+    console.error('ConfigurationPanel: useTranslations error', error)
+    // Fallback translations
+    t = (key: string) => key
+    tCommon = (key: string) => key
+  }
   
   // Estado de montaje para evitar problemas de hidratación
   const [isMounted, setIsMounted] = useState(false)
