@@ -101,7 +101,7 @@ export function UnifiedSalonView({
   
   const router = useRouter()
   const tCommon = useTranslations('common')
-  const { user } = useAuth()
+  const { user, tenant, isLoading: authLoading } = useAuth()
   const { tables = [], loading: tablesLoading, error: tablesError, refetch: refetchTables } = useTables()
   const { zones = [], loading: zonesLoading, error: zonesError, refetch: refetchZones } = useZones()
 
@@ -111,8 +111,10 @@ export function UnifiedSalonView({
   }, [])
   
   const canEdit = user?.role === "admin" && allowEditing
-  const isLoading = tablesLoading || zonesLoading
-  const hasError = tablesError || zonesError
+  // Include auth loading in the overall loading state
+  const isLoading = authLoading || tablesLoading || zonesLoading
+  // Only show error if tenant is loaded but data fetch failed
+  const hasError = tenant && (tablesError || zonesError)
 
   // Estadísticas de mesas - always calculated to maintain hook consistency
   const tableStats = useMemo(() => {

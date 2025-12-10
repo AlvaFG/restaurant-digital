@@ -25,7 +25,7 @@ function getTenantIdFromUser(user: User): string | undefined {
   return undefined
 }
 
-export async function GET() {
+export async function GET(request: Request) {
   const startTime = Date.now()
 
   try {
@@ -41,24 +41,35 @@ export async function GET() {
     logger.debug('GET /api/zones - tenant_id extraído', { tenantId })
     
     if (!tenantId) {
-      logger.error('GET /api/zones - Usuario sin tenant asignado', new Error('Missing tenant_id'), {
+      logger.warn('GET /api/zones - Usuario sin tenant asignado', {
         userId: user.id,
         metadata: user.user_metadata
       })
-      return NextResponse.json({ error: 'Usuario sin tenant asignado' }, { status: 403 })
+      // Return empty array instead of error for better UX when tenant is not yet assigned
+      return NextResponse.json({ data: [] })
     }
 
     logger.debug('GET /api/zones - Consultando base de datos', { tenantId })
     
+    // Parse query parameters
+    const url = new URL(request.url)
+    const includeInactive = url.searchParams.get('includeInactive') === 'true'
+    
     // Usar createServerClient directamente (no zones-service que usa browser client)
     const supabase = createServerClient()
     
-    const { data: zones, error } = await supabase
+    let query = supabase
       .from('zones')
       .select('*')
       .eq('tenant_id', tenantId)
-      .eq('active', true)
       .order('sort_order', { ascending: true })
+    
+    // Only filter by active if not including inactive
+    if (!includeInactive) {
+      query = query.eq('active', true)
+    }
+    
+    const { data: zones, error } = await query
     
     if (error) {
       logger.error('GET /api/zones - Error al obtener zonas', error as Error, { tenantId })
@@ -72,7 +83,7 @@ export async function GET() {
       tenantId,
     })
 
-    return NextResponse.json({ data: zones })
+    return NextResponse.json({ data: zones || [] })
   } catch (error) {
     const duration = Date.now() - startTime
     logger.error('Error al obtener zonas', error as Error, { duration })
