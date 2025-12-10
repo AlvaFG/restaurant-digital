@@ -77,6 +77,7 @@ export function ConfigurationPanel() {
         </div>
       </div>
     )
+  }
 
   // Detectar cambios no guardados
   useEffect(() => {

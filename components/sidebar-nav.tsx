@@ -99,6 +99,9 @@ export function SidebarNav() {
 
   const filteredNavItems = navItems.filter((item) => item.roles.includes(user.role))
 
+  // Extract pathname without locale prefix for comparison
+  const pathnameWithoutLocale = pathname.replace(/^\/(en|es)/, '') || '/'
+
   return (
     <div className="flex h-full w-64 flex-col bg-card border-r border-border/80 dark:bg-zinc-900 dark:border-zinc-700">
       {/* Header */}
@@ -130,7 +133,7 @@ export function SidebarNav() {
       <ScrollArea className="flex-1 px-3 py-4">
         <nav className="space-y-1">
           {filteredNavItems.map((item) => {
-            const isActive = pathname === item.href
+            const isActive = pathnameWithoutLocale === item.href
             return (
               <Link key={item.href} href={item.href} className="block">
                 <Button
