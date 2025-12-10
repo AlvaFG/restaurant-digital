@@ -3,7 +3,7 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react"
 import { useRouter } from "next/navigation"
 import { useTranslations } from "next-intl"
-import { TableMap } from "@/components/table-map"
+import dynamic from "next/dynamic"
 import { TableList, type TableListRef } from "@/components/table-list"
 import { ZoneFilter } from "@/components/zone-filter"
 import { ZonesManagement, type ZonesManagementRef } from "@/components/zones-management"
@@ -29,6 +29,19 @@ import { useZones } from "@/hooks/use-zones"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
 import type { Table } from "@/lib/mock-data"
+
+// Dynamically import TableMap to avoid SSR issues with Konva
+const TableMap = dynamic(
+  () => import("@/components/table-map").then(mod => mod.TableMap),
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
+)
 
 interface UnifiedSalonViewProps {
   /**

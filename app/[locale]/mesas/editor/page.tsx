@@ -2,7 +2,7 @@
 
 import { useTranslations } from "next-intl"
 import { useState } from "react"
-import dynamicImport from 'next/dynamic'
+import dynamic from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ZonesManagerDialog } from "@/components/zones-manager-dialog"
@@ -10,9 +10,16 @@ import { Card, CardContent } from "@/components/ui/card"
 import { Info } from "lucide-react"
 
 // Dynamically import Konva-dependent component (no SSR)
-const UnifiedSalonView = dynamicImport(
+const UnifiedSalonView = dynamic(
   () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView),
-  { ssr: false }
+  { 
+    ssr: false,
+    loading: () => (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    )
+  }
 );
 
 export default function TableEditorPage() {
