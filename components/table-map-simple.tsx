@@ -19,10 +19,26 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
+  const [mounted, setMounted] = useState(false)
   
-  const { tables, loading: tablesLoading } = useTables()
-  const { zones, loading: zonesLoading } = useZones()
+  const { tables = [], loading: tablesLoading } = useTables()
+  const { zones = [], loading: zonesLoading } = useZones()
   const tCommon = useTranslations('common')
+
+  // Ensure client-side only rendering
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Card className="p-4">
+        <div className="flex h-[500px] items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </Card>
+    )
+  }
 
   // Responsive canvas sizing
   useEffect(() => {
