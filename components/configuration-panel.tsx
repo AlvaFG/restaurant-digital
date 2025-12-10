@@ -62,13 +62,6 @@ export function ConfigurationPanel() {
     tCommon = (key: string) => key
   }
   
-  // Estado de montaje para evitar problemas de hidratación
-  const [isMounted, setIsMounted] = useState(false)
-
-  useEffect(() => {
-    setIsMounted(true)
-  }, [])
-
   const initialSettings = {
     restaurantName: tenant?.name || "Restaurante Demo",
     description: "Restaurante familiar con comida casera",
@@ -93,18 +86,6 @@ export function ConfigurationPanel() {
   const [isLoading, setIsLoading] = useState(false)
   const [validationErrors, setValidationErrors] = useState<ValidationErrors>({})
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false)
-  
-  // Mostrar loading mientras se monta el componente
-  if (!isMounted) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando configuración...</p>
-        </div>
-      </div>
-    )
-  }
 
   // Detectar cambios no guardados
   useEffect(() => {
