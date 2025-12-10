@@ -1,11 +1,9 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
-import { useTranslations } from "next-intl"
 import { useTables } from "@/hooks/use-tables"
 import { useZones } from "@/hooks/use-zones"
 import { TABLE_STATE_COLORS } from "@/lib/table-states"
-import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { LoadingSpinner } from "@/components/loading-spinner"
 import type { Table } from "@/lib/mock-data"
@@ -24,7 +22,6 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
   
   const { tables = [], loading: tablesLoading } = useTables()
   const { zones = [], loading: zonesLoading } = useZones()
-  const tCommon = useTranslations('common')
 
   // Ensure client-side only rendering
   useEffect(() => {
@@ -201,13 +198,21 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
     )
   }
 
+  const statusLabels: Record<string, string> = {
+    libre: 'Libre',
+    ocupada: 'Ocupada',
+    reservada: 'Reservada',
+    limpieza: 'Limpieza',
+    pago: 'Pago'
+  }
+
   return (
     <Card className="p-4">
       <div ref={containerRef} className="relative">
         {editable && (
           <div className="mb-4 p-3 bg-amber-50 border border-amber-200 rounded-md">
             <p className="text-sm text-amber-800">
-              {tCommon('editModeInstructions') || 'El modo de edición avanzado estará disponible próximamente. Por ahora puedes ver la disposición del salón.'}
+              El modo de edición avanzado estará disponible próximamente. Por ahora puedes ver la disposición del salón.
             </p>
           </div>
         )}
@@ -231,7 +236,7 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
                   borderColor: colors.stroke
                 }}
               />
-              <span className="text-sm">{tCommon(status) || status}</span>
+              <span className="text-sm capitalize">{statusLabels[status] || status}</span>
             </div>
           ))}
         </div>
