@@ -7,7 +7,6 @@ import dynamicImport from 'next/dynamic'
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ErrorBoundary } from "@/components/error-boundary"
-import { useAuth } from "@/contexts/auth-context"
 import type { Table } from "@/lib/mock-data"
 
 // Dynamically import Konva-dependent component (no SSR)
@@ -61,7 +60,6 @@ export default function SalonPage() {
   const router = useRouter()
   const t = useTranslations('common')
   const [showAddDialog, setShowAddDialog] = useState(false)
-  const { isHydrated } = useAuth()
 
   const handleTableClick = (table: Table) => {
     router.push(`/mesas/${table.id}`)
@@ -69,20 +67,6 @@ export default function SalonPage() {
 
   const handleTableCreated = () => {
     // El componente se actualiza automáticamente con React Query
-  }
-
-  // Wait for auth to hydrate before rendering
-  if (!isHydrated) {
-    return (
-      <DashboardLayout>
-        <div className="flex h-[400px] items-center justify-center">
-          <div className="text-center">
-            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-            <p className="text-muted-foreground">Cargando...</p>
-          </div>
-        </div>
-      </DashboardLayout>
-    )
   }
 
   return (
