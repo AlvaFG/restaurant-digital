@@ -30,7 +30,9 @@ import {
   Save,
   Trash2,
   Copy,
-  Magnet
+  Magnet,
+  Square,
+  Layers
 } from "lucide-react"
 
 export type ToolMode = 'select' | 'move' | 'rotate' | 'resize'
@@ -60,6 +62,7 @@ interface TableMapToolbarProps {
   onDelete: () => void
   onDuplicate: () => void
   onAddTable: () => void
+  onAddZone: () => void
   editable: boolean
 }
 
@@ -86,6 +89,7 @@ export function TableMapToolbar({
   onDelete,
   onDuplicate,
   onAddTable,
+  onAddZone,
   editable
 }: TableMapToolbarProps) {
   
@@ -124,18 +128,32 @@ export function TableMapToolbar({
 
             <Separator orientation="vertical" className="h-6 mx-1" />
 
-            {/* Add table */}
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button variant="outline" size="sm" onClick={onAddTable}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Mesa
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Agregar mesa (N)</p>
-              </TooltipContent>
-            </Tooltip>
+            {/* Add table and zone */}
+            <div className="flex items-center gap-1">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={onAddTable}>
+                    <Plus className="h-4 w-4 mr-1" />
+                    Mesa
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Agregar mesa (N)</p>
+                </TooltipContent>
+              </Tooltip>
+              
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant="outline" size="sm" onClick={onAddZone}>
+                    <Layers className="h-4 w-4 mr-1" />
+                    Zona
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>Agregar zona (Z)</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
 
             <Separator orientation="vertical" className="h-6 mx-1" />
           </>

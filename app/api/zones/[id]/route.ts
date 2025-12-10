@@ -71,11 +71,13 @@ export async function PATCH(
     const body = await request.json().catch(() => ({})) as {
       name?: string
       active?: boolean
+      position?: { x: number; y: number; w: number; h: number }
     }
 
     const updates: {
       name?: string
       active?: boolean
+      position?: { x: number; y: number; w: number; h: number }
     } = {}
 
     if (body.name !== undefined) {
@@ -87,6 +89,18 @@ export async function PATCH(
 
     if (typeof body.active === 'boolean') {
       updates.active = body.active
+    }
+
+    if (body.position !== undefined) {
+      if (
+        typeof body.position === 'object' &&
+        typeof body.position.x === 'number' &&
+        typeof body.position.y === 'number' &&
+        typeof body.position.w === 'number' &&
+        typeof body.position.h === 'number'
+      ) {
+        updates.position = body.position
+      }
     }
 
     if (Object.keys(updates).length === 0) {

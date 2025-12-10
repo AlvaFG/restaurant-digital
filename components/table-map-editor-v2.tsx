@@ -21,6 +21,20 @@ interface TablePosition {
   shape: 'rectangle' | 'square' | 'circle'
 }
 
+interface ZonePosition {
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
+interface ZoneWithPosition {
+  id: string
+  name: string
+  color: string
+  position: ZonePosition
+}
+
 interface TableWithPosition {
   id: string
   number: string
@@ -32,7 +46,8 @@ interface TableWithPosition {
 
 interface DragState {
   isDragging: boolean
-  tableId: string | null
+  targetId: string | null
+  targetType: 'table' | 'zone' | null
   offsetX: number
   offsetY: number
   handle: 'body' | 'resize' | 'rotate' | null
@@ -48,7 +63,8 @@ interface SelectionBox {
 }
 
 interface HistoryEntry {
-  positions: Map<string, TablePosition>
+  tablePositions: Map<string, TablePosition>
+  zonePositions: Map<string, ZonePosition>
   timestamp: number
 }
 
@@ -127,7 +143,8 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
   // Core state
   const [mounted, setMounted] = useState(false)
   const [canvasSize, setCanvasSize] = useState({ width: 1000, height: 700 })
-  const [positions, setPositions] = useState<Map<string, TablePosition>>(new Map())
+  const [tablePositions, setTablePositions] = useState<Map<string, TablePosition>>(new Map())
+  const [zonePositions, setZonePositions] = useState<Map<string, ZonePosition>>(new Map())
   
   // Tool state
   const [toolMode, setToolMode] = useState<ToolMode>('select')
@@ -138,12 +155,14 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
   
   // Selection state
   const [selectedTableIds, setSelectedTableIds] = useState<Set<string>>(new Set())
+  const [selectedZoneId, setSelectedZoneId] = useState<string | null>(null)
   const [selectionBox, setSelectionBox] = useState<SelectionBox | null>(null)
   
   // Drag state
   const [dragState, setDragState] = useState<DragState>({
     isDragging: false,
-    tableId: null,
+    targetId: null,
+    targetType: null,
     offsetX: 0,
     offsetY: 0,
     handle: null
@@ -159,9 +178,14 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
   const [hasChanges, setHasChanges] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   
+  // Zone colors for visual distinction
+  const zoneColors = useMemo(() => [
+    '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16'
+  ], [])
+  
   // Data hooks
   const { tables = [], loading: tablesLoading } = useTables()
-  const { zones = [], loading: zonesLoading } = useZones()
+  const { zones = [], loading: zonesLoading, createZone, updateZone } = useZones()
   
   // Memoized tables with positions
   const tablesWithPositions = useMemo((): TableWithPosition[] => {
@@ -171,9 +195,43 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
       status: table.status,
       capacity: table.capacity || 4,
       zone_id: table.zone_id,
-      position: positions.get(table.id) || parsePosition(table.position, index)
+      position: tablePositions.get(table.id) || parsePosition(table.position, index)
     }))
-  }, [tables, positions])
+  }, [tables, tablePositions])
+
+  // Memoized zones with positions
+  const zonesWithPositions = useMemo((): ZoneWithPosition[] => {
+    return zones.map((zone, index) => {
+      // Calculate zone bounds from tables or use stored position
+      const zoneTables = tablesWithPositions.filter(t => t.zone_id === zone.id)
+      const storedPosition = zonePositions.get(zone.id)
+      
+      let position: ZonePosition
+      if (storedPosition) {
+        position = storedPosition
+      } else if (zoneTables.length > 0) {
+        // Auto-calculate from tables
+        let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0
+        zoneTables.forEach(table => {
+          minX = Math.min(minX, table.position.x - 30)
+          minY = Math.min(minY, table.position.y - 30)
+          maxX = Math.max(maxX, table.position.x + table.position.w + 30)
+          maxY = Math.max(maxY, table.position.y + table.position.h + 30)
+        })
+        position = { x: minX, y: minY, w: maxX - minX, h: maxY - minY }
+      } else {
+        // Default position for empty zones
+        position = { x: 50 + (index % 3) * 250, y: 50 + Math.floor(index / 3) * 200, w: 200, h: 150 }
+      }
+      
+      return {
+        id: zone.id,
+        name: zone.name,
+        color: zoneColors[index % zoneColors.length],
+        position
+      }
+    })
+  }, [zones, tablesWithPositions, zonePositions, zoneColors])
 
   // Get selected table for properties panel
   const selectedTable = useMemo((): TableProperties | null => {
@@ -198,17 +256,17 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
   
   // Initialize positions from tables
   useEffect(() => {
-    if (tables.length > 0 && positions.size === 0) {
+    if (tables.length > 0 && tablePositions.size === 0) {
       const initialPositions = new Map<string, TablePosition>()
       tables.forEach((table, index) => {
         initialPositions.set(table.id, parsePosition(table.position, index))
       })
-      setPositions(initialPositions)
+      setTablePositions(initialPositions)
       // Initialize history
-      setHistory([{ positions: new Map(initialPositions), timestamp: Date.now() }])
+      setHistory([{ tablePositions: new Map(initialPositions), zonePositions: new Map(), timestamp: Date.now() }])
       setHistoryIndex(0)
     }
-  }, [tables, positions.size])
+  }, [tables, tablePositions.size])
 
   // Mount effect
   useEffect(() => {
@@ -293,11 +351,15 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
 
   // ============ History Management ============
   
-  const pushHistory = useCallback((newPositions: Map<string, TablePosition>) => {
+  const pushHistory = useCallback(() => {
     setHistory(prev => {
       // Remove any future history if we're not at the end
       const newHistory = prev.slice(0, historyIndex + 1)
-      newHistory.push({ positions: new Map(newPositions), timestamp: Date.now() })
+      newHistory.push({ 
+        tablePositions: new Map(tablePositions), 
+        zonePositions: new Map(zonePositions),
+        timestamp: Date.now() 
+      })
       // Limit history size
       if (newHistory.length > MAX_HISTORY) {
         newHistory.shift()
@@ -305,12 +367,13 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
       return newHistory
     })
     setHistoryIndex(prev => Math.min(prev + 1, MAX_HISTORY - 1))
-  }, [historyIndex])
+  }, [historyIndex, tablePositions, zonePositions])
 
   const handleUndo = useCallback(() => {
     if (historyIndex > 0) {
       const prevEntry = history[historyIndex - 1]
-      setPositions(new Map(prevEntry.positions))
+      setTablePositions(new Map(prevEntry.tablePositions))
+      setZonePositions(new Map(prevEntry.zonePositions))
       setHistoryIndex(prev => prev - 1)
       setHasChanges(true)
     }
@@ -319,7 +382,8 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
   const handleRedo = useCallback(() => {
     if (historyIndex < history.length - 1) {
       const nextEntry = history[historyIndex + 1]
-      setPositions(new Map(nextEntry.positions))
+      setTablePositions(new Map(nextEntry.tablePositions))
+      setZonePositions(new Map(nextEntry.zonePositions))
       setHistoryIndex(prev => prev + 1)
       setHasChanges(true)
     }
@@ -369,31 +433,49 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
       }
     }
 
-    // Draw zones as background areas
-    zones.forEach(zone => {
-      const zoneTables = tablesWithPositions.filter(t => t.zone_id === zone.id)
-      if (zoneTables.length === 0) return
+    // Draw zones as background areas (now with positions and selection)
+    zonesWithPositions.forEach(zone => {
+      const pos = zone.position
+      const isSelected = selectedZoneId === zone.id
+      const isDragging = dragState.isDragging && dragState.targetType === 'zone' && dragState.targetId === zone.id
       
-      let minX = Infinity, minY = Infinity, maxX = 0, maxY = 0
-      zoneTables.forEach(table => {
-        minX = Math.min(minX, table.position.x - 20)
-        minY = Math.min(minY, table.position.y - 20)
-        maxX = Math.max(maxX, table.position.x + table.position.w + 20)
-        maxY = Math.max(maxY, table.position.y + table.position.h + 20)
-      })
+      ctx.save()
       
-      if (minX !== Infinity) {
-        ctx.fillStyle = '#3b82f615'
-        ctx.strokeStyle = '#3b82f640'
+      // Shadow for selected zones
+      if (isSelected || isDragging) {
+        ctx.shadowColor = zone.color + '80'
+        ctx.shadowBlur = 15
+        ctx.shadowOffsetX = 0
+        ctx.shadowOffsetY = 4
+      }
+      
+      // Zone background
+      ctx.fillStyle = zone.color + '15'
+      ctx.strokeStyle = isSelected ? zone.color : zone.color + '60'
+      ctx.lineWidth = isSelected ? 3 : 2
+      ctx.setLineDash(isSelected ? [] : [8, 4])
+      ctx.beginPath()
+      ctx.roundRect(pos.x, pos.y, pos.w, pos.h, 12)
+      ctx.fill()
+      ctx.stroke()
+      ctx.setLineDash([])
+      
+      ctx.restore()
+      
+      // Zone label
+      ctx.fillStyle = zone.color
+      ctx.font = 'bold 12px Inter, system-ui, sans-serif'
+      ctx.fillText(zone.name, pos.x + 10, pos.y + 22)
+      
+      // Resize handle when selected and editable
+      if (editable && isSelected) {
+        ctx.fillStyle = zone.color
+        ctx.strokeStyle = '#ffffff'
         ctx.lineWidth = 2
-        ctx.beginPath()
-        ctx.roundRect(minX, minY, maxX - minX, maxY - minY, 12)
-        ctx.fill()
-        ctx.stroke()
-        
-        ctx.fillStyle = '#60a5fa'
-        ctx.font = 'bold 11px Inter, system-ui, sans-serif'
-        ctx.fillText(zone.name, minX + 10, minY + 18)
+        const handleX = pos.x + pos.w - RESIZE_HANDLE_SIZE / 2
+        const handleY = pos.y + pos.h - RESIZE_HANDLE_SIZE / 2
+        ctx.fillRect(handleX, handleY, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE)
+        ctx.strokeRect(handleX, handleY, RESIZE_HANDLE_SIZE, RESIZE_HANDLE_SIZE)
       }
     })
 
@@ -402,7 +484,7 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
       const pos = table.position
       const colors = getTableColors(table.status)
       const isSelected = selectedTableIds.has(table.id)
-      const isDragging = dragState.isDragging && dragState.tableId === table.id
+      const isDragging = dragState.isDragging && dragState.targetType === 'table' && dragState.targetId === table.id
       
       ctx.save()
       
@@ -572,16 +654,50 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     return null
   }, [tablesWithPositions, selectedTableIds, editable])
 
+  // Check if point is on a zone
+  const getZoneAtPosition = useCallback((x: number, y: number): {
+    zone: ZoneWithPosition
+    handle: 'body' | 'resize'
+  } | null => {
+    // Check in reverse order (top-most first)
+    for (let i = zonesWithPositions.length - 1; i >= 0; i--) {
+      const zone = zonesWithPositions[i]
+      const pos = zone.position
+      const isSelected = selectedZoneId === zone.id
+      
+      // Check resize handle first (if selected and editable)
+      if (editable && isSelected) {
+        const handleX = pos.x + pos.w - RESIZE_HANDLE_SIZE / 2
+        const handleY = pos.y + pos.h - RESIZE_HANDLE_SIZE / 2
+        if (x >= handleX && x <= handleX + RESIZE_HANDLE_SIZE &&
+            y >= handleY && y <= handleY + RESIZE_HANDLE_SIZE) {
+          return { zone, handle: 'resize' }
+        }
+      }
+      
+      // Check zone body
+      if (x >= pos.x && x <= pos.x + pos.w &&
+          y >= pos.y && y <= pos.y + pos.h) {
+        return { zone, handle: 'body' }
+      }
+    }
+    return null
+  }, [zonesWithPositions, selectedZoneId, editable])
+
   // ============ Mouse Handlers ============
   
   const handleMouseDown = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e.clientX, e.clientY)
     if (!coords) return
     
+    // Check tables first (they're on top)
     const hit = getTableAtPosition(coords.x, coords.y)
     
     if (hit) {
       const { table, handle } = hit
+      
+      // Clear zone selection when selecting a table
+      setSelectedZoneId(null)
       
       // Handle selection
       if (e.shiftKey) {
@@ -604,7 +720,8 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
         
         setDragState({
           isDragging: true,
-          tableId: table.id,
+          targetId: table.id,
+          targetType: 'table',
           offsetX: coords.x - pos.x,
           offsetY: coords.y - pos.y,
           handle: toolMode === 'rotate' ? 'rotate' : toolMode === 'resize' ? 'resize' : handle,
@@ -612,23 +729,57 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
           startRotation: pos.rot
         })
       }
-    } else {
-      // Clicked empty space
-      if (!e.shiftKey) {
-        setSelectedTableIds(new Set())
-      }
+      return
+    }
+    
+    // Check zones
+    const zoneHit = getZoneAtPosition(coords.x, coords.y)
+    
+    if (zoneHit) {
+      const { zone, handle } = zoneHit
       
-      // Start selection box
-      if (toolMode === 'select') {
-        setSelectionBox({
-          startX: coords.x,
-          startY: coords.y,
-          endX: coords.x,
-          endY: coords.y
+      // Clear table selection when selecting a zone
+      setSelectedTableIds(new Set())
+      setSelectedZoneId(zone.id)
+      
+      // Initialize zone position if not exists
+      if (!zonePositions.has(zone.id)) {
+        setZonePositions(prev => {
+          const updated = new Map(prev)
+          updated.set(zone.id, zone.position)
+          return updated
         })
       }
+      
+      if (editable && (toolMode === 'move' || handle === 'body' || handle === 'resize')) {
+        const pos = zone.position
+        
+        setDragState({
+          isDragging: true,
+          targetId: zone.id,
+          targetType: 'zone',
+          offsetX: coords.x - pos.x,
+          offsetY: coords.y - pos.y,
+          handle: toolMode === 'resize' ? 'resize' : handle
+        })
+      }
+      return
     }
-  }, [getCanvasCoords, getTableAtPosition, editable, toolMode, selectedTableIds])
+    
+    // Clicked empty space
+    setSelectedTableIds(new Set())
+    setSelectedZoneId(null)
+    
+    // Start selection box
+    if (toolMode === 'select') {
+      setSelectionBox({
+        startX: coords.x,
+        startY: coords.y,
+        endX: coords.x,
+        endY: coords.y
+      })
+    }
+  }, [getCanvasCoords, getTableAtPosition, getZoneAtPosition, editable, toolMode, selectedTableIds, zonePositions])
 
   const handleMouseMove = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e.clientX, e.clientY)
@@ -638,9 +789,13 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     const canvas = canvasRef.current
     if (canvas) {
       const hit = getTableAtPosition(coords.x, coords.y)
+      const zoneHit = getZoneAtPosition(coords.x, coords.y)
       if (hit) {
         if (hit.handle === 'rotate') canvas.style.cursor = 'grab'
         else if (hit.handle === 'resize') canvas.style.cursor = 'nwse-resize'
+        else canvas.style.cursor = editable ? 'move' : 'pointer'
+      } else if (zoneHit) {
+        if (zoneHit.handle === 'resize') canvas.style.cursor = 'nwse-resize'
         else canvas.style.cursor = editable ? 'move' : 'pointer'
       } else {
         canvas.style.cursor = toolMode === 'select' ? 'crosshair' : 'default'
@@ -654,17 +809,50 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     }
     
     // Handle dragging
-    if (!dragState.isDragging || !dragState.tableId) return
+    if (!dragState.isDragging || !dragState.targetId) return
     
-    const pos = positions.get(dragState.tableId)
+    // Dragging a zone
+    if (dragState.targetType === 'zone') {
+      const pos = zonePositions.get(dragState.targetId)
+      if (!pos) return
+      
+      setZonePositions(prev => {
+        const updated = new Map(prev)
+        const current = updated.get(dragState.targetId!) || pos
+        
+        if (dragState.handle === 'resize') {
+          let newW = coords.x - current.x
+          let newH = coords.y - current.y
+          newW = Math.max(100, Math.min(800, newW))
+          newH = Math.max(80, Math.min(600, newH))
+          newW = snapToGrid(newW, gridSize, snapStrength)
+          newH = snapToGrid(newH, gridSize, snapStrength)
+          updated.set(dragState.targetId!, { ...current, w: newW, h: newH })
+        } else {
+          let newX = coords.x - dragState.offsetX
+          let newY = coords.y - dragState.offsetY
+          newX = snapToGrid(newX, gridSize, snapStrength)
+          newY = snapToGrid(newY, gridSize, snapStrength)
+          newX = Math.max(0, Math.min(newX, (canvasSize.width / zoom) - current.w))
+          newY = Math.max(0, Math.min(newY, (canvasSize.height / zoom) - current.h))
+          updated.set(dragState.targetId!, { ...current, x: newX, y: newY })
+        }
+        return updated
+      })
+      setHasChanges(true)
+      return
+    }
+    
+    // Dragging a table
+    const pos = tablePositions.get(dragState.targetId)
     if (!pos) return
     
     const centerX = pos.x + pos.w / 2
     const centerY = pos.y + pos.h / 2
     
-    setPositions(prev => {
+    setTablePositions(prev => {
       const updated = new Map(prev)
-      const current = updated.get(dragState.tableId!)
+      const current = updated.get(dragState.targetId!)
       if (!current) return prev
       
       let newPos = { ...current }
@@ -709,12 +897,12 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
         newY = Math.max(0, Math.min(newY, (canvasSize.height / zoom) - pos.h))
         
         // Move all selected tables
-        if (selectedTableIds.size > 1 && selectedTableIds.has(dragState.tableId!)) {
+        if (selectedTableIds.size > 1 && selectedTableIds.has(dragState.targetId!)) {
           const deltaX = newX - current.x
           const deltaY = newY - current.y
           
           selectedTableIds.forEach(id => {
-            if (id === dragState.tableId) return
+            if (id === dragState.targetId) return
             const otherPos = updated.get(id)
             if (otherPos) {
               updated.set(id, {
@@ -730,12 +918,12 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
         newPos.y = newY
       }
       
-      updated.set(dragState.tableId!, newPos)
+      updated.set(dragState.targetId!, newPos)
       return updated
     })
     
     setHasChanges(true)
-  }, [getCanvasCoords, getTableAtPosition, selectionBox, dragState, positions, selectedTableIds, zoom, gridSize, snapStrength, canvasSize, editable, toolMode])
+  }, [getCanvasCoords, getTableAtPosition, getZoneAtPosition, selectionBox, dragState, tablePositions, zonePositions, selectedTableIds, zoom, gridSize, snapStrength, canvasSize, editable, toolMode])
 
   const handleMouseUp = useCallback(() => {
     // Handle selection box
@@ -763,16 +951,17 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     
     // Handle drag end
     if (dragState.isDragging) {
-      pushHistory(positions)
+      pushHistory()
       setDragState({
         isDragging: false,
-        tableId: null,
+        targetId: null,
+        targetType: null,
         offsetX: 0,
         offsetY: 0,
         handle: null
       })
     }
-  }, [selectionBox, tablesWithPositions, dragState, positions, pushHistory])
+  }, [selectionBox, tablesWithPositions, dragState, pushHistory])
 
   const handleDoubleClick = useCallback((e: React.MouseEvent<HTMLCanvasElement>) => {
     const coords = getCanvasCoords(e.clientX, e.clientY)
@@ -797,7 +986,8 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     setIsSaving(true)
     
     try {
-      const updates = Array.from(positions.entries()).map(([id, pos]) => ({
+      // Save table positions
+      const tableUpdates = Array.from(tablePositions.entries()).map(([id, pos]) => ({
         id,
         position: pos
       }))
@@ -805,7 +995,7 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
       const response = await fetch('/api/table-layout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ updates })
+        body: JSON.stringify({ updates: tableUpdates })
       })
       
       const result = await response.json()
@@ -814,10 +1004,15 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
         throw new Error(result.error || 'Error al guardar')
       }
       
+      // Save zone positions
+      for (const [zoneId, pos] of zonePositions.entries()) {
+        await updateZone({ id: zoneId, position: pos })
+      }
+      
       setHasChanges(false)
       toast({
         title: "Layout guardado",
-        description: `Se guardaron ${result.summary?.successful || updates.length} posiciones correctamente.`
+        description: `Se guardaron ${result.summary?.successful || tableUpdates.length} posiciones correctamente.`
       })
       
       if (result.errors?.length > 0) {
@@ -836,7 +1031,7 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     } finally {
       setIsSaving(false)
     }
-  }, [positions])
+  }, [tablePositions, zonePositions, updateZone])
 
   const handleDelete = useCallback(() => {
     // For layout editor, delete just means remove from view/reset position
@@ -861,12 +1056,59 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
     })
   }, [])
 
+  const handleAddZone = useCallback(async () => {
+    // Generate a unique name
+    const existingNames = zones.map(z => z.name)
+    let newName = "Nueva Zona"
+    let counter = 1
+    while (existingNames.includes(newName)) {
+      newName = `Nueva Zona ${counter++}`
+    }
+    
+    try {
+      const result = await createZone({
+        name: newName,
+        description: "",
+        sortOrder: zones.length
+      })
+      
+      // Set initial position for the new zone
+      if (result?.id) {
+        const newPosition: ZonePosition = {
+          x: 50 + Math.random() * 200,
+          y: 50 + Math.random() * 100,
+          w: 200,
+          h: 150
+        }
+        setZonePositions(prev => {
+          const updated = new Map(prev)
+          updated.set(result.id, newPosition)
+          return updated
+        })
+        setSelectedZoneId(result.id)
+        setSelectedTableIds(new Set())
+        setHasChanges(true)
+      }
+      
+      toast({
+        title: "Zona creada",
+        description: `"${newName}" creada. Haz doble clic para editar el nombre.`
+      })
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "No se pudo crear la zona.",
+        variant: "destructive"
+      })
+    }
+  }, [zones, createZone])
+
   const handleUpdateTable = useCallback((updates: Partial<TableProperties>) => {
     if (selectedTableIds.size !== 1) return
     const id = Array.from(selectedTableIds)[0]
     
     if (updates.position) {
-      setPositions(prev => {
+      setTablePositions(prev => {
         const updated = new Map(prev)
         const current = updated.get(id)
         if (current) {
@@ -914,10 +1156,11 @@ export function TableMapEditor({ onTableClick, editable = false }: TableMapEdito
         hasChanges={hasChanges}
         onSave={handleSave}
         isSaving={isSaving}
-        hasSelection={selectedTableIds.size > 0}
+        hasSelection={selectedTableIds.size > 0 || selectedZoneId !== null}
         onDelete={handleDelete}
         onDuplicate={handleDuplicate}
         onAddTable={handleAddTable}
+        onAddZone={handleAddZone}
         editable={editable}
       />
 
