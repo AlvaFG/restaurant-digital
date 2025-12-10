@@ -313,8 +313,11 @@ class RealtimeSocketClient implements SocketClientInstance {
       this.socket.addEventListener("error", this.handleError)
       this.updateState({ isReconnecting: this.attempts > 0 })
     } catch (error) {
-      console.error("[socket-client] Failed to create WebSocket", error)
-      this.scheduleReconnect()
+      console.warn("[socket-client] WebSocket API not available")
+      // Don't schedule reconnect on initial failures - API might not exist
+      if (this.attempts > 0) {
+        this.scheduleReconnect()
+      }
     }
   }
 
@@ -370,16 +373,20 @@ class RealtimeSocketClient implements SocketClientInstance {
       return
     }
 
-    if (event.code !== 1000) {
+    if (event.code !== 1000 && event.code !== 1006) {
       this.updateState({ error: event.reason || "Socket closed unexpectedly" })
     }
 
-    this.scheduleReconnect()
+    // Only schedule reconnect if we had a successful connection before
+    if (this.state.lastHeartbeatAt) {
+      this.scheduleReconnect()
+    }
   }
 
   private handleError = (event: Event) => {
-    console.error("[socket-client] socket error", event)
-    this.updateState({ error: "Socket error" })
+    // Silently handle socket errors - this is expected when WebSocket API is not available
+    console.warn("[socket-client] socket connection unavailable")
+    this.updateState({ error: "Socket unavailable" })
   }
 
   private flushOutbox() {
