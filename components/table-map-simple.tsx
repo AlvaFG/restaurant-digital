@@ -16,6 +16,7 @@ interface TableMapSimpleProps {
 }
 
 export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpleProps) {
+  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const [canvasSize, setCanvasSize] = useState({ width: 800, height: 600 })
@@ -29,16 +30,6 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
   useEffect(() => {
     setMounted(true)
   }, [])
-
-  if (!mounted) {
-    return (
-      <Card className="p-4">
-        <div className="flex h-[500px] items-center justify-center">
-          <LoadingSpinner />
-        </div>
-      </Card>
-    )
-  }
 
   // Responsive canvas sizing
   useEffect(() => {
@@ -199,11 +190,14 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
     }
   }
 
-  if (tablesLoading) {
+  // Conditional renders AFTER all hooks
+  if (!mounted || tablesLoading) {
     return (
-      <div className="flex h-[500px] items-center justify-center">
-        <LoadingSpinner />
-      </div>
+      <Card className="p-4">
+        <div className="flex h-[500px] items-center justify-center">
+          <LoadingSpinner />
+        </div>
+      </Card>
     )
   }
 
