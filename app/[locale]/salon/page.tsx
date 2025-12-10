@@ -7,7 +7,6 @@ import dynamic from "next/dynamic"
 import { DashboardLayout } from "@/components/dashboard-layout"
 import { AddTableDialog } from "@/components/add-table-dialog"
 import { ErrorBoundary } from "@/components/error-boundary"
-import type { Table } from "@/lib/mock-data"
 
 // Dynamically import UnifiedSalonView to avoid SSR issues
 const UnifiedSalonView = dynamic(
@@ -30,7 +29,7 @@ export default function SalonPage() {
   const t = useTranslations('common')
   const [showAddDialog, setShowAddDialog] = useState(false)
 
-  const handleTableClick = (table: Table) => {
+  const handleTableClick = (table: { id: string; number: string; status: string }) => {
     router.push(`/mesas/${table.id}`)
   }
 

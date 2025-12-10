@@ -3,13 +3,43 @@
 import { useEffect, useRef, useState } from "react"
 import { useTables } from "@/hooks/use-tables"
 import { useZones } from "@/hooks/use-zones"
-import { TABLE_STATE_COLORS } from "@/lib/table-states"
+import { TABLE_STATE_COLORS, type TableState } from "@/lib/table-states"
 import { Card } from "@/components/ui/card"
 import { LoadingSpinner } from "@/components/loading-spinner"
-import type { Table } from "@/lib/mock-data"
+
+// Local type for table colors with fill/stroke
+interface TableColorConfig {
+  fill: string
+  stroke: string
+  text: string
+}
+
+// Map single colors to fill/stroke config
+function getTableColors(status: string): TableColorConfig {
+  const baseColor = TABLE_STATE_COLORS[status as TableState] || TABLE_STATE_COLORS.libre
+  
+  // Create fill (lighter) and stroke (darker) variants from base color
+  return {
+    fill: baseColor + '20', // Add 20% opacity for fill
+    stroke: baseColor,
+    text: '#1f2937'
+  }
+}
+
+// Status label translations
+const STATUS_LABELS: Record<string, string> = {
+  libre: 'Libre',
+  ocupada: 'Ocupada',
+  reservada: 'Reservada',
+  limpieza: 'Limpieza',
+  pago: 'Pago',
+  pedido_en_curso: 'Pedido en curso',
+  cuenta_solicitada: 'Cuenta solicitada',
+  pago_confirmado: 'Pago confirmado'
+}
 
 interface TableMapSimpleProps {
-  onTableClick?: (table: Table) => void
+  onTableClick?: (table: { id: string; number: string; status: string }) => void
   editable?: boolean
 }
 
@@ -104,44 +134,35 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
 
     // Draw tables
     tables.forEach((table, index) => {
-      // Get position from layout or use grid
+      // Get position from position field or use grid layout
       let x = 100 + (index % 6) * 120
       let y = 100 + Math.floor(index / 6) * 100
       
-      if (table.layout_config) {
+      // Try to get position from the position field (JSON)
+      if (table.position) {
         try {
-          const config = typeof table.layout_config === 'string'
-            ? JSON.parse(table.layout_config)
-            : table.layout_config
-          if (config.x !== undefined) x = config.x
-          if (config.y !== undefined) y = config.y
+          const pos = typeof table.position === 'string'
+            ? JSON.parse(table.position)
+            : table.position
+          if (pos && typeof pos.x === 'number') x = pos.x
+          if (pos && typeof pos.y === 'number') y = pos.y
         } catch (e) {
           // Use default position
         }
       }
 
       const size = 60
-      const color = TABLE_STATE_COLORS[table.status] || TABLE_STATE_COLORS.libre
+      const colors = getTableColors(table.status)
 
-      // Draw table shape
-      if (table.shape === 'circle') {
-        ctx.beginPath()
-        ctx.arc(x, y, size / 2, 0, Math.PI * 2)
-        ctx.fillStyle = color.fill
-        ctx.fill()
-        ctx.strokeStyle = color.stroke
-        ctx.lineWidth = 3
-        ctx.stroke()
-      } else {
-        ctx.fillStyle = color.fill
-        ctx.fillRect(x - size / 2, y - size / 2, size, size)
-        ctx.strokeStyle = color.stroke
-        ctx.lineWidth = 3
-        ctx.strokeRect(x - size / 2, y - size / 2, size, size)
-      }
+      // Draw table as rectangle (default shape)
+      ctx.fillStyle = colors.fill
+      ctx.fillRect(x - size / 2, y - size / 2, size, size)
+      ctx.strokeStyle = colors.stroke
+      ctx.lineWidth = 3
+      ctx.strokeRect(x - size / 2, y - size / 2, size, size)
 
       // Draw table number
-      ctx.fillStyle = color.text || '#1f2937'
+      ctx.fillStyle = colors.text
       ctx.font = 'bold 18px sans-serif'
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
@@ -157,31 +178,33 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
     if (!canvas) return
 
     const rect = canvas.getBoundingClientRect()
-    const x = e.clientX - rect.left
-    const y = e.clientY - rect.top
+    const clickX = e.clientX - rect.left
+    const clickY = e.clientY - rect.top
 
     // Find clicked table
-    for (const table of tables) {
-      let tx = 100 + (tables.indexOf(table) % 6) * 120
-      let ty = 100 + Math.floor(tables.indexOf(table) / 6) * 100
+    for (let i = 0; i < tables.length; i++) {
+      const table = tables[i]
+      let tx = 100 + (i % 6) * 120
+      let ty = 100 + Math.floor(i / 6) * 100
 
-      if (table.layout_config) {
+      // Try to get position from the position field
+      if (table.position) {
         try {
-          const config = typeof table.layout_config === 'string'
-            ? JSON.parse(table.layout_config)
-            : table.layout_config
-          if (config.x !== undefined) tx = config.x
-          if (config.y !== undefined) ty = config.y
+          const pos = typeof table.position === 'string'
+            ? JSON.parse(table.position)
+            : table.position
+          if (pos && typeof pos.x === 'number') tx = pos.x
+          if (pos && typeof pos.y === 'number') ty = pos.y
         } catch (e) {
           // Use default position
         }
       }
 
       const size = 60
-      const distance = Math.sqrt((x - tx) ** 2 + (y - ty) ** 2)
+      const distance = Math.sqrt((clickX - tx) ** 2 + (clickY - ty) ** 2)
       
       if (distance < size / 2) {
-        onTableClick(table)
+        onTableClick({ id: table.id, number: table.number, status: table.status })
         return
       }
     }
@@ -196,14 +219,6 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
         </div>
       </Card>
     )
-  }
-
-  const statusLabels: Record<string, string> = {
-    libre: 'Libre',
-    ocupada: 'Ocupada',
-    reservada: 'Reservada',
-    limpieza: 'Limpieza',
-    pago: 'Pago'
   }
 
   return (
@@ -227,16 +242,16 @@ export function TableMapSimple({ onTableClick, editable = false }: TableMapSimpl
         />
         
         <div className="mt-4 flex flex-wrap gap-4">
-          {Object.entries(TABLE_STATE_COLORS).map(([status, colors]) => (
+          {Object.entries(TABLE_STATE_COLORS).map(([status, color]) => (
             <div key={status} className="flex items-center gap-2">
               <div 
                 className="w-4 h-4 rounded border-2"
                 style={{ 
-                  backgroundColor: colors.fill,
-                  borderColor: colors.stroke
+                  backgroundColor: color + '40',
+                  borderColor: color
                 }}
               />
-              <span className="text-sm capitalize">{statusLabels[status] || status}</span>
+              <span className="text-sm capitalize">{STATUS_LABELS[status] || status}</span>
             </div>
           ))}
         </div>

@@ -28,7 +28,13 @@ import { useTables } from "@/hooks/use-tables"
 import { useZones } from "@/hooks/use-zones"
 import { useAuth } from "@/contexts/auth-context"
 import { cn } from "@/lib/utils"
-import type { Table } from "@/lib/mock-data"
+
+// Simplified table type for click handling
+interface TableClickData {
+  id: string
+  number: string
+  status: string
+}
 
 interface UnifiedSalonViewProps {
   /**
@@ -49,9 +55,33 @@ interface UnifiedSalonViewProps {
   /**
    * Callbacks opcionales
    */
-  onTableClick?: (table: Table) => void
+  onTableClick?: (table: TableClickData) => void
   onAddTable?: () => void
   onManageZones?: () => void
+}
+
+// Loading skeleton component to avoid hydration mismatch
+function SalonLoadingSkeleton() {
+  return (
+    <div className="space-y-6">
+      <div className="grid gap-3 grid-cols-2 sm:grid-cols-3 md:grid-cols-5">
+        {[1, 2, 3, 4, 5].map((i) => (
+          <Card key={i} className="animate-pulse">
+            <CardContent className="pt-6">
+              <div className="h-8 bg-muted rounded w-12 mb-2" />
+              <div className="h-4 bg-muted rounded w-20" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <div className="h-[500px] bg-muted rounded-lg animate-pulse flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4" />
+          <p className="text-muted-foreground">Cargando salón...</p>
+        </div>
+      </div>
+    </div>
+  )
 }
 
 export function UnifiedSalonView({
@@ -62,7 +92,8 @@ export function UnifiedSalonView({
   onAddTable,
   onManageZones,
 }: UnifiedSalonViewProps) {
-  // Hooks - always called in the same order
+  // All hooks must be called unconditionally and in the same order
+  const [mounted, setMounted] = useState(false)
   const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
@@ -71,36 +102,19 @@ export function UnifiedSalonView({
   const router = useRouter()
   const tCommon = useTranslations('common')
   const { user } = useAuth()
-  const { tables = [], loading: tablesLoading, error: tablesError } = useTables()
-  const { zones = [], loading: zonesLoading, error: zonesError } = useZones()
+  const { tables = [], loading: tablesLoading, error: tablesError, refetch: refetchTables } = useTables()
+  const { zones = [], loading: zonesLoading, error: zonesError, refetch: refetchZones } = useZones()
+
+  // Mount effect - only runs on client
+  useEffect(() => {
+    setMounted(true)
+  }, [])
   
   const canEdit = user?.role === "admin" && allowEditing
   const isLoading = tablesLoading || zonesLoading
   const hasError = tablesError || zonesError
 
-  // Show error state if queries failed
-  if (hasError) {
-    return (
-      <Alert variant="destructive">
-        <AlertCircle className="h-4 w-4" />
-        <AlertTitle>Error cargando datos</AlertTitle>
-        <AlertDescription>
-          No se pudieron cargar los datos del salón. Por favor, recarga la página.
-          <Button 
-            variant="outline" 
-            size="sm" 
-            className="mt-2"
-            onClick={() => window.location.reload()}
-          >
-            <RefreshCw className="h-4 w-4 mr-2" />
-            Recargar
-          </Button>
-        </AlertDescription>
-      </Alert>
-    )
-  }
-
-  // Estadísticas de mesas
+  // Estadísticas de mesas - always calculated to maintain hook consistency
   const tableStats = useMemo(() => {
     const stats = {
       total: tables.length,
@@ -131,7 +145,7 @@ export function UnifiedSalonView({
   }, [tables])
 
   // Manejar click en mesa desde el mapa
-  const handleTableClickFromMap = useCallback((table: Table) => {
+  const handleTableClickFromMap = useCallback((table: TableClickData) => {
     if (isEditMode) return
     
     if (onTableClick) {
@@ -174,6 +188,42 @@ export function UnifiedSalonView({
     document.addEventListener('keydown', handleKeyPress)
     return () => document.removeEventListener('keydown', handleKeyPress)
   }, [canEdit, currentView, handleToggleEditMode])
+
+  // Conditional returns AFTER all hooks - prevents hydration mismatch
+  // Return loading skeleton until component is mounted on client
+  if (!mounted) {
+    return <SalonLoadingSkeleton />
+  }
+
+  // Show error state if queries failed
+  if (hasError) {
+    return (
+      <Alert variant="destructive">
+        <AlertCircle className="h-4 w-4" />
+        <AlertTitle>Error cargando datos</AlertTitle>
+        <AlertDescription>
+          No se pudieron cargar los datos del salón.
+          <Button 
+            variant="outline" 
+            size="sm" 
+            className="mt-2 ml-2"
+            onClick={() => {
+              refetchTables?.()
+              refetchZones?.()
+            }}
+          >
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Reintentar
+          </Button>
+        </AlertDescription>
+      </Alert>
+    )
+  }
+
+  // Show loading state while data is being fetched
+  if (isLoading) {
+    return <SalonLoadingSkeleton />
+  }
 
   return (
     <div className="space-y-6">
