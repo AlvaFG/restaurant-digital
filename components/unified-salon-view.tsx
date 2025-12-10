@@ -75,8 +75,7 @@ export function UnifiedSalonView({
   onAddTable,
   onManageZones,
 }: UnifiedSalonViewProps) {
-  // ALL HOOKS MUST BE CALLED BEFORE ANY CONDITIONAL RETURNS
-  const [isClient, setIsClient] = useState(false)
+  // Hooks - always called in the same order
   const [currentView, setCurrentView] = useState<'map' | 'list' | 'zones'>(defaultView)
   const [isEditMode, setIsEditMode] = useState(false)
   const [selectedZoneIds, setSelectedZoneIds] = useState<string[]>([])
@@ -87,22 +86,6 @@ export function UnifiedSalonView({
   const { user } = useAuth()
   const { tables = [], loading: tablesLoading, error: tablesError } = useTables()
   const { zones = [], loading: zonesLoading, error: zonesError } = useZones()
-  
-  useEffect(() => {
-    setIsClient(true)
-  }, [])
-  
-  // Show loading state during SSR and initial hydration
-  if (!isClient) {
-    return (
-      <div className="flex h-[400px] items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-muted-foreground">Cargando salón...</p>
-        </div>
-      </div>
-    )
-  }
   
   const canEdit = user?.role === "admin" && allowEditing
   const isLoading = tablesLoading || zonesLoading
