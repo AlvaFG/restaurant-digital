@@ -83,7 +83,7 @@ export async function POST(request: NextRequest) {
       const session = existingValidation.session;
       
       // Get table from Supabase
-      const supabase = createServerClient()
+      const supabase = await createServerClient()
       const { data: table, error: tableError } = await supabase
         .from('tables')
         .select('id, number, zone_id, capacity')
@@ -155,7 +155,7 @@ export async function POST(request: NextRequest) {
       }
       
       // Buscar la mesa en Supabase para obtener el tenant_id
-      const supabase = createServerClient()
+      const supabase = await createServerClient()
       const { data: tableData, error: fetchTableError } = await supabase
         .from('tables')
         .select('id, number, zone_id, capacity, tenant_id')

@@ -1,4 +1,4 @@
-﻿import { createServerClient } from "@/lib/supabase/server"
+import { createServerClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 import { MENSAJES } from "@/lib/i18n/mensajes"
 
@@ -36,7 +36,7 @@ export async function getDashboardMetrics(tenantId: string): Promise<DashboardMe
   logger.debug("Obteniendo métricas del dashboard", { tenantId })
 
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // Fecha de inicio del día (00:00:00)
     const startOfDay = new Date()

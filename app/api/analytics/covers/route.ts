@@ -1,4 +1,4 @@
-﻿import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getCurrentUser, createServerClient } from '@/lib/supabase/server'
 import type { CoversServed, AnalyticsAPIResponse } from '@/lib/types/analytics-extended'
 import { createLogger } from '@/lib/logger'
@@ -13,10 +13,10 @@ function getTenantIdFromUser(user: { user_metadata?: { tenant_id?: string } }) {
 /**
  * GET /api/analytics/covers
  * 
- * Retorna métricas avanzadas de cubiertos servidos:
- * - Hoy, esta semana, este mes, este año
+ * Retorna m�tricas avanzadas de cubiertos servidos:
+ * - Hoy, esta semana, este mes, este a�o
  * - Tendencia y cambio porcentual
- * - Datos por día para gráficos
+ * - Datos por d�a para gr�ficos
  * 
  * Query params:
  * - from: fecha inicio (ISO) opcional
@@ -50,9 +50,9 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
-    // Obtener parámetros de búsqueda
+    // Obtener par�metros de b�squeda
     const searchParams = request.nextUrl.searchParams
     const fromParam = searchParams.get('from')
     const toParam = searchParams.get('to')
@@ -61,7 +61,7 @@ export async function GET(request: NextRequest) {
     const now = new Date()
     const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
     const to = toParam ? new Date(toParam) : now
-    const from = fromParam ? new Date(fromParam) : new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 días atrás
+    const from = fromParam ? new Date(fromParam) : new Date(today.getTime() - 30 * 24 * 60 * 60 * 1000) // 30 d�as atr�s
 
     // Calcular inicio de semana (lunes)
     const startOfWeek = new Date(today)
@@ -73,11 +73,11 @@ export async function GET(request: NextRequest) {
     // Calcular inicio de mes
     const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1)
 
-    // Calcular inicio de año
+    // Calcular inicio de a�o
     const startOfYear = new Date(today.getFullYear(), 0, 1)
 
     // Query para contar cubiertos (personas en pedidos completados)
-    // Los cubiertos están en metadata.guests o metadata.covers
+    // Los cubiertos est�n en metadata.guests o metadata.covers
     
     // CUBIERTOS HOY
     const { data: todayData, error: todayError } = await supabase
@@ -130,7 +130,7 @@ export async function GET(request: NextRequest) {
       return sum + covers
     }, 0) || 0
 
-    // CUBIERTOS ESTE AÑO
+    // CUBIERTOS ESTE A�O
     const { data: yearData, error: yearError } = await supabase
       .from('orders')
       .select('metadata')
@@ -147,7 +147,7 @@ export async function GET(request: NextRequest) {
       return sum + covers
     }, 0) || 0
 
-    // CUBIERTOS MES ANTERIOR (para comparación)
+    // CUBIERTOS MES ANTERIOR (para comparaci�n)
     const previousMonth = new Date(startOfMonth)
     previousMonth.setMonth(previousMonth.getMonth() - 1)
 
@@ -177,7 +177,7 @@ export async function GET(request: NextRequest) {
       percentageChange = 100
     }
 
-    // DATOS POR DÍA (últimos 30 días o rango personalizado)
+    // DATOS POR D�A (�ltimos 30 d�as o rango personalizado)
     const { data: dailyData, error: dailyError } = await supabase
       .from('orders')
       .select('created_at, metadata')
@@ -191,7 +191,7 @@ export async function GET(request: NextRequest) {
       logger.error("Error fetching daily data", new Error(dailyError.message), { tenantId, from: from.toISOString(), to: to.toISOString() })
     }
 
-    // Agrupar por día
+    // Agrupar por d�a
     const byDayMap = new Map<string, number>()
     
     dailyData?.forEach((order: any) => {

@@ -36,7 +36,7 @@ export async function GET(request: Request) {
     }
 
     if (!authUser) {
-      const supabase = createServerClient()
+      const supabase = await createServerClient()
       const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
       logger.debug('Estado de sesión vía cookies', {

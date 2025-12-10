@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Tests for QR Order API
  * @vitest-environment node
  */

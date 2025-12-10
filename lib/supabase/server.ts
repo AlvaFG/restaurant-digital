@@ -20,20 +20,20 @@ import type { Database } from './types'
  * ```typescript
  * // Server Component
  * export default async function Page() {
- *   const supabase = createServerClient()
+ *   const supabase = await createServerClient()
  *   const { data } = await supabase.from('orders').select('*')
  *   return <div>{data.length} orders</div>
  * }
  * 
  * // API Route
  * export async function GET() {
- *   const supabase = createServerClient()
+ *   const supabase = await createServerClient()
  *   const { data } = await supabase.from('orders').select('*')
  *   return Response.json(data)
  * }
  * ```
  */
-export function createServerClient() {
+export async function createServerClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
@@ -44,7 +44,7 @@ export function createServerClient() {
     )
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   return createClient<Database>(supabaseUrl, supabaseAnonKey, {
     cookies: {
@@ -77,7 +77,7 @@ export function createServerClient() {
  * @returns Usuario autenticado o null
  */
 export async function getCurrentUser() {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
   const { data: { user }, error } = await supabase.auth.getUser()
   
   if (error || !user) {
@@ -105,14 +105,14 @@ export async function hasActiveSession(): Promise<boolean> {
  * ```typescript
  * // API Route que necesita acceso completo
  * export async function GET() {
- *   const supabase = createServiceRoleClient()
+ *   const supabase = await createServiceRoleClient()
  *   // Este cliente puede acceder a todos los datos sin restricciones RLS
  *   const { data } = await supabase.from('tenants').select('*')
  *   return Response.json(data)
  * }
  * ```
  */
-export function createServiceRoleClient() {
+export async function createServiceRoleClient() {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
@@ -123,7 +123,7 @@ export function createServiceRoleClient() {
     )
   }
 
-  const cookieStore = cookies()
+  const cookieStore = await cookies()
 
   return createClient<Database>(supabaseUrl, supabaseServiceKey, {
     cookies: {

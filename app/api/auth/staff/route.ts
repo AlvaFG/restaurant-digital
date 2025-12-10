@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     logRequest('POST', '/api/auth/staff')
 
     // Obtener usuario actual
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
     if (sessionError || !session) {
@@ -196,7 +196,7 @@ export async function GET() {
     logRequest('GET', '/api/auth/staff')
 
     // Obtener usuario actual
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { session }, error: sessionError } = await supabase.auth.getSession()
 
     if (sessionError || !session) {

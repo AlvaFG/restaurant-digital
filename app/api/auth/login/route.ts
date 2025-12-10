@@ -1,4 +1,4 @@
-﻿import { createAdminClient } from '@/lib/supabase/admin'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { manejarError, validarBody, respuestaExitosa, logRequest, logResponse } from '@/lib/api-helpers'
 import { AuthenticationError, ValidationError, DatabaseError } from '@/lib/errors'
 import { MENSAJES } from '@/lib/i18n/mensajes'
@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     // Usar admin client para Supabase Auth
     const supabase = createAdminClient()
 
-    logger.info('Iniciando autenticación con Supabase', { email })
+    logger.info('Iniciando autenticaci�n con Supabase', { email })
 
     // 1. Autenticar con Supabase Auth
     const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
@@ -36,7 +36,7 @@ export async function POST(request: Request) {
     })
 
     if (authError || !authData.session) {
-      logger.warn('Error en autenticación de Supabase', { email, error: authError?.message })
+      logger.warn('Error en autenticaci�n de Supabase', { email, error: authError?.message })
       throw new AuthenticationError(MENSAJES.ERRORES.CREDENCIALES_INVALIDAS)
     }
 

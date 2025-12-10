@@ -36,7 +36,7 @@ export async function GET(
     logRequest('GET', `/api/auth/staff/${staffId}`)
 
     // Verificar sesión y rol admin
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
@@ -91,7 +91,7 @@ export async function PATCH(
     logRequest('PATCH', `/api/auth/staff/${staffId}`)
 
     // Verificar sesión y rol admin
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {
@@ -222,7 +222,7 @@ export async function DELETE(
     logRequest('DELETE', `/api/auth/staff/${staffId}`)
 
     // Verificar sesión y rol admin
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: { session } } = await supabase.auth.getSession()
 
     if (!session) {

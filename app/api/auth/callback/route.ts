@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { createAdminClient } from "@/lib/supabase/admin"
 import { logger } from "@/lib/logger"
 import type { Database } from "@/lib/supabase/database.types"
@@ -33,27 +33,27 @@ export async function GET(request: Request) {
     return NextResponse.redirect(`${requestUrl.origin}/login?error=oauth_failed`)
   }
 
-  // Si no hay código, redirigir al login
+  // Si no hay c�digo, redirigir al login
   if (!code) {
-    logger.warn("Callback sin código de autorización")
+    logger.warn("Callback sin c�digo de autorizaci�n")
     return NextResponse.redirect(`${requestUrl.origin}/login`)
   }
 
   try {
     const supabase = createAdminClient()
 
-    // Intercambiar el código por una sesión
+    // Intercambiar el c�digo por una sesi�n
     const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code)
 
     if (exchangeError) {
-      logger.error("Error al intercambiar código por sesión", exchangeError as Error)
+      logger.error("Error al intercambiar c�digo por sesi�n", exchangeError as Error)
       return NextResponse.redirect(`${requestUrl.origin}/login?error=session_failed`)
     }
 
     const { user, session } = data
 
     if (!user || !session) {
-      logger.error("No se obtuvo usuario o sesión después del intercambio")
+      logger.error("No se obtuvo usuario o sesi�n despu�s del intercambio")
       return NextResponse.redirect(`${requestUrl.origin}/login?error=no_user`)
     }
 
@@ -83,7 +83,7 @@ export async function GET(request: Request) {
         .single()
 
       if (!defaultTenant) {
-        logger.error("No se encontró tenant por defecto")
+        logger.error("No se encontr� tenant por defecto")
         return NextResponse.redirect(`${requestUrl.origin}/login?error=no_tenant`)
       }
 
@@ -96,7 +96,7 @@ export async function GET(request: Request) {
         role: "staff",
         tenant_id: tenantId,
         active: true,
-        password_hash: "", // Google OAuth no usa contraseña
+        password_hash: "", // Google OAuth no usa contrase�a
       }
 
       const { data: newUser, error: createError } = await supabase
@@ -114,13 +114,13 @@ export async function GET(request: Request) {
       logger.info("Usuario creado exitosamente", { userId: userRecord?.id })
     }
 
-    // Verificar que userRecord no sea null después de la creación
+    // Verificar que userRecord no sea null despu�s de la creaci�n
     if (!userRecord) {
-      logger.error("Error: userRecord es null después de la creación")
+      logger.error("Error: userRecord es null despu�s de la creaci�n")
       return NextResponse.redirect(`${requestUrl.origin}/login?error=user_creation_failed`)
     }
 
-    // Verificar que el usuario esté activo
+    // Verificar que el usuario est� activo
     if (!userRecord.active) {
       logger.warn("Intento de login con usuario inactivo", { userId: userRecord.id })
       return NextResponse.redirect(`${requestUrl.origin}/login?error=user_inactive`)
@@ -163,7 +163,7 @@ export async function GET(request: Request) {
       .single()
 
     if (!tenant) {
-      logger.error("No se encontró tenant para el usuario")
+      logger.error("No se encontr� tenant para el usuario")
       return NextResponse.redirect(`${requestUrl.origin}/login?error=no_tenant`)
     }
 
@@ -172,7 +172,7 @@ export async function GET(request: Request) {
 
     const settings = tenant.settings as TenantSettings | null
 
-    // Establecer cookies con la información del usuario y tenant
+    // Establecer cookies con la informaci�n del usuario y tenant
     response.cookies.set("restaurant_auth", JSON.stringify({
       id: userRecord.id,
       email: user.email,
@@ -184,7 +184,7 @@ export async function GET(request: Request) {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 7, // 7 d�as
       path: "/",
     })
 
@@ -205,7 +205,7 @@ export async function GET(request: Request) {
       httpOnly: false,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7, // 7 días
+      maxAge: 60 * 60 * 24 * 7, // 7 d�as
       path: "/",
     })
 

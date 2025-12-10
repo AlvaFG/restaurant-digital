@@ -23,7 +23,7 @@ export async function POST() {
     logger.debug('Usuario autenticado', { userId: user.id })
 
     // Obtener datos desde la tabla users
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: userData, error: userError } = await supabase
       .from('users')
       .select('id, tenant_id, name, role, active')

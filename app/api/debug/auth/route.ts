@@ -15,7 +15,7 @@ export async function GET() {
     const user = await getCurrentUser()
 
     // 3. Verificar sesión directamente
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: session, error: sessionError } = await supabase.auth.getSession()
 
     const metadata = user?.user_metadata as Record<string, unknown> | undefined

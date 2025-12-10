@@ -15,12 +15,12 @@ import { createLogger } from "@/lib/logger"
 import type { Zone } from "@/lib/mock-data"
 
 const logger = createLogger('zones-store')
-function getWritableSupabaseClient() {
+async function getWritableSupabaseClient() {
   const hasServiceRoleKey = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY)
 
   if (hasServiceRoleKey) {
     try {
-      return createServiceRoleClient()
+      return await createServiceRoleClient()
     } catch (error) {
       logger.warn('Fallo al crear cliente service role, se usara el cliente autenticado por usuario', {
         error: error instanceof Error ? error.message : String(error)
@@ -28,7 +28,7 @@ function getWritableSupabaseClient() {
     }
   }
 
-  return createServerClient()
+  return await createServerClient()
 }
 
 
@@ -42,7 +42,7 @@ type ZoneRowWithCount = ZoneRow & { tables?: Array<{ count: number | null }> }
  */
 export async function listZones(tenantId: string): Promise<Zone[]> {
   console.log('[listZones] Iniciando con tenant_id:', tenantId)
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data, error } = await supabase
     .from('zones')
@@ -84,7 +84,7 @@ export async function listZones(tenantId: string): Promise<Zone[]> {
  * Obtiene una zona por ID dentro del tenant indicado.
  */
 export async function getZoneById(zoneId: string, tenantId: string): Promise<Zone | null> {
-  const supabase = createServerClient()
+  const supabase = await createServerClient()
 
   const { data, error } = await supabase
     .from('zones')
@@ -127,7 +127,7 @@ interface CreateZoneInput {
  * Crea una nueva zona para el tenant indicado.
  */
 export async function createZone(data: CreateZoneInput): Promise<Zone> {
-  const supabaseRead = createServerClient()
+  const supabaseRead = await createServerClient()
 
   const { data: existing } = await supabaseRead
     .from('zones')
@@ -140,7 +140,7 @@ export async function createZone(data: CreateZoneInput): Promise<Zone> {
     throw new Error(`Ya existe una zona con el nombre "${data.name}"`)
   }
 
-  const supabaseAdmin = getWritableSupabaseClient()
+  const supabaseAdmin = await getWritableSupabaseClient()
 
   const insertPayload: ZoneInsert = {
     tenant_id: data.tenantId,
@@ -197,7 +197,7 @@ export async function updateZone(
   tenantId: string,
   updates: UpdateZoneInput,
 ): Promise<Zone> {
-  const supabaseRead = createServerClient()
+  const supabaseRead = await createServerClient()
 
   const existing = await getZoneById(zoneId, tenantId)
   if (!existing) {
@@ -218,7 +218,7 @@ export async function updateZone(
     }
   }
 
-  const supabaseAdmin = getWritableSupabaseClient()
+  const supabaseAdmin = await getWritableSupabaseClient()
 
   const updatePayload: ZoneUpdate = {}
   if (typeof updates.name === 'string') {
@@ -279,7 +279,7 @@ export async function deleteZone(zoneId: string, tenantId: string): Promise<void
     )
   }
 
-  const supabaseAdmin = getWritableSupabaseClient()
+  const supabaseAdmin = await getWritableSupabaseClient()
 
   const { error } = await supabaseAdmin
     .from('zones')

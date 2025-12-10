@@ -56,7 +56,7 @@ export async function GET(request: Request) {
     const includeInactive = url.searchParams.get('includeInactive') === 'true'
     
     // Usar createServerClient directamente (no zones-service que usa browser client)
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     
     let query = supabase
       .from('zones')
@@ -122,7 +122,7 @@ export async function POST(request: Request) {
     }
 
     // Usar createServerClient directamente
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     
     const { data: zone, error } = await supabase
       .from('zones')

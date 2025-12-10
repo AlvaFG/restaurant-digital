@@ -1,4 +1,4 @@
-﻿import { NextResponse } from "next/server"
+import { NextResponse } from "next/server"
 import { getCurrentUser, createServerClient } from "@/lib/supabase/server"
 import { logger } from "@/lib/logger"
 import type { User } from "@supabase/supabase-js"
@@ -32,7 +32,7 @@ export async function GET(
 
     const zoneId = context.params.id
     
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     
     const { data: zone, error } = await supabase
       .from('zones')
@@ -93,7 +93,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'No se enviaron cambios validos' }, { status: 400 })
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     
     const { data: zone, error } = await supabase
       .from('zones')
@@ -134,7 +134,7 @@ export async function DELETE(
 
     const zoneId = context.params.id
     
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     
     // Soft delete: marcar como inactiva
     const { error } = await supabase

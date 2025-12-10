@@ -139,7 +139,7 @@ export async function GET() {
     // Paso siguiente: Verificar zonas con cliente normal (con RLS)
     addStep('Obtener zonas con cliente normal (con RLS)')
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: userZones, error: userZonesError } = await supabase
       .from('zones')
       .select('*')

@@ -73,7 +73,7 @@ export async function generateQR(
 
   try {
     // Get table data using server client
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: table, error: tableError } = await supabase
       .from('tables')
       .select(`
@@ -237,7 +237,7 @@ export async function validateToken(token: string, tenantId: string): Promise<QR
     }
 
     // Get table data
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: table, error: tableError } = await supabase
       .from('tables')
       .select(`
@@ -390,7 +390,7 @@ async function updateTableQRMetadata(
   tenantId: string
 ): Promise<void> {
   try {
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { error } = await supabase
       .from('tables')
       .update({
@@ -424,7 +424,7 @@ async function updateTableQRMetadata(
 async function incrementScanCount(tableId: string, tenantId: string): Promise<void> {
   try {
     // Get current table to read scan_count from metadata
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
     const { data: table, error: getError } = await supabase
       .from('tables')
       .select('metadata')

@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // Obtener parámetros de búsqueda
     const searchParams = request.nextUrl.searchParams

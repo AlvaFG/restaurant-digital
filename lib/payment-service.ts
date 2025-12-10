@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Payment Service
  * Business logic for payment processing
  */

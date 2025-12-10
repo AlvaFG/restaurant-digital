@@ -15,7 +15,7 @@ export async function POST() {
   try {
     logRequest('POST', '/api/auth/logout')
 
-    const supabase = createServerClient()
+    const supabase = await createServerClient()
 
     // Obtener usuario actual antes de cerrar sesión
     const { data: { session } } = await supabase.auth.getSession()

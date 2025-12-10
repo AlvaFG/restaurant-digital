@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Payment Types & Interfaces
  * Types for payment processing with MercadoPago
  */

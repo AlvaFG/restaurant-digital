@@ -1,4 +1,4 @@
-﻿/**
+/**
  * AuthService - Cliente de autenticación con Supabase
  * 
  * Maneja la autenticación del lado del cliente usando Supabase Auth.

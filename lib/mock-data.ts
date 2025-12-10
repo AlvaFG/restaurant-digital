@@ -1,4 +1,4 @@
-﻿/**
+/**
  * @deprecated Este archivo está deprecado y solo debe usarse en tests.
  * Los datos reales deben obtenerse de Supabase usando los servicios en lib/services/
  * 
