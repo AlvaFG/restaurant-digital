@@ -13,24 +13,40 @@ import type { Table } from "@/lib/mock-data"
 // Dynamically import Konva-dependent component (no SSR)
 const UnifiedSalonView = dynamicImport(
   () => import('@/components/unified-salon-view').then(mod => {
+    console.log('✅ UnifiedSalonView module loaded successfully', Object.keys(mod))
     if (!mod.UnifiedSalonView) {
-      console.error('UnifiedSalonView not found in module')
+      console.error('❌ UnifiedSalonView not found in module. Available exports:', Object.keys(mod))
       throw new Error('UnifiedSalonView export not found')
     }
     return { default: mod.UnifiedSalonView }
   }).catch(err => {
-    console.error('Failed to load UnifiedSalonView:', err)
+    console.error('❌ Failed to load UnifiedSalonView:', err)
+    console.error('Error details:', {
+      message: err.message,
+      stack: err.stack,
+      name: err.name
+    })
     // Return a proper default export component
     return {
       default: () => (
         <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
           <h2 className="text-lg font-semibold text-destructive mb-2">Error al cargar el salón</h2>
           <p className="text-sm text-muted-foreground mb-4">
-            No se pudo cargar la vista del salón. Por favor, recarga la página.
+            No se pudo cargar la vista del salón.
           </p>
+          <details className="mt-4 text-xs">
+            <summary className="cursor-pointer font-medium mb-2">Detalles del error (para desarrolladores)</summary>
+            <pre className="mt-2 p-3 bg-muted rounded overflow-auto text-left">
+              {JSON.stringify({
+                error: err.message,
+                name: err.name,
+                timestamp: new Date().toISOString()
+              }, null, 2)}
+            </pre>
+          </details>
           <button 
             onClick={() => window.location.reload()} 
-            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
           >
             Recargar
           </button>

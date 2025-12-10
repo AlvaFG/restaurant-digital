@@ -83,6 +83,15 @@ export class ConfigurationErrorBoundary extends Component<
                 <li>Sesión expirada o inválida</li>
                 <li>Configuración incorrecta del servidor</li>
               </ul>
+              {this.state.error && (
+                <details className="mt-4 text-xs">
+                  <summary className="cursor-pointer font-medium">Detalles del error (para desarrolladores)</summary>
+                  <pre className="mt-2 p-2 bg-muted rounded overflow-auto">
+                    {this.state.error.toString()}
+                    {this.state.error.stack && `\n\n${this.state.error.stack}`}
+                  </pre>
+                </details>
+              )}
               <div className="mt-4 flex gap-2">
                 <Button 
                   variant="default" 
