@@ -12,22 +12,31 @@ import type { Table } from "@/lib/mock-data"
 
 // Dynamically import Konva-dependent component (no SSR)
 const UnifiedSalonView = dynamicImport(
-  () => import('@/components/unified-salon-view').then(mod => mod.UnifiedSalonView).catch(err => {
+  () => import('@/components/unified-salon-view').then(mod => {
+    if (!mod.UnifiedSalonView) {
+      console.error('UnifiedSalonView not found in module')
+      throw new Error('UnifiedSalonView export not found')
+    }
+    return { default: mod.UnifiedSalonView }
+  }).catch(err => {
     console.error('Failed to load UnifiedSalonView:', err)
-    return () => (
-      <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
-        <h2 className="text-lg font-semibold text-destructive mb-2">Error al cargar el salón</h2>
-        <p className="text-sm text-muted-foreground mb-4">
-          No se pudo cargar la vista del salón. Por favor, recarga la página.
-        </p>
-        <button 
-          onClick={() => window.location.reload()} 
-          className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
-        >
-          Recargar
-        </button>
-      </div>
-    )
+    // Return a proper default export component
+    return {
+      default: () => (
+        <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-6">
+          <h2 className="text-lg font-semibold text-destructive mb-2">Error al cargar el salón</h2>
+          <p className="text-sm text-muted-foreground mb-4">
+            No se pudo cargar la vista del salón. Por favor, recarga la página.
+          </p>
+          <button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90"
+          >
+            Recargar
+          </button>
+        </div>
+      )
+    }
   }),
   { ssr: false }
 );
