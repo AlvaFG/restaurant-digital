@@ -94,6 +94,11 @@
     "workbox-window": "^7.3.0",
     "zod": "3.25.67"
   },
+  "overrides": {
+    "react-konva": {
+      "react-reconciler": "0.29.2"
+    }
+  },
   "devDependencies": {
     "@eslint/config-array": "^0.23.0",
     "@eslint/object-schema": "^3.0.0",
