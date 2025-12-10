@@ -62,7 +62,26 @@ export function UnifiedSalonView({
   onAddTable,
   onManageZones,
 }: UnifiedSalonViewProps) {
-  // Safe hooks with fallbacks
+  // Guard against SSR - React Query hooks MUST run on client only
+  const [isClient, setIsClient] = useState(false)
+  
+  useEffect(() => {
+    setIsClient(true)
+  }, [])
+  
+  // Show loading state during SSR and initial hydration
+  if (!isClient) {
+    return (
+      <div className="flex h-[400px] items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Cargando salón...</p>
+        </div>
+      </div>
+    )
+  }
+  
+  // Safe hooks with fallbacks - only run on client
   let router, tCommon, user, tables, tablesLoading, tablesError, zones, zonesLoading, zonesError
   
   try {
